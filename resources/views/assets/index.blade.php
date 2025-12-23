@@ -348,7 +348,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto lg:overflow-visible px-3 sm:px-4 lg:px-4">
+                <div class="w-full overflow-x-auto px-3 sm:px-4 lg:px-4">
                     <table class="w-full border-separate border-spacing-y-2">
                         <thead>
                             <tr class="text-left text-xs font-semibold tracking-[0.15em] text-slate-500">
@@ -364,7 +364,7 @@
                                 <th class="bg-slate-50 px-3 py-3 w-36">Last Synced</th>
                                 <th class="bg-slate-50 px-3 py-3 w-40">Assigned To</th>
                                 <th class="bg-slate-50 px-3 py-3">Location</th>
-                                <th class="bg-slate-50 px-3 py-3 text-right w-28">Actions</th>
+                                <th class="bg-slate-50 px-3 py-3 text-right w-[160px] whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -415,7 +415,7 @@
                                     </td>
                                     <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->user->name ?? 'Unassigned' }}</td>
                                     <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->location ?? '-' }}</td>
-                                    <td class="whitespace-nowrap px-3 py-2.5 text-right text-sm w-32">
+                                    <td class="whitespace-nowrap px-3 py-2.5 text-right text-sm w-[160px]">
                                         <div class="flex items-center justify-end gap-2">
                                             <a
                                                 href="{{ route('assets.show', $asset) }}"
