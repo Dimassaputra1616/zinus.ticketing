@@ -796,6 +796,22 @@
                     }, 3500);
                 });
 
+                document.querySelectorAll('[data-notification-badge]').forEach(badge => {
+                    const anchor = badge.closest('a');
+                    const countTarget = document.querySelector(`[data-notification-count="${badge.dataset.notificationBadge}"]`);
+                    const hideBadge = () => {
+                        badge.hidden = true;
+                        if (countTarget) {
+                            countTarget.textContent = '0';
+                        }
+                    };
+                    if (anchor) {
+                        anchor.addEventListener('click', hideBadge);
+                    } else {
+                        badge.addEventListener('click', hideBadge);
+                    }
+                });
+
                 document.querySelectorAll('[data-ticket-form]').forEach(form => {
                     const fields = {
                         title: form.querySelector('[data-validate-field="title"]'),
