@@ -342,6 +342,16 @@
                     ->get()
                     ->groupBy('type')
                     ->map->count();
+
+                if (request()->routeIs('tickets.index')) {
+                    $user->unreadNotifications()->where('type', $ticketNotificationType)->update(['read_at' => now()]);
+                    $notificationCounts[$ticketNotificationType] = 0;
+                }
+
+                if (request()->routeIs('users.index')) {
+                    $user->unreadNotifications()->where('type', $userNotificationType)->update(['read_at' => now()]);
+                    $notificationCounts[$userNotificationType] = 0;
+                }
             }
 
             $navItems = [
