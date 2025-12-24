@@ -5,7 +5,7 @@
     'tagline' => 'Dashboard Ticketing',
     'title' => 'Manajemen tiket yang lebih terstruktur',
     'description' => 'Kelola tiket dan dukungan IT Zinus Dream Indonesia dari satu panel terpadu.',
-    'compactUser' => false,
+    'hideUserOnMobile' => false,
 ])
 
 @php
@@ -68,7 +68,7 @@
         </div>
 
         @if ($user)
-            <div class="flex items-center gap-2.5 lg:mt-0">
+            <div class="{{ $hideUserOnMobile ? 'hidden lg:flex' : 'flex' }} items-center gap-2.5 lg:mt-0">
                 <div x-data="{ open: false }" class="relative">
                     <button
                         type="button"
@@ -78,12 +78,10 @@
                         <span class="h-8 w-8 rounded-full bg-gradient-to-br from-[#12824C] to-[#0F6D3F] text-white flex items-center justify-center text-sm font-semibold shadow-inner shadow-emerald-200/50 ring-2 ring-[#C5E5D0]">
                             {{ $initial }}
                         </span>
-                        @if (! $compactUser)
-                            <span class="leading-tight pr-2">
-                                <span class="block text-sm font-semibold text-[#0D1F2B]">{{ $displayName }}</span>
-                                <span class="block text-xs text-[#4A5D68] truncate max-w-[180px]">{{ $displayEmail }}</span>
-                            </span>
-                        @endif
+                        <span class="leading-tight pr-2">
+                            <span class="block text-sm font-semibold text-[#0D1F2B]">{{ $displayName }}</span>
+                            <span class="block text-xs text-[#4A5D68] truncate max-w-[180px]">{{ $displayEmail }}</span>
+                        </span>
                         <svg class="h-4 w-4 text-slate-500 transition" :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.25a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z" clip-rule="evenodd" />
                         </svg>

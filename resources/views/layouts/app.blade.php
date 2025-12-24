@@ -323,8 +323,9 @@
     </head>
     @php $authUser = Auth::user(); @endphp
     <body
-        x-init="setTimeout(() => { document.body.classList.remove('page-preload'); document.body.classList.add('page-loaded'); }, 10); $watch('mobileNav', value => { document.body.classList.toggle('overflow-hidden', value); })"
-        x-data="{ mobileNav: false }"
+        x-init="setTimeout(() => { document.body.classList.remove('page-preload'); document.body.classList.add('page-loaded'); }, 10)"
+        x-data="{ sidebarOpen: false }"
+        :class="sidebarOpen ? 'overflow-hidden max-h-screen' : ''"
         class="page-preload font-sans bg-white text-slate-800 antialiased min-h-screen overflow-x-hidden"
         @if($authUser?->isAdmin()) data-notifications-endpoint="{{ route('admin.notifications.summary') }}" @endif
     >
@@ -548,7 +549,7 @@
                     <div class="flex items-center gap-2">
                         <button
                             type="button"
-                            @click="mobileNav = true"
+                            @click="sidebarOpen = true"
                             class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                             aria-label="Buka menu navigasi"
                         >
@@ -576,18 +577,22 @@
 
                 <!-- Mobile nav drawer -->
                 <div
-                    x-show="mobileNav"
+                    x-show="sidebarOpen"
                     x-transition.opacity
-                    class="fixed inset-0 z-50 bg-black/30 lg:hidden"
-                    @click.self="mobileNav = false"
+                    class="fixed inset-0 bg-black/40 lg:hidden z-40"
+                    @click="sidebarOpen = false"
+                ></div>
+                <div
+                    x-show="sidebarOpen"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="translate-x-[-100%]"
+                    x-transition:enter-end="translate-x-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="translate-x-0"
+                    x-transition:leave-end="translate-x-[-100%]"
+                    class="fixed inset-y-0 left-0 z-50 w-full lg:hidden"
                 >
                     <div
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="translate-x-[-100%]"
-                        x-transition:enter-end="translate-x-0"
-                        x-transition:leave="transition ease-in duration-150"
-                        x-transition:leave-start="translate-x-0"
-                        x-transition:leave-end="translate-x-[-100%]"
                         class="h-full w-full bg-[#0F2F22] text-emerald-50 shadow-2xl ring-1 ring-emerald-900/30 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.06)]"
                         style="background:linear-gradient(180deg,#0f2f22,#0d241b);"
                     >
@@ -598,7 +603,7 @@
                             </div>
                             <button
                                 type="button"
-                                @click="mobileNav = false"
+                                @click="sidebarOpen = false"
                                 class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-emerald-50 transition hover:bg-white/10"
                                 aria-label="Tutup menu navigasi"
                             >
@@ -607,7 +612,7 @@
                                 </svg>
                             </button>
                         </div>
-                <div class="space-y-1 px-3 py-4 sidebar-nav text-[14px]">
+                        <div class="space-y-1 px-3 py-4 sidebar-nav text-[14px]">
                             @foreach ($navItems as $item)
                                 @continue(! $item['visible'])
                                 @php
@@ -617,7 +622,7 @@
                                 @endphp
                                 <a
                                     href="{{ route($item['route']) }}"
-                                    @click="mobileNav = false"
+                                    @click="sidebarOpen = false"
                                     @class([
                                         'group flex items-center gap-3 rounded-lg px-5 py-3 text-[14px] font-medium transition-all duration-200 hover:text-white border-l-[3px] border-transparent',
                                         'text-emerald-100/80' => ! $isActive,
@@ -678,7 +683,7 @@
                         :user="$user"
                         :title="$topbarTitle"
                         :description="$topbarDescription"
-                        :compact-user="request()->routeIs('dashboard')"
+                        :hide-user-on-mobile="request()->routeIs('dashboard')"
                     />
                 @else
                     <header class="sticky-header sticky top-[64px] lg:top-0 z-40 relative bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
