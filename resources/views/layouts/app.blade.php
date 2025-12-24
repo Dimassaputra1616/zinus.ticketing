@@ -323,7 +323,7 @@
     </head>
     @php $authUser = Auth::user(); @endphp
     <body
-        x-init="setTimeout(() => { document.body.classList.remove('page-preload'); document.body.classList.add('page-loaded'); }, 10)"
+        x-init="setTimeout(() => { document.body.classList.remove('page-preload'); document.body.classList.add('page-loaded'); }, 10); $watch('mobileNav', value => { document.body.classList.toggle('overflow-hidden', value); })"
         x-data="{ mobileNav: false }"
         class="page-preload font-sans bg-white text-slate-800 antialiased min-h-screen overflow-x-hidden"
         @if($authUser?->isAdmin()) data-notifications-endpoint="{{ route('admin.notifications.summary') }}" @endif
@@ -678,6 +678,7 @@
                         :user="$user"
                         :title="$topbarTitle"
                         :description="$topbarDescription"
+                        :compact-user="request()->routeIs('dashboard')"
                     />
                 @else
                     <header class="sticky-header sticky top-[64px] lg:top-0 z-40 relative bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
