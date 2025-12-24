@@ -1,6 +1,6 @@
 <x-app-layout>
     <div
-        class="w-full max-w-none mx-0 px-10 lg:px-16 pt-6 pb-8 space-y-7"
+        class="w-full pt-4 sm:pt-6 pb-8 space-y-7"
         data-live-refresh="true"
         data-live-url="{{ request()->url() }}"
         data-live-query="{{ http_build_query(request()->except('refresh')) }}"

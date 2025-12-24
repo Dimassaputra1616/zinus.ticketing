@@ -82,19 +82,19 @@
                     </div>
 
                     <div class="mt-4 flex flex-wrap items-stretch gap-4 text-sm text-ink-700">
-                        <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 flex-1 min-w-[200px]">
+                        <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 w-full sm:flex-1 sm:min-w-[200px]">
                             <p class="text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500">Kategori</p>
                             <p class="mt-2 text-base font-semibold text-ink-900">{{ optional($ticket->category)->name ?? 'Tidak ada' }}</p>
                         </div>
-                        <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 flex-1 min-w-[200px]">
+                        <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 w-full sm:flex-1 sm:min-w-[200px]">
                             <p class="text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500">Departemen</p>
                             <p class="mt-2 text-base font-semibold text-ink-900">{{ optional($ticket->department)->name ?? 'Tidak ada' }}</p>
                         </div>
-                        <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 flex-none min-w-[260px]">
+                        <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 w-full sm:flex-1 sm:min-w-[200px]">
                             <p class="text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500">Email Pelapor</p>
-                            <p class="mt-2 text-sm font-semibold text-ink-900 whitespace-nowrap">{{ optional($ticket->user)->email ?? 'Tidak terdaftar' }}</p>
+                            <p class="mt-2 text-sm font-semibold text-ink-900 break-words">{{ optional($ticket->user)->email ?? 'Tidak terdaftar' }}</p>
                         </div>
-                        <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 flex-1 min-w-[160px]">
+                        <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 w-full sm:flex-1 sm:min-w-[160px]">
                             <p class="text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500">Lampiran</p>
                             <p class="mt-2 text-base font-semibold text-ink-900">{{ $ticket->attachments_count }} file</p>
                         </div>

@@ -325,7 +325,7 @@
     <body
         x-init="setTimeout(() => { document.body.classList.remove('page-preload'); document.body.classList.add('page-loaded'); }, 10)"
         x-data="{ mobileNav: false }"
-        class="page-preload font-sans bg-white text-slate-800 antialiased min-h-screen overflow-x-hidden lg:flex"
+        class="page-preload font-sans bg-white text-slate-800 antialiased min-h-screen overflow-x-hidden"
         @if($authUser?->isAdmin()) data-notifications-endpoint="{{ route('admin.notifications.summary') }}" @endif
     >
         <div class="loading-bar" aria-hidden="true"></div>
@@ -459,7 +459,7 @@
             ];
         @endphp
 
-        <aside class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen w-[260px] z-50 lg:shrink-0 flex-col justify-between bg-[#0E1F1B] text-emerald-50 shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto">
+        <aside class="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:h-screen w-[260px] z-50 lg:shrink-0 flex-col justify-between bg-[#0E1F1B] text-emerald-50 shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto">
             <div class="flex flex-col w-full h-full">
                 <div class="px-6 pt-10 pb-6 space-y-5">
                         <div class="flex flex-col items-center text-center space-y-3">
@@ -542,7 +542,7 @@
             </div>
         </aside>
 
-        <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:flex-1">
+        <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:pl-[260px]">
                 <!-- Mobile top bar -->
                 <div class="sticky top-0 z-50 flex items-center justify-between bg-white/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden">
                     <div class="flex items-center gap-2">
@@ -588,7 +588,7 @@
                         x-transition:leave="transition ease-in duration-150"
                         x-transition:leave-start="translate-x-0"
                         x-transition:leave-end="translate-x-[-100%]"
-                        class="h-full w-[82%] max-w-xs bg-[#0F2F22] text-emerald-50 shadow-2xl ring-1 ring-emerald-900/30 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.06)]"
+                        class="h-full w-full bg-[#0F2F22] text-emerald-50 shadow-2xl ring-1 ring-emerald-900/30 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.06)]"
                         style="background:linear-gradient(180deg,#0f2f22,#0d241b);"
                     >
                         <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
@@ -681,7 +681,7 @@
                     />
                 @else
                     <header class="sticky-header sticky top-[64px] lg:top-0 z-40 relative bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
-                        <div class="w-full max-w-none px-4 lg:px-6 py-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                             <div class="flex flex-col gap-2">
                                 <div class="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#23455D]/70">
                                     IT Support Center &middot; Zinus Dream
@@ -752,7 +752,7 @@
 
                 <section class="flex-1 w-full">
                     <div class="h-px w-full bg-gradient-to-r from-transparent via-emerald-200/70 to-transparent"></div>
-                    <div class="relative w-full {{ request()->routeIs('tickets.index') ? 'max-w-none mx-0 px-10 lg:px-16' : (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') ? 'max-w-6xl mx-auto px-6 lg:px-8' : 'max-w-none px-6 lg:px-8') }} py-4">
+                    <div class="relative w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                         <div class="pointer-events-none absolute -top-16 right-8 h-36 w-36 rounded-full bg-emerald-300/40 blur-3xl"></div>
                         <div class="pointer-events-none absolute bottom-0 left-0 h-44 w-44 rounded-full bg-sky-200/40 blur-3xl"></div>
                         <div class="relative">
@@ -761,7 +761,7 @@
                     </div>
         </section>
         <footer class="mt-auto bg-white/90 border-t border-slate-200 py-4">
-            <div class="max-w-6xl mx-auto px-6 lg:px-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-500">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-500">
                 <span>&copy; {{ now()->year }} Zinus Dream IT Support. Need help? hubungi support@zinusdream.com</span>
                 <div class="flex items-center gap-3 text-slate-400">
                     <a href="mailto:support@zinusdream.com" class="hover:text-emerald-600" aria-label="Email support">

@@ -42,7 +42,7 @@
     @endif
 
     <div class="min-h-screen bg-gradient-to-b from-slate-50 via-slate-50 to-slate-100">
-        <div class="mx-auto w-full max-w-6xl px-4 py-6 md:px-6 md:py-8 lg:px-8 space-y-6">
+        <div class="w-full py-6 md:py-8 space-y-6">
             {{-- Hero Summary --}}
             <div class="rounded-3xl bg-white/90 border border-emerald-50 shadow-[0_24px_60px_rgba(15,23,42,.12)] backdrop-blur-xl p-6 md:p-7 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div class="space-y-3">

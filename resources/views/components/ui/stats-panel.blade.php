@@ -5,7 +5,7 @@
     'showLive' => true,
 ])
 
-<div {{ $attributes->merge(['class' => 'rounded-xl border border-[#CFEADF] px-5 py-4 surface-card space-y-4 bg-gradient-to-br from-[#F6F9F8] via-white to-[#EDF3F2] reveal-on-scroll transition hover:-translate-y-0.5 hover:shadow-md hover:shadow-emerald-900/10']) }}>
+<div {{ $attributes->merge(['class' => 'w-full rounded-xl border border-[#CFEADF] p-4 sm:p-6 surface-card space-y-4 bg-gradient-to-br from-[#F6F9F8] via-white to-[#EDF3F2] reveal-on-scroll transition hover:-translate-y-0.5 hover:shadow-md hover:shadow-emerald-900/10']) }}>
     <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="space-y-0.5 max-w-xl">
             <p class="heading-font text-[10px] font-semibold uppercase tracking-[0.36em] text-[#23455D]/70">{{ $title }}</p>

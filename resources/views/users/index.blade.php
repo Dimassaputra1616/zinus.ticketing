@@ -1,6 +1,6 @@
 <x-app-layout>
     <div
-        class="max-w-6xl mx-auto px-6 sm:px-8 pb-12 space-y-8"
+        class="w-full pt-4 sm:pt-6 pb-10 space-y-8"
         x-data="userPage({
             csrf: '{{ csrf_token() }}',
             initialSearch: @js($search ?? ''),
@@ -100,7 +100,7 @@
             subtitle="Ubah role atau hapus akun yang tidak diperlukan"
             class="shadow-md border-ink-100/80 bg-white/95 [&>div:first-child]:!border-b [&>div:first-child]:!px-5 [&>div:first-child]:!py-3 [&_h3]:text-lg [&_h3]:font-semibold space-y-4"
         >
-            <form class="flex flex-wrap items-center gap-3 text-sm" @submit.prevent="submitSearch">
+            <form class="flex flex-col gap-3 text-sm sm:flex-row sm:items-center" @submit.prevent="submitSearch">
                 <label class="text-2xs font-semibold uppercase tracking-[0.22em] text-slate-500">Cari User</label>
                 <div class="relative flex items-center" @click.away="suggestionsOpen = false">
                     <input
@@ -108,7 +108,7 @@
                         name="q"
                         x-model="searchTerm"
                         placeholder="Cari nama/email/role..."
-                        class="min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-2 pr-20 text-sm shadow-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 appearance-none"
+                        class="w-full sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-2 pr-20 text-sm shadow-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 appearance-none"
                         @input="queueTypeahead"
                         @focus="suggestionsOpen = true; fetchSuggestions()"
                     >

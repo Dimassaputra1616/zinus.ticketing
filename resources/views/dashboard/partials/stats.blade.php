@@ -40,7 +40,7 @@
 @endphp
 
 <div class="space-y-3" data-stats-wrapper>
-    <div class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 items-stretch animate-pulse" data-stats-skeleton>
+    <div class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 items-stretch animate-pulse" data-stats-skeleton>
         @for ($i = 0; $i < 4; $i++)
             <div class="h-[160px] rounded-xl border border-slate-200/60 bg-slate-50 shadow-inner shadow-white/50 flex flex-col gap-2.5 p-4">
                 <div class="h-3.5 w-20 rounded bg-slate-200"></div>
@@ -51,7 +51,7 @@
         @endfor
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 items-stretch" style="grid-auto-rows: 1fr;" data-stats-content>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 items-stretch" style="grid-auto-rows: 1fr;" data-stats-content>
         @foreach ($cards as $card)
             @php
                 $statusParam = match ($card['label']) {

@@ -11,7 +11,7 @@
         </div>
 
         <div class="flex flex-col gap-3 md:items-end">
-            <div class="flex flex-wrap items-center gap-2 overflow-x-auto text-2xs font-semibold uppercase tracking-[0.22em] -mx-1 px-1">
+            <div class="flex flex-wrap items-center gap-2 text-2xs font-semibold uppercase tracking-[0.22em]">
                 @php $isAll = empty($statusFilter); @endphp
                 <a
                     href="{{ route('tickets.mine') }}"
@@ -43,7 +43,7 @@
         </div>
     </div>
 
-    <div class="space-y-5 lg:hidden">
+    <div class="space-y-5 md:hidden">
         @forelse ($tickets as $ticket)
             <article class="rounded-[16px] border border-ink-100 bg-white/95 p-4 shadow-[0_3px_14px_rgba(0,0,0,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(18,130,76,0.08)] hover:border-brand-200">
                 <div class="flex flex-col gap-3">
@@ -132,7 +132,7 @@
         @endforelse
     </div>
 
-    <div class="hidden lg:block space-y-3">
+    <div class="hidden md:block space-y-3">
         <div class="grid grid-cols-[35%_15%_15%_15%_20%] items-center gap-3 px-1 text-[11px] uppercase tracking-[0.2em] text-ink-500">
             <span class="text-left">Tiket</span>
             <span class="text-center">Kategori</span>

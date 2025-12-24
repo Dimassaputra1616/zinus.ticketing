@@ -7,7 +7,7 @@
     ];
 @endphp
 
-<div class="hidden lg:block pt-2" data-loan-table>
+<div class="hidden md:block pt-2" data-loan-table>
     <div class="overflow-x-auto">
     <table class="w-full table-auto divide-y divide-slate-200">
         <thead class="bg-slate-50/90 backdrop-blur text-2xs uppercase tracking-[0.2em] text-slate-800 font-semibold sticky top-0 z-10">
@@ -76,7 +76,7 @@
     </div>
 </div>
 
-<div class="lg:hidden space-y-3">
+<div class="md:hidden space-y-3">
     @forelse ($logs as $log)
         <article class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:-translate-y-[1px] hover:shadow-md loan-row" data-loan-id="{{ $log->id }}">
             <div class="flex items-start justify-between gap-3">

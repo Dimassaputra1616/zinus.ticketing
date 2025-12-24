@@ -1,6 +1,6 @@
 <x-app-layout>
     <div
-        class="w-full max-w-5xl mx-auto px-4 lg:px-6 pt-6 pb-8 space-y-6"
+        class="w-full pt-4 sm:pt-6 pb-8 space-y-6"
         data-live-refresh="true"
         data-live-url="{{ request()->url() }}"
         data-live-query="{{ http_build_query(request()->except('refresh')) }}"
@@ -49,7 +49,7 @@
         </x-ui.section-hero>
 
         <section class="space-y-3 mt-0">
-            <div class="space-y-3 max-w-5xl w-full mx-auto">
+            <div class="space-y-3 w-full">
                 <x-ui.stats-panel
                     title="Statistik Tiket"
                     subtitle="Ringkasan status tiket yang sedang kamu pantau."

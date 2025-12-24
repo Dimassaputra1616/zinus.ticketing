@@ -15,7 +15,7 @@
         csrf: '{{ csrf_token() }}',
         isAdmin: {{ $isAdmin ? 'true' : 'false' }},
         initialSearch: @js($search ?? ''),
-    })" class="w-full max-w-none mx-0 px-6 lg:px-10 pt-6 pb-10 space-y-6">
+    })" class="w-full pt-4 sm:pt-6 pb-10 space-y-6">
         <x-ui.section-hero
             pill="Asset & Inventory"
             title="Log Peminjaman"
@@ -49,13 +49,13 @@
             <div class="space-y-4">
                 <div class="border-b border-slate-100 pb-3">
                     <form method="GET" action="{{ route('loans.index') }}" class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between" data-live-form>
-                        <div class="flex flex-wrap items-center gap-3 w-full">
+                        <div class="flex flex-col gap-3 w-full md:flex-row md:flex-wrap md:items-center">
                             @unless($isAdmin)
                                 <x-ui.button type="button" size="sm" variant="primary" class="shadow-button" @click="openAdd()">
                                     + Ajukan Peminjaman
                                 </x-ui.button>
                             @endunless
-                            <div class="flex-1 min-w-[260px]">
+                            <div class="flex-1 min-w-0 w-full md:min-w-[260px]">
                                 <label class="sr-only" for="search">Cari</label>
                                 <div class="flex items-center gap-2 rounded-[16px] border border-slate-200 bg-white px-3 py-2 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100">
                                     <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
@@ -72,37 +72,37 @@
                             </div>
 
                             @if ($isAdmin)
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                     <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Status</label>
-                                    <select name="status" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
+                                    <select name="status" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
                                         <option value="">Semua</option>
                                         @foreach ($statuses as $key => $label)
                                             <option value="{{ $key }}" @selected($statusFilter === $key)>{{ ucfirst($label) }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                     <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Device</label>
-                                    <select name="device_id" class="min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
+                                    <select name="device_id" class="w-full sm:min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
                                         <option value="">Semua Device</option>
                                         @foreach ($devices as $device)
                                             <option value="{{ $device->id }}" @selected($deviceFilter == $device->id)>{{ $device->name }}{{ $device->code ? ' • '.$device->code : '' }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                     <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Mulai</label>
-                                    <input type="date" name="start_date" value="{{ $startDate }}" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
+                                    <input type="date" name="start_date" value="{{ $startDate }}" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                                 </div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                     <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Selesai</label>
-                                    <input type="date" name="end_date" value="{{ $endDate }}" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
+                                    <input type="date" name="end_date" value="{{ $endDate }}" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                                 </div>
                                 <x-ui.button type="submit" size="sm" variant="primary">Terapkan</x-ui.button>
                             @else
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                     <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Status</label>
-                                    <select name="status" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
+                                    <select name="status" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
                                         <option value="">Semua</option>
                                         @foreach ($statuses as $key => $label)
                                             <option value="{{ $key }}" @selected($statusFilter === $key)>{{ ucfirst($label) }}</option>

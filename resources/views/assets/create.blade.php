@@ -42,7 +42,7 @@
         $isAgent = ($syncSource === 'agent');
         $lastSyncedAt = $asset->last_synced_at ?? null;
     @endphp
-    <div class="mx-auto w-full max-w-6xl space-y-6 px-4 pb-12 pt-8 lg:px-0">
+    <div class="w-full space-y-6 pb-12 pt-6">
         <x-ui.section-hero
             pill="Asset & Inventory"
             title="{{ $formTitle }}"

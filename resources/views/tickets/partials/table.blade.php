@@ -41,41 +41,43 @@
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] overflow-x-auto -mx-1 px-1 pt-1">
-            @php
-                $baseFilters = [
-                    'department' => $departmentFilter,
-                    'search' => $searchTerm,
-                    'start_date' => $startDate,
-                    'end_date' => $endDate,
-                ];
-            @endphp
-            <a
-                href="{{ route('tickets.index', $filterParams($baseFilters)) }}"
-                data-live-link
-                class="rounded-full border border-[#C8E2D8] bg-[#EDF3F2] px-4 py-2 text-[#23455D] transition duration-200 hover:bg-[#D7F5E9] hover:text-[#183153] hover:border-[#A7DCC1] hover:-translate-y-0.5 shadow-sm {{ empty($statusFilter) ? 'bg-[#12824C] text-white border-transparent shadow-emerald-500/20 hover:text-white hover:bg-[#12824C]' : '' }}"
-            >
-                Semua
-            </a>
-            @foreach ($statuses as $key => $label)
-                <a
-                    href="{{ route('tickets.index', $filterParams(array_merge($baseFilters, ['status' => $key]))) }}"
-                    data-live-link
-                    class="rounded-full border border-[#C8E2D8] bg-[#EDF3F2] px-4 py-2 capitalize text-[#23455D] transition duration-200 hover:bg-[#D7F5E9] hover:text-[#183153] hover:border-[#A7DCC1] hover:-translate-y-0.5 shadow-sm {{ ($statusFilter === $key) ? 'bg-[#12824C] text-white border-transparent shadow-emerald-500/20 hover:text-white hover:bg-[#12824C]' : '' }}"
-                >
-                    {{ str_replace('_', ' ', $key) }}
-                    <span class="ms-2 text-[0.68rem] font-bold text-ink-400">{{ $statusCounts[$key] ?? 0 }}</span>
-                </a>
-            @endforeach
-        </div>
+        <div class="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
+            <div class="space-y-4">
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] pt-1">
+                    @php
+                        $baseFilters = [
+                            'department' => $departmentFilter,
+                            'search' => $searchTerm,
+                            'start_date' => $startDate,
+                            'end_date' => $endDate,
+                        ];
+                    @endphp
+                    <a
+                        href="{{ route('tickets.index', $filterParams($baseFilters)) }}"
+                        data-live-link
+                        class="rounded-full border border-[#C8E2D8] bg-[#EDF3F2] px-4 py-2 text-[#23455D] transition duration-200 hover:bg-[#D7F5E9] hover:text-[#183153] hover:border-[#A7DCC1] hover:-translate-y-0.5 shadow-sm {{ empty($statusFilter) ? 'bg-[#12824C] text-white border-transparent shadow-emerald-500/20 hover:text-white hover:bg-[#12824C]' : '' }}"
+                    >
+                        Semua
+                    </a>
+                    @foreach ($statuses as $key => $label)
+                        <a
+                            href="{{ route('tickets.index', $filterParams(array_merge($baseFilters, ['status' => $key]))) }}"
+                            data-live-link
+                            class="rounded-full border border-[#C8E2D8] bg-[#EDF3F2] px-4 py-2 capitalize text-[#23455D] transition duration-200 hover:bg-[#D7F5E9] hover:text-[#183153] hover:border-[#A7DCC1] hover:-translate-y-0.5 shadow-sm {{ ($statusFilter === $key) ? 'bg-[#12824C] text-white border-transparent shadow-emerald-500/20 hover:text-white hover:bg-[#12824C]' : '' }}"
+                        >
+                            {{ str_replace('_', ' ', $key) }}
+                            <span class="ms-2 text-[0.68rem] font-bold text-ink-400">{{ $statusCounts[$key] ?? 0 }}</span>
+                        </a>
+                    @endforeach
+                </div>
 
-        <div class="border-b border-slate-100 pb-3">
-            <form
-                method="GET"
-                action="{{ route('tickets.index') }}"
-                class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between"
-                data-live-form
-                x-data="{
+                <div class="border-b border-slate-100 pb-3 lg:border-b-0 lg:pb-0">
+                    <form
+                        method="GET"
+                        action="{{ route('tickets.index') }}"
+                        class="flex flex-col gap-3 lg:flex-col"
+                        data-live-form
+                        x-data="{
                     endpoint: '{{ route('tickets.index') }}',
                     searchTerm: @js($searchTerm),
                     status: @js($statusFilter),
@@ -174,14 +176,14 @@
                     <input type="hidden" name="status" value="{{ $statusFilter }}">
                 @endif
 
-                <div class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-3 w-full">
-                    <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm transition duration-200">
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-col gap-3">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm transition duration-200">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <label for="department" class="text-slate-500">Departemen</label>
                             <select
                                 id="department"
                                 name="department"
-                                class="h-[42px] min-w-[180px] rounded-[12px] border border-slate-200 bg-white px-[12px] py-[8px] text-[11px] font-medium text-slate-700 shadow-sm transition duration-150 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
+                                class="h-[42px] w-full sm:min-w-[180px] rounded-[12px] border border-slate-200 bg-white px-[12px] py-[8px] text-[11px] font-medium text-slate-700 shadow-sm transition duration-150 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                                 onchange="this.form.submit()"
                             >
                                 <option value="">Semua Dept</option>
@@ -192,24 +194,24 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <label for="start_date" class="text-slate-500">Mulai</label>
                             <input
                                 type="date"
                                 id="start_date"
                                 name="start_date"
                                 value="{{ $startDate }}"
-                                class="h-[42px] min-w-[170px] rounded-[12px] border border-slate-200 bg-white px-[12px] py-[8px] text-[13px] font-medium text-slate-700 shadow-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
+                                class="h-[42px] w-full sm:min-w-[170px] rounded-[12px] border border-slate-200 bg-white px-[12px] py-[8px] text-[13px] font-medium text-slate-700 shadow-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                             >
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <label for="end_date" class="text-slate-500">Selesai</label>
                             <input
                                 type="date"
                                 id="end_date"
                                 name="end_date"
                                 value="{{ $endDate }}"
-                                class="h-[42px] min-w-[170px] rounded-[12px] border border-slate-200 bg-white px-[12px] py-[8px] text-[13px] font-medium text-slate-700 shadow-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
+                                class="h-[42px] w-full sm:min-w-[170px] rounded-[12px] border border-slate-200 bg-white px-[12px] py-[8px] text-[13px] font-medium text-slate-700 shadow-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                             >
                         </div>
                         <button
@@ -220,83 +222,85 @@
                         </button>
                     </div>
 
-                    <div class="flex-1 min-w-[280px]">
-                        <label for="search" class="sr-only">Cari tiket</label>
-                        <div class="relative search-shell flex w-full items-center gap-2 rounded-[18px] border border-slate-200 bg-white px-[12px] py-[6px] h-[44px] shadow-sm focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100" @click.away="suggestionsOpen = false">
-                            <input
-                                type="search"
-                                id="search"
-                                name="search"
-                                x-model="searchTerm"
-                                placeholder="Cari tiket..."
-                                class="min-w-0 flex-1 border-none bg-transparent px-[10px] py-[6px] text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-0 appearance-none"
-                                @input="queueFetch(); queueSearch()"
-                                @focus="suggestionsOpen = true; fetchSuggestions(); queueSearch()"
-                            >
-                            <button
-                                type="button"
-                                class="relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-xs text-slate-500 hover:text-rose-500 hover:scale-110 transition"
-                                x-show="searchTerm"
-                                @click="clearSearch"
-                            >
-                                ×
-                            </button>
-                            <button
-                                type="submit"
-                                class="inline-flex h-[36px] shrink-0 items-center rounded-[14px] bg-[#12824C] px-[12px] text-[10px] font-semibold uppercase tracking-wide text-white shadow-[0_3px_10px_rgba(18,130,76,0.2)] transition duration-150 hover:-translate-y-[1px] hover:shadow-[0_8px_14px_rgba(18,130,76,0.26)]"
-                            >
-                                Search
-                            </button>
+                            <div class="flex-1 min-w-0 w-full">
+                                <label for="search" class="sr-only">Cari tiket</label>
+                                <div class="relative search-shell flex w-full items-center gap-2 rounded-[18px] border border-slate-200 bg-white px-[12px] py-[6px] h-[44px] shadow-sm focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100" @click.away="suggestionsOpen = false">
+                                    <input
+                                        type="search"
+                                        id="search"
+                                        name="search"
+                                        x-model="searchTerm"
+                                        placeholder="Cari tiket..."
+                                        class="min-w-0 flex-1 border-none bg-transparent px-[10px] py-[6px] text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-0 appearance-none"
+                                        @input="queueFetch(); queueSearch()"
+                                        @focus="suggestionsOpen = true; fetchSuggestions(); queueSearch()"
+                                    >
+                                    <button
+                                        type="button"
+                                        class="relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-xs text-slate-500 hover:text-rose-500 hover:scale-110 transition"
+                                        x-show="searchTerm"
+                                        @click="clearSearch"
+                                    >
+                                        ×
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        class="inline-flex h-[36px] shrink-0 items-center rounded-[14px] bg-[#12824C] px-[12px] text-[10px] font-semibold uppercase tracking-wide text-white shadow-[0_3px_10px_rgba(18,130,76,0.2)] transition duration-150 hover:-translate-y-[1px] hover:shadow-[0_8px_14px_rgba(18,130,76,0.26)]"
+                                    >
+                                        Search
+                                    </button>
 
-                            <div
-                                x-show="suggestionsOpen && (suggestionsLoading || suggestions.length || searchTerm)"
-                                class="absolute left-0 right-0 top-[calc(100%+6px)] z-30 rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-300/30"
-                                x-transition
-                            >
-                                <template x-if="suggestionsLoading">
-                                    <div class="px-4 py-3 text-sm text-slate-500">Memuat...</div>
-                                </template>
-                                <template x-if="!suggestionsLoading && suggestions.length">
-                                    <ul class="divide-y divide-slate-100">
-                                        <template x-for="item in suggestions" :key="item.id">
-                                            <li>
-                                                <a
-                                                    class="flex w-full items-start gap-3 px-4 py-3 hover:bg-emerald-50 transition"
-                                                    :href="item.url"
-                                                    @click="suggestionsOpen = false"
-                                                >
-                                                    <div class="flex-1 min-w-0">
-                                                        <p class="text-xs font-semibold text-ink-400 uppercase tracking-[0.28em]" x-text="`#${item.id}`"></p>
-                                                        <p class="font-semibold text-slate-800 truncate" x-text="item.title"></p>
-                                                        <p class="text-[11px] text-slate-500 truncate" x-text="item.user ? `Pelapor: ${item.user}` : 'User tidak diketahui'"></p>
-                                                    </div>
-                                                    <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700" x-text="item.status"></span>
-                                                </a>
-                                            </li>
+                                    <div
+                                        x-show="suggestionsOpen && (suggestionsLoading || suggestions.length || searchTerm)"
+                                        class="absolute left-0 right-0 top-[calc(100%+6px)] z-30 rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-300/30"
+                                        x-transition
+                                    >
+                                        <template x-if="suggestionsLoading">
+                                            <div class="px-4 py-3 text-sm text-slate-500">Memuat...</div>
                                         </template>
-                                    </ul>
-                                </template>
-                                <template x-if="!suggestionsLoading && !suggestions.length && searchTerm">
-                                    <div class="px-4 py-3 text-sm text-slate-500">Tidak ada tiket yang cocok.</div>
-                                </template>
-                            </div>
+                                        <template x-if="!suggestionsLoading && suggestions.length">
+                                            <ul class="divide-y divide-slate-100">
+                                                <template x-for="item in suggestions" :key="item.id">
+                                                    <li>
+                                                        <a
+                                                            class="flex w-full items-start gap-3 px-4 py-3 hover:bg-emerald-50 transition"
+                                                            :href="item.url"
+                                                            @click="suggestionsOpen = false"
+                                                        >
+                                                            <div class="flex-1 min-w-0">
+                                                                <p class="text-xs font-semibold text-ink-400 uppercase tracking-[0.28em]" x-text="`#${item.id}`"></p>
+                                                                <p class="font-semibold text-slate-800 truncate" x-text="item.title"></p>
+                                                                <p class="text-[11px] text-slate-500 truncate" x-text="item.user ? `Pelapor: ${item.user}` : 'User tidak diketahui'"></p>
+                                                            </div>
+                                                            <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700" x-text="item.status"></span>
+                                                        </a>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </template>
+                                        <template x-if="!suggestionsLoading && !suggestions.length && searchTerm">
+                                            <div class="px-4 py-3 text-sm text-slate-500">Tidak ada tiket yang cocok.</div>
+                                        </template>
+                                    </div>
 
-                            <div
-                                x-show="!suggestionsLoading && !hasResults && searchTerm"
-                                class="absolute left-0 right-0 top-[calc(100%+6px)] z-20 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-lg shadow-slate-300/30"
-                                x-transition
-                            >
-                                Tidak ada hasil untuk pencarian ini.
+                                    <div
+                                        x-show="!suggestionsLoading && !hasResults && searchTerm"
+                                        class="absolute left-0 right-0 top-[calc(100%+6px)] z-20 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-lg shadow-slate-300/30"
+                                        x-transition
+                                    >
+                                        Tidak ada hasil untuk pencarian ini.
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+
+                    </form>
                 </div>
+            </div>
 
-            </form>
-        </div>
-
-        <div class="space-y-4 lg:hidden">
-            @forelse ($tickets as $ticket)
+            <div class="space-y-4">
+                <div class="space-y-4 md:hidden">
+                    @forelse ($tickets as $ticket)
                 <article class="rounded-[20px] border border-slate-100 bg-white/95 p-4 shadow-[0_10px_36px_rgba(0,0,0,0.06)] animate-fade-up transition duration-200 hover:-translate-y-[2px] hover:scale-[1.01] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:shadow-emerald-100/70">
                     <div class="flex flex-col gap-3">
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -427,7 +431,7 @@
             @endforelse
         </div>
 
-        <div class="hidden lg:block pt-6">
+        <div class="hidden md:block pt-4 md:pt-6 lg:pt-0">
             <div class="w-full max-w-none px-4 border-t border-slate-100 pt-4 overflow-visible" style="scrollbar-gutter: stable;">
                 <table class="w-full table-auto divide-y divide-slate-200">
                     <thead class="bg-slate-50/90 backdrop-blur text-2xs uppercase tracking-[0.2em] text-slate-800 font-semibold sticky top-0 z-10">
