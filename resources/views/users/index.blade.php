@@ -531,8 +531,11 @@
                 errors: {},
                 toasts: [],
                 initPage() {},
+                generateToastId() {
+                    return window.safeUUID();
+                },
                 addToast(message, type = 'success', title = type === 'error' ? 'Gagal' : 'Berhasil') {
-                    const id = crypto.randomUUID();
+                    const id = this.generateToastId();
                     this.toasts.push({ id, message, type, title });
                     setTimeout(() => {
                         this.toasts = this.toasts.filter(t => t.id !== id);

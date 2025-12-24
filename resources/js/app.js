@@ -2,6 +2,9 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import initLiveUpdates from './live-updates';
+import { safeUUID } from './utils/uuid';
+
+window.safeUUID = safeUUID;
 
 function formatFileSize(bytes) {
     if (!Number.isFinite(bytes) || bytes <= 0) {

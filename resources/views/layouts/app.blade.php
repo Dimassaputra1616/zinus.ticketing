@@ -13,6 +13,32 @@
         <link href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
         <!-- Scripts -->
+        <script>
+            (function () {
+                if (!window.crypto) {
+                    window.crypto = {};
+                }
+
+                if (typeof window.crypto.randomUUID !== 'function') {
+                    window.crypto.randomUUID = function () {
+                        const ts = Date.now().toString(36);
+                        const rand = Math.random().toString(36).substring(2, 10);
+                        return `${ts}-${rand}`;
+                    };
+                }
+
+                if (typeof window.safeUUID !== 'function') {
+                    window.safeUUID = function () {
+                        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                            return window.crypto.randomUUID();
+                        }
+                        const ts = Date.now().toString(36);
+                        const rand = Math.random().toString(36).substring(2, 10);
+                        return `${ts}-${rand}`;
+                    };
+                }
+            })();
+        </script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
             html { scroll-behavior: smooth; }
