@@ -471,23 +471,23 @@
                     @endforelse
                 </div>
 
-                <div class="hidden md:block w-full overflow-x-auto px-3 sm:px-4 lg:px-4">
-                    <table class="w-full border-separate border-spacing-y-2">
+                <div class="hidden md:block w-full px-3 sm:px-4 lg:px-4">
+                    <table class="w-full table-auto text-sm border-separate border-spacing-y-2">
                         <thead>
                             <tr class="text-left text-xs font-semibold tracking-[0.15em] text-slate-500">
-                                <th class="bg-slate-50 px-3 py-3 w-28">Asset Code</th>
+                                <th class="bg-slate-50 px-3 py-3">Asset Code</th>
                                 <th class="bg-slate-50 px-3 py-3">Factory</th>
-                                <th class="bg-slate-50 px-3 py-3 w-32">Department</th>
-                                <th class="bg-slate-50 px-3 py-3 w-28">Category</th>
-                                <th class="bg-slate-50 px-3 py-3 w-32">Brand</th>
+                                <th class="bg-slate-50 px-3 py-3">Department</th>
+                                <th class="bg-slate-50 px-3 py-3">Category</th>
+                                <th class="bg-slate-50 px-3 py-3">Brand</th>
                                 <th class="bg-slate-50 px-3 py-3">Model</th>
-                                <th class="bg-slate-50 px-3 py-3 w-36">Serial Number</th>
-                                <th class="bg-slate-50 px-3 py-3 w-24">Status</th>
-                                <th class="bg-slate-50 px-3 py-3 w-28">Sync Source</th>
-                                <th class="bg-slate-50 px-3 py-3 w-36">Last Synced</th>
-                                <th class="bg-slate-50 px-3 py-3 w-40">Assigned To</th>
+                                <th class="bg-slate-50 px-3 py-3">Serial Number</th>
+                                <th class="bg-slate-50 px-3 py-3">Status</th>
+                                <th class="bg-slate-50 px-3 py-3">Sync Source</th>
+                                <th class="bg-slate-50 px-3 py-3">Last Synced</th>
+                                <th class="bg-slate-50 px-3 py-3">Assigned To</th>
                                 <th class="bg-slate-50 px-3 py-3">Location</th>
-                                <th class="bg-slate-50 px-3 py-3 text-right w-[160px] whitespace-nowrap">Actions</th>
+                                <th class="bg-slate-50 px-3 py-3 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -506,28 +506,28 @@
                                     class="table-hover-row rounded-2xl border border-transparent bg-white shadow-sm shadow-slate-200/60 transition duration-150 cursor-pointer hover:bg-emerald-50"
                                     onclick="window.location='{{ route('assets.show', $asset) }}'"
                                 >
-                                    <td class="whitespace-nowrap px-3 py-2.5 text-sm font-semibold text-slate-900">
+                                    <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-900">
                                         <span class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-700 ring-1 ring-emerald-100">{{ $asset->asset_code }}</span>
                                     </td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->factory ?? $asset->location ?? '-' }}</td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->department->name ?? '-' }}</td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->category ?? ($filters['category'] ?? '-') }}</td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->brand ?? '-' }}</td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->model ?? ($asset->name ?? '-') }}</td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->serial_number ?? '-' }}</td>
-                                    <td class="whitespace-nowrap px-3 py-2.5 w-24">
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->factory ?? $asset->location ?? '-' }}</td>
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->department->name ?? '-' }}</td>
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->category ?? ($filters['category'] ?? '-') }}</td>
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->brand ?? '-' }}</td>
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->model ?? ($asset->name ?? '-') }}</td>
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->serial_number ?? '-' }}</td>
+                                    <td class="whitespace-nowrap px-3 py-2.5">
                                         <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] {{ $statusTone }}">
                                             {{ $statusLabel }}
                                         </span>
                                     </td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">
                                         @if ($asset->sync_source === 'agent')
                                             <span class="badge badge-soft-success text-uppercase text-xs">Agent</span>
                                         @else
                                             <span class="badge badge-soft-secondary text-uppercase text-xs">Manual</span>
                                         @endif
                                     </td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">
                                         @if ($asset->last_synced_at)
                                             <span class="badge badge-soft-primary text-xs">
                                                 {{ $asset->last_synced_at->diffForHumans() }}
@@ -536,9 +536,9 @@
                                             <span class="badge badge-soft-light text-xs">Never</span>
                                         @endif
                                     </td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->user->name ?? 'Unassigned' }}</td>
-                                    <td class="px-3 py-2.5 text-sm text-slate-800 break-words">{{ $asset->location ?? '-' }}</td>
-                                    <td class="whitespace-nowrap px-3 py-2.5 text-right text-sm w-[160px]">
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->user->name ?? 'Unassigned' }}</td>
+                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->location ?? '-' }}</td>
+                                    <td class="whitespace-nowrap px-3 py-2.5 text-right">
                                         <div class="flex items-center justify-end gap-2">
                                             <a
                                                 href="{{ route('assets.show', $asset) }}"
