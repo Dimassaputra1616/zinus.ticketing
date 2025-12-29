@@ -31,6 +31,7 @@ const initContainerRefresh = (container) => {
             const target = container.querySelector(`[data-live-slot="${slot}"]`);
             if (target) {
                 target.innerHTML = html;
+                if (window.Alpine?.initTree) window.Alpine.initTree(target);
             }
         });
     };
@@ -107,6 +108,7 @@ export default function initLiveUpdates() {
             const target = container.querySelector(`[data-live-slot="${slot}"]`);
             if (target) {
                 target.innerHTML = html;
+                if (window.Alpine?.initTree) window.Alpine.initTree(target);
             }
         });
 

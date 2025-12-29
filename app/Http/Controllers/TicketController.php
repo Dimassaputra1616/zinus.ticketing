@@ -52,6 +52,10 @@ class TicketController extends Controller
 
         $ticketsQuery = Ticket::with(['category', 'department', 'user', 'attachments'])->latest();
 
+        if ($statusFilter && array_key_exists($statusFilter, $statuses)) {
+            $ticketsQuery->where('status', $statusFilter);
+        }
+
         $departmentFilter = $request->query('department');
 
         if ($departmentFilter) {
@@ -364,6 +368,10 @@ class TicketController extends Controller
         $ticketsQuery = Ticket::with(['category', 'department', 'attachments'])
             ->where('user_id', $user->id)
             ->latest();
+
+        if ($statusFilter && array_key_exists($statusFilter, $statuses)) {
+            $ticketsQuery->where('status', $statusFilter);
+        }
 
         $tickets = $ticketsQuery->paginate(10)->appends($request->except(['page', 'refresh']));
 

@@ -6,7 +6,7 @@
 
 <x-ui.stats-panel
     title="Statistik Tiket"
-    subtitle="Angka terbaru berdasarkan filter yang aktif"
+    subtitle="Ringkasan performa terbaru · klik kartu untuk filter cepat"
     class="mt-1 w-full max-w-none"
 >
     @include('dashboard.partials.stats', [

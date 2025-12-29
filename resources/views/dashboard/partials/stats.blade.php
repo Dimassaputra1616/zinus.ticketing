@@ -63,10 +63,13 @@
                 };
             @endphp
             <a
-                class="stat-card surface-card flex flex-col h-full min-h-[170px] w-full rounded-xl border border-slate-200 px-4 py-4 lg:px-5 lg:py-5 bg-white/95 shadow-md shadow-emerald-900/10 transition hover:border-[#A7DCC1] hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                class="stat-card surface-card group relative flex flex-col h-full min-h-[170px] w-full rounded-xl border border-slate-200 px-4 py-4 lg:px-5 lg:py-5 bg-white/95 shadow-md shadow-emerald-900/10 transition hover:border-[#A7DCC1] hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 href="{{ $statusParam ? route('tickets.index', ['status' => $statusParam]) : route('tickets.index') }}"
                 title="{{ $card['description'] }}"
             >
+                <span class="pointer-events-none absolute right-4 top-3 text-[9px] font-semibold uppercase tracking-[0.24em] text-slate-400 opacity-0 transition group-hover:opacity-100">
+                    Quick filter
+                </span>
                 <div class="flex-1 flex flex-col items-center justify-center text-center gap-2.5">
                     <div class="flex items-center gap-2.5 text-slate-500">
                         <span class="h-7 w-7 rounded-full bg-white/80 shadow-inner shadow-white flex items-center justify-center" aria-hidden="true">

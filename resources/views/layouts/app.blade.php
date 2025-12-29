@@ -758,7 +758,7 @@
 
                 <section class="flex-1 w-full">
                     <div class="h-px w-full bg-gradient-to-r from-transparent via-emerald-200/70 to-transparent"></div>
-                    <div class="relative w-full {{ request()->routeIs('assets.index') ? 'max-w-none' : 'max-w-6xl mx-auto' }} px-4 sm:px-6 {{ request()->routeIs('assets.index') ? 'lg:px-10' : 'lg:px-8' }} py-4">
+                    <div class="relative w-full {{ request()->routeIs('assets.index') || request()->routeIs('tickets.index') ? 'max-w-none' : 'max-w-6xl mx-auto' }} px-4 sm:px-6 {{ request()->routeIs('assets.index') ? 'lg:px-10' : 'lg:px-8' }} py-4">
                         <div class="pointer-events-none absolute -top-16 right-8 h-36 w-36 rounded-full bg-emerald-300/40 blur-3xl"></div>
                         <div class="pointer-events-none absolute bottom-0 left-0 h-44 w-44 rounded-full bg-sky-200/40 blur-3xl"></div>
                         <div class="relative">
