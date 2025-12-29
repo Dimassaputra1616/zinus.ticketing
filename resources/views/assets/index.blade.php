@@ -516,8 +516,8 @@
                                 <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">Model</th>
                                 <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">Serial Number</th>
                                 <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Status</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Sync Source</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Last Synced</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Created</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Updated</th>
                                 <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur lg:hidden">Assigned / Location</th>
                                 <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur lg:table-cell">Assigned To</th>
                                 <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur lg:table-cell">Location</th>
@@ -563,23 +563,13 @@
                                             {{ $statusLabel }}
                                         </span>
                                     </td>
-                                    <td class="px-3 py-2.5 text-slate-800 break-words">
-                                        @if ($asset->sync_source === 'agent')
-                                            <span class="badge badge-soft-success text-uppercase text-xs">Agent</span>
-                                        @else
-                                            <span class="badge badge-soft-secondary text-uppercase text-xs">Manual</span>
-                                        @endif
+                                    <td class="px-3 py-2.5 text-slate-800 whitespace-nowrap">
+                                        <div class="font-medium">{{ optional($asset->created_at)->timezone(config('app.timezone'))->format('d M Y') ?? '-' }}</div>
+                                        <div class="text-xs text-slate-500">{{ optional($asset->created_at)->timezone(config('app.timezone'))->format('H:i') ?? '' }} WIB</div>
                                     </td>
-                                    <td class="px-3 py-2.5 text-slate-800 break-words">
-                                        @if ($asset->last_synced_at)
-                                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                                                {{ $asset->last_synced_at->diffForHumans() }}
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200/70">
-                                                Never
-                                            </span>
-                                        @endif
+                                    <td class="px-3 py-2.5 text-slate-800 whitespace-nowrap">
+                                        <div class="font-medium">{{ optional($asset->updated_at)->timezone(config('app.timezone'))->format('d M Y') ?? '-' }}</div>
+                                        <div class="text-xs text-slate-500">{{ optional($asset->updated_at)->timezone(config('app.timezone'))->format('H:i') ?? '' }} WIB</div>
                                     </td>
                                     <td class="px-3 py-2.5 text-slate-800 break-words lg:hidden">
                                         <div class="space-y-1">
