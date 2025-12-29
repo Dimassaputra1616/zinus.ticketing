@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
 @layer utilities {
     .animation-delay-100 {
         animation-delay: 0.1s;

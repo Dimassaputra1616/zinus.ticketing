@@ -30,6 +30,18 @@ const initContainerRefresh = (container) => {
         Object.entries(fragments).forEach(([slot, html]) => {
             const target = container.querySelector(`[data-live-slot="${slot}"]`);
             if (target) {
+                if (slot === 'ticket-table') {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const incomingResults = doc.querySelector('[data-ticket-results]');
+                    const currentResults = target.querySelector('[data-ticket-results]');
+                    if (incomingResults && currentResults) {
+                        currentResults.innerHTML = incomingResults.innerHTML;
+                        if (window.Alpine?.initTree) window.Alpine.initTree(currentResults);
+                        return;
+                    }
+                }
+
                 target.innerHTML = html;
                 if (window.Alpine?.initTree) window.Alpine.initTree(target);
             }

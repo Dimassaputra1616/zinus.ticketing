@@ -120,7 +120,7 @@
                                         <select
                                             name="category_id"
                                             required
-                                            class="w-full rounded-[12px] border border-slate-200 bg-white px-5 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition appearance-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 shadow-sm {{ $categoryError ? 'border-rose-400 focus:border-rose-400 focus:ring-rose-100' : '' }}"
+                                            class="w-full rounded-[12px] border border-slate-200 bg-white bg-none px-5 py-3 pr-10 text-sm text-slate-900 placeholder:text-slate-400 transition appearance-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 shadow-sm {{ $categoryError ? 'border-rose-400 focus:border-rose-400 focus:ring-rose-100' : '' }}"
                                             data-validate-field="category_id"
                                         >
                                             <option value="" disabled @selected(! old('category_id'))>Pilih kategori tiket</option>
