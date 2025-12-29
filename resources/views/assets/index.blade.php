@@ -1,16 +1,18 @@
 @php
     $statusMeta = [
-        'in_use' => ['label' => 'Active', 'class' => 'bg-emerald-100 text-emerald-700'],
-        'active' => ['label' => 'Active', 'class' => 'bg-emerald-100 text-emerald-700'],
-        'maintenance' => ['label' => 'In Repair', 'class' => 'bg-amber-100 text-amber-700'],
-        'in_repair' => ['label' => 'In Repair', 'class' => 'bg-amber-100 text-amber-700'],
-        'available' => ['label' => 'Spare', 'class' => 'bg-sky-100 text-sky-700'],
-        'spare' => ['label' => 'Spare', 'class' => 'bg-sky-100 text-sky-700'],
-        'broken' => ['label' => 'Retired', 'class' => 'bg-rose-100 text-rose-700'],
-        'retired' => ['label' => 'Retired', 'class' => 'bg-rose-100 text-rose-700'],
+        'in_use' => ['label' => 'Active', 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70'],
+        'active' => ['label' => 'Active', 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70'],
+        'maintenance' => ['label' => 'In Repair', 'class' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70'],
+        'in_repair' => ['label' => 'In Repair', 'class' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70'],
+        'available' => ['label' => 'Spare', 'class' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/70'],
+        'spare' => ['label' => 'Spare', 'class' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/70'],
+        'broken' => ['label' => 'Retired', 'class' => 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/70'],
+        'retired' => ['label' => 'Retired', 'class' => 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/70'],
     ];
 
-    $activeFilters = collect($filters ?? [])->filter(fn ($value) => filled($value));
+    $filterKeys = ['search', 'factory', 'department', 'category', 'status'];
+    $activeFilters = collect($filters ?? [])->only($filterKeys)->filter(fn ($value) => filled($value));
+    $activeFilterCount = $activeFilters->count();
 @endphp
 
 <x-app-layout>
@@ -34,11 +36,11 @@
         </div>
     @endif
 
-    <div class="min-h-screen bg-slate-50 pb-12 pt-6">
-        <div class="w-full space-y-6">
-            <section class="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/60 p-6 shadow-md shadow-emerald-500/10 lg:p-8">
-                <div class="flex flex-col gap-6">
-                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div class="min-h-screen bg-slate-50 pb-10 pt-5">
+        <div class="w-full space-y-4">
+            <section class="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/60 p-4 shadow-md shadow-emerald-500/10 lg:p-6">
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div class="space-y-2">
                             <p class="text-xs uppercase tracking-[0.35em] text-emerald-600/80">IT Asset Management</p>
                             <div class="flex flex-wrap items-center gap-3">
@@ -49,14 +51,14 @@
                         </div>
                         <a
                             href="{{ route('assets.create') }}"
-                            class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                            class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                         >
                             <span class="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-lg leading-none">+</span>
                             Add Asset
                         </a>
                     </div>
 
-                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="grid items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         @php
                             $cards = [
                                 [
@@ -102,11 +104,16 @@
                             @php
                                 $isTotal = $card['emphasis'] ?? false;
                                 $isActive = $card['status'] === '' ? ! filled($statusFilter) : $statusFilter === $card['status'];
-                                $cardClasses = $isActive
-                                    ? 'bg-emerald-600 text-white ring-1 ring-emerald-500/30 shadow-lg shadow-emerald-500/30 border border-transparent'
-                                    : ($isTotal
-                                        ? 'bg-gradient-to-br from-emerald-800 to-emerald-600 text-white ring-1 ring-emerald-500/30 shadow-lg shadow-emerald-500/30'
-                                        : 'bg-white ring-1 ring-slate-100 text-slate-900 shadow-sm shadow-slate-200/70');
+                                $showFiltered = $card['status'] !== '' && filled($statusFilter) && $statusFilter === $card['status'];
+                                if ($isTotal) {
+                                    $cardClasses = $isActive
+                                        ? 'bg-gradient-to-br from-emerald-800 to-emerald-600 text-white ring-2 ring-emerald-200/90 shadow-xl shadow-emerald-500/45'
+                                        : 'bg-gradient-to-br from-emerald-800 to-emerald-600 text-white ring-1 ring-emerald-500/30 shadow-lg shadow-emerald-500/30';
+                                } else {
+                                    $cardClasses = $isActive
+                                        ? 'bg-emerald-600 text-white ring-2 ring-emerald-200/90 shadow-xl shadow-emerald-500/45 border border-transparent'
+                                        : 'bg-white ring-1 ring-slate-100 text-slate-900 shadow-sm shadow-slate-200/70';
+                                }
                                 $queryParams = request()->except('page');
                                 if ($card['status'] === '') {
                                     unset($queryParams['status']);
@@ -116,10 +123,11 @@
                             @endphp
                             <a
                                 href="{{ route('assets.index', $queryParams) }}"
-                                class="{{ $cardClasses }} rounded-2xl p-4 transition hover:-translate-y-0.5 hover:shadow-lg cursor-pointer block"
+                                class="{{ $cardClasses }} group relative flex h-full min-h-[150px] flex-col rounded-2xl p-4 transition hover:-translate-y-0.5 hover:shadow-md hover:ring-emerald-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-200 cursor-pointer"
                                 data-status-card="{{ $card['status'] ?? '' }}"
+                                aria-pressed="{{ $isActive ? 'true' : 'false' }}"
                             >
-                                <div class="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] {{ ($isActive || $isTotal) ? 'text-emerald-50' : 'text-slate-500' }}">
+                                <div class="flex w-full items-center gap-2 text-[11px] uppercase tracking-[0.3em] {{ ($isActive || $isTotal) ? 'text-emerald-50' : 'text-slate-500' }}">
                                     <span class="flex h-8 w-8 items-center justify-center rounded-xl {{ ($isActive || $isTotal) ? 'bg-white/10 text-white shadow-inner shadow-emerald-900/20' : 'bg-slate-100 text-slate-600 shadow-inner shadow-slate-100' }}">
                                         @switch($card['icon'])
                                             @case('collection')
@@ -158,47 +166,66 @@
                                         @endswitch
                                     </span>
                                     <span>{{ $card['label'] }}</span>
+                                    @if ($showFiltered)
+                                        <span class="ml-auto inline-flex items-center rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.25em] text-white">
+                                            Filtered
+                                        </span>
+                                    @endif
                                 </div>
                                 <p class="{{ ($isActive || $isTotal) ? 'mt-3 text-3xl font-semibold text-white' : 'mt-2 text-2xl font-semibold text-slate-900' }}">{{ number_format($stats[$card['key']] ?? 0) }}</p>
                                 <p class="{{ ($isActive || $isTotal) ? 'mt-1 text-xs text-emerald-100/90' : 'mt-1 text-xs text-slate-500' }}">{{ $card['sublabel'] }}</p>
+                                <span
+                                    class="{{ ($isActive || $isTotal) ? 'text-emerald-50/90' : 'text-slate-400' }} pointer-events-none absolute bottom-3 right-4 text-[10px] font-semibold uppercase tracking-[0.25em] opacity-0 transition duration-150 group-hover:opacity-100"
+                                >
+                                    Click to filter
+                                </span>
                             </a>
                         @endforeach
                     </div>
                 </div>
             </section>
 
-            <form
-                method="GET"
-                x-data="{ advancedOpen: false }"
-                class="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-200/60"
-                id="asset-filter-form"
-            >
-                <div class="space-y-4">
-                    <div class="space-y-1">
-                        <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Search</label>
-                        <div class="relative">
-                            <input
-                                type="search"
-                                name="search"
-                                value="{{ $filters['search'] ?? '' }}"
-                                placeholder="Search asset code, serial, user..."
-                                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pl-11 text-sm text-slate-800 shadow-inner shadow-slate-100 placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                                id="asset-search-input"
-                            >
-                            <svg class="absolute left-3 top-3 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="8" />
-                                <path d="m21 21-4.35-4.35" />
-                            </svg>
+            <div class="rounded-3xl border border-slate-200/80 bg-slate-50/70 p-2 shadow-sm shadow-slate-200/60 sm:p-3">
+                <form
+                    method="GET"
+                    x-data="{ advancedOpen: false }"
+                    class="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm shadow-slate-200/60 sm:p-4"
+                    id="asset-filter-form"
+                >
+                <div class="space-y-2">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <div class="flex-1 space-y-1">
+                            <label class="text-xs font-semibold tracking-[0.25em] text-slate-500">Search</label>
+                            <div class="relative">
+                                <input
+                                    type="search"
+                                    name="search"
+                                    value="{{ $filters['search'] ?? '' }}"
+                                    placeholder="Search asset code, serial, user..."
+                                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-11 text-sm text-slate-800 shadow-inner shadow-slate-100 placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                                    id="asset-search-input"
+                                >
+                                <svg class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="m21 21-4.35-4.35" />
+                                </svg>
+                            </div>
                         </div>
+                        <button
+                            type="submit"
+                            class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 text-sm font-semibold text-white shadow-md shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-200 sm:w-auto"
+                        >
+                            <span>Apply Filters</span>
+                        </button>
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <div class="space-y-1">
                             <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Factory</label>
                             <div class="relative">
                                 <select
                                     name="factory"
-                                    class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                                    class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                 >
                                     <option value="">All Factories</option>
                                     @foreach ($filterOptions['factories'] as $factory)
@@ -218,7 +245,7 @@
                             <div class="relative">
                                 <select
                                     name="department"
-                                    class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                                    class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                 >
                                     <option value="">All Departments</option>
                                     @foreach ($departments as $department)
@@ -238,7 +265,7 @@
                             <div class="relative">
                                 <select
                                     name="category"
-                                    class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                                    class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                 >
                                     <option value="">All Categories</option>
                                     @foreach ($filterOptions['categories'] as $category)
@@ -258,7 +285,7 @@
                             <div class="relative">
                                 <select
                                     name="status"
-                                    class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                                    class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                 >
                                     <option value="">All Status</option>
                                     @foreach ($filterOptions['statuses'] as $status)
@@ -273,25 +300,17 @@
                             </div>
                         </div>
 
-                        <div class="flex items-end">
-                            <button
-                                type="submit"
-                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:opacity-75"
-                            >
-                                <span>Apply Filters</span>
-                            </button>
-                        </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
-                            <span>Active filters: {{ $activeFilters->count() }}</span>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-600">
+                            <span>Active filters: {{ $activeFilterCount }}</span>
                             <span class="text-slate-300">|</span>
                             <a href="{{ route('assets.index') }}" class="text-slate-500 hover:text-emerald-700">Clear</a>
                         </div>
                         <button
                             type="button"
-                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"
+                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"
                             @click="advancedOpen = !advancedOpen"
                         >
                             Advanced Filters
@@ -310,7 +329,7 @@
                         x-show="advancedOpen"
                         x-transition
                         x-cloak
-                        class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-3"
+                        class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-2.5"
                     >
                         @if ($activeFilters->isNotEmpty())
                             <div class="flex flex-wrap gap-2">
@@ -326,17 +345,18 @@
                         @endif
                     </div>
                 </div>
-            </form>
+                </form>
+            </div>
 
             <section id="asset-list-container" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md shadow-slate-200/80 transition-shadow duration-150 hover:shadow-lg">
                 @php
                     $hasAgentSync = $assets->getCollection()->contains(fn ($asset) => $asset->sync_source === 'agent');
                 @endphp
-                <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:px-5 sm:py-5 md:flex-row md:items-center md:justify-between">
+                <div class="flex flex-col gap-2 border-b border-slate-100 px-4 py-3 sm:px-5 sm:py-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <p class="text-xs uppercase tracking-[0.35em] text-emerald-600/80">Live Inventory</p>
                         <div class="flex flex-wrap items-center gap-3">
-                            <h2 class="text-lg font-semibold text-slate-900">IT Asset List</h2>
+                            <h2 class="text-xl font-semibold text-slate-900">IT Asset List</h2>
                             <span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
                                 {{ $hasAgentSync ? 'Updated in real time' : 'Manual records' }}
                             </span>
@@ -403,7 +423,17 @@
                                 </div>
                                 <div class="space-y-1">
                                     <dt class="font-semibold text-slate-500">Last Synced</dt>
-                                    <dd class="text-slate-800">{{ $asset->last_synced_at ? $asset->last_synced_at->diffForHumans() : 'Never' }}</dd>
+                                    <dd class="text-slate-800">
+                                        @if ($asset->last_synced_at)
+                                            <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+                                                {{ $asset->last_synced_at->diffForHumans() }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200/70">
+                                                Never
+                                            </span>
+                                        @endif
+                                    </dd>
                                 </div>
                             </dl>
 
@@ -471,23 +501,24 @@
                     @endforelse
                 </div>
 
-                <div class="hidden md:block w-full px-3 sm:px-4 lg:px-4">
+                <div class="relative hidden md:block w-full max-h-[60vh] overflow-x-auto overflow-y-auto px-3 sm:px-4 lg:px-4">
                     <table class="w-full table-auto text-sm border-separate border-spacing-y-2">
                         <thead>
                             <tr class="text-left text-xs font-semibold tracking-[0.15em] text-slate-500">
-                                <th class="bg-slate-50 px-3 py-3">Asset Code</th>
-                                <th class="bg-slate-50 px-3 py-3">Factory</th>
-                                <th class="bg-slate-50 px-3 py-3">Department</th>
-                                <th class="bg-slate-50 px-3 py-3">Category</th>
-                                <th class="bg-slate-50 px-3 py-3">Brand</th>
-                                <th class="bg-slate-50 px-3 py-3">Model</th>
-                                <th class="bg-slate-50 px-3 py-3">Serial Number</th>
-                                <th class="bg-slate-50 px-3 py-3">Status</th>
-                                <th class="bg-slate-50 px-3 py-3">Sync Source</th>
-                                <th class="bg-slate-50 px-3 py-3">Last Synced</th>
-                                <th class="bg-slate-50 px-3 py-3">Assigned To</th>
-                                <th class="bg-slate-50 px-3 py-3">Location</th>
-                                <th class="bg-slate-50 px-3 py-3 text-right whitespace-nowrap">Actions</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Asset Code</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Factory</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Department</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Category</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">Brand</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">Model</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">Serial Number</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Status</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Sync Source</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Last Synced</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur lg:hidden">Assigned / Location</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur lg:table-cell">Assigned To</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur lg:table-cell">Location</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 text-right backdrop-blur">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -501,22 +532,31 @@
                                     ];
                                     $statusLabel = $statusInfo['label'];
                                     $statusTone = $statusInfo['class'];
+                                    $isRepair = in_array($statusKey, ['maintenance', 'in_repair'], true);
+                                    $rowTone = $isRepair
+                                        ? 'bg-amber-50/40 border-amber-200/70 border-l-amber-400/80 hover:bg-amber-50/60 hover:border-l-amber-500/80'
+                                        : 'bg-white border-transparent border-l-transparent hover:bg-emerald-50/40 hover:border-l-emerald-400/70';
                                 @endphp
                                 <tr
-                                    class="table-hover-row rounded-2xl border border-transparent bg-white shadow-sm shadow-slate-200/60 transition duration-150 cursor-pointer hover:bg-emerald-50"
+                                    class="table-hover-row group rounded-2xl border border-l-4 shadow-sm shadow-slate-200/60 transition duration-150 cursor-pointer hover:shadow-md {{ $rowTone }}"
                                     onclick="window.location='{{ route('assets.show', $asset) }}'"
                                 >
                                     <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-900">
-                                        <span class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-700 ring-1 ring-emerald-100">{{ $asset->asset_code }}</span>
+                                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.3em] text-emerald-700 ring-1 ring-emerald-200/70">{{ $asset->asset_code }}</span>
                                     </td>
                                     <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->factory ?? $asset->location ?? '-' }}</td>
                                     <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->department->name ?? '-' }}</td>
                                     <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->category ?? ($filters['category'] ?? '-') }}</td>
-                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->brand ?? '-' }}</td>
-                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->model ?? ($asset->name ?? '-') }}</td>
-                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->serial_number ?? '-' }}</td>
+                                    <td class="hidden px-3 py-2.5 text-slate-500 break-words xl:table-cell">{{ $asset->brand ?? '-' }}</td>
+                                    <td class="hidden px-3 py-2.5 text-slate-500 break-words xl:table-cell">{{ $asset->model ?? ($asset->name ?? '-') }}</td>
+                                    <td class="hidden px-3 py-2.5 text-slate-500 break-words xl:table-cell">{{ $asset->serial_number ?? '-' }}</td>
                                     <td class="whitespace-nowrap px-3 py-2.5">
-                                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] {{ $statusTone }}">
+                                        <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] {{ $statusTone }}">
+                                            @if ($isRepair)
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.59c.75 1.334-.213 2.99-1.742 2.99H3.48c-1.53 0-2.492-1.656-1.742-2.99L8.257 3.1ZM9 7.75a1 1 0 0 1 2 0v3.5a1 1 0 1 1-2 0v-3.5Zm1 7.25a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z" clip-rule="evenodd" />
+                                                </svg>
+                                            @endif
                                             {{ $statusLabel }}
                                         </span>
                                     </td>
@@ -529,30 +569,48 @@
                                     </td>
                                     <td class="px-3 py-2.5 text-slate-800 break-words">
                                         @if ($asset->last_synced_at)
-                                            <span class="badge badge-soft-primary text-xs">
+                                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
                                                 {{ $asset->last_synced_at->diffForHumans() }}
                                             </span>
                                         @else
-                                            <span class="badge badge-soft-light text-xs">Never</span>
+                                            <span class="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200/70">
+                                                Never
+                                            </span>
                                         @endif
                                     </td>
-                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->user->name ?? 'Unassigned' }}</td>
-                                    <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->location ?? '-' }}</td>
-                                    <td class="whitespace-nowrap px-3 py-2.5 text-right">
-                                        <div class="flex items-center justify-end gap-2">
+                                    <td class="px-3 py-2.5 text-slate-800 break-words lg:hidden">
+                                        <div class="space-y-1">
+                                            <p class="text-sm text-slate-800">{{ $asset->user->name ?? 'Unassigned' }}</p>
+                                            <p class="text-xs text-slate-500">{{ $asset->location ?? '-' }}</p>
+                                        </div>
+                                    </td>
+                                    <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->user->name ?? 'Unassigned' }}</td>
+                                    <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->location ?? '-' }}</td>
+                                    <td class="px-3 py-2.5 text-right">
+                                        <div class="flex items-center justify-end gap-2 opacity-80 transition group-hover:opacity-100">
                                             <a
                                                 href="{{ route('assets.show', $asset) }}"
                                                 onclick="event.stopPropagation()"
-                                                class="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-emerald-200 hover:text-emerald-700"
+                                                class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-600 shadow-sm shadow-slate-200/60 transition hover:border-emerald-200 hover:text-emerald-700"
+                                                aria-label="View asset"
+                                                title="View asset"
                                             >
-                                                View
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+                                                    <circle cx="12" cy="12" r="3" />
+                                                </svg>
                                             </a>
                                             <a
                                                 href="{{ route('assets.edit', $asset) }}"
                                                 onclick="event.stopPropagation()"
-                                                class="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-sm shadow-emerald-400/30 hover:bg-emerald-700"
+                                                class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm shadow-emerald-400/30 transition hover:bg-emerald-700"
+                                                aria-label="Edit asset"
+                                                title="Edit asset"
                                             >
-                                                Edit
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M12 20h9" />
+                                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+                                                </svg>
                                             </a>
                                             <div class="relative" x-data="{ open: false }">
                                                 <button
@@ -561,6 +619,8 @@
                                                     @click.stop="open = !open"
                                                     @keydown.escape.window="open = false"
                                                     @click.away="open = false"
+                                                    aria-label="More actions"
+                                                    title="More actions"
                                                 >
                                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                                         <circle cx="12" cy="6" r="1.5" />
@@ -603,7 +663,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="13" class="px-4 py-8">
+                                    <td colspan="14" class="px-4 py-8">
                                         <div class="mx-auto flex max-w-lg flex-col items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-6 text-center shadow-sm">
                                             <div class="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shadow-inner shadow-emerald-100">
                                                 <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -627,17 +687,17 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="flex flex-col gap-3 border-t border-slate-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
+                <div class="flex flex-col gap-4 border-t border-slate-100 bg-slate-50/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div class="text-sm text-slate-600">
                         Showing <span class="font-semibold text-slate-800">{{ $assets->firstItem() ?? 0 }}</span>&ndash;<span class="font-semibold text-slate-800">{{ $assets->lastItem() ?? 0 }}</span> of <span class="font-semibold text-slate-800">{{ $assets->total() }}</span> assets
                     </div>
-                    <div class="flex items-center gap-4">
-                        <form method="GET" class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <form method="GET" class="flex items-center gap-2 rounded-xl bg-white px-3 py-2 ring-1 ring-slate-200">
                             <label for="per_page" class="text-sm text-slate-600">Per page</label>
                             <select
                                 id="per_page"
                                 name="per_page"
-                                class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                                class="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                 onchange="this.form.submit()"
                             >
                                 @foreach ([10, 25, 50, 100] as $size)
@@ -650,7 +710,7 @@
                                 @endif
                             @endforeach
                         </form>
-                        <div>
+                        <div class="rounded-xl bg-white px-3 py-2 ring-1 ring-slate-200">
                             {{ $assets->onEachSide(1)->links() }}
                         </div>
                     </div>

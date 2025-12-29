@@ -326,7 +326,7 @@
         x-init="setTimeout(() => { document.body.classList.remove('page-preload'); document.body.classList.add('page-loaded'); }, 10)"
         x-data="{ sidebarOpen: false }"
         :class="sidebarOpen ? 'overflow-hidden max-h-screen' : ''"
-        class="page-preload font-sans bg-white text-slate-800 antialiased min-h-screen overflow-x-hidden"
+        class="page-preload font-sans bg-white text-slate-800 antialiased min-h-screen overflow-x-hidden lg:flex"
         @if($authUser?->isAdmin()) data-notifications-endpoint="{{ route('admin.notifications.summary') }}" @endif
     >
         <div class="loading-bar" aria-hidden="true"></div>
@@ -460,7 +460,7 @@
             ];
         @endphp
 
-        <aside class="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:h-screen w-[260px] z-50 lg:shrink-0 flex-col justify-between bg-[#0E1F1B] text-emerald-50 shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto">
+        <aside class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen w-[260px] z-50 lg:shrink-0 flex-col justify-between bg-[#0E1F1B] text-emerald-50 shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto">
             <div class="flex flex-col w-full h-full">
                 <div class="px-6 pt-10 pb-6 space-y-5">
                         <div class="flex flex-col items-center text-center space-y-3">
@@ -543,7 +543,7 @@
             </div>
         </aside>
 
-        <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:pl-[260px]">
+        <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:flex-1">
                 <!-- Mobile top bar -->
                 <div class="sticky top-0 z-50 flex items-center justify-between bg-white/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden">
                     <div class="flex items-center gap-2">
@@ -758,7 +758,7 @@
 
                 <section class="flex-1 w-full">
                     <div class="h-px w-full bg-gradient-to-r from-transparent via-emerald-200/70 to-transparent"></div>
-                    <div class="relative w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                    <div class="relative w-full {{ request()->routeIs('assets.index') ? 'max-w-none' : 'max-w-6xl mx-auto' }} px-4 sm:px-6 {{ request()->routeIs('assets.index') ? 'lg:px-10' : 'lg:px-8' }} py-4">
                         <div class="pointer-events-none absolute -top-16 right-8 h-36 w-36 rounded-full bg-emerald-300/40 blur-3xl"></div>
                         <div class="pointer-events-none absolute bottom-0 left-0 h-44 w-44 rounded-full bg-sky-200/40 blur-3xl"></div>
                         <div class="relative">
