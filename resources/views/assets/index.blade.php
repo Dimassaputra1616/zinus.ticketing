@@ -468,7 +468,7 @@
                                         x-show="open"
                                         x-transition
                                         x-cloak
-                                        class="absolute right-0 z-20 mt-2 w-36 overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-lg shadow-slate-200"
+                                        class="absolute right-0 z-20 mt-2 w-36 overflow-visible rounded-xl border border-slate-200 bg-white text-left shadow-lg shadow-slate-200"
                                     >
                                         <form
                                             method="POST"
@@ -480,7 +480,7 @@
                                             <button
                                                 type="button"
                                                 data-asset="{{ $asset->asset_code }}"
-                                                class="delete-asset-btn flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+                                                class="delete-asset-btn group relative flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
                                                 @click.stop="open = false"
                                             >
                                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -490,6 +490,9 @@
                                                     <path d="M14 11v6" />
                                                 </svg>
                                                 Delete
+                                                <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 shadow transition group-hover:opacity-100">
+                                                    Delete
+                                                </span>
                                             </button>
                                         </form>
                                     </div>
@@ -586,18 +589,19 @@
                                     </td>
                                     <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->user->name ?? 'Unassigned' }}</td>
                                     <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->location ?? '-' }}</td>
-                                    <td class="px-3 py-2.5 text-right">
+                                    <td class="px-3 py-2.5 text-right overflow-visible">
                                         <div class="flex items-center justify-end gap-2 opacity-80 transition group-hover:opacity-100">
                                             <a
                                                 href="{{ route('assets.show', $asset) }}"
                                                 onclick="event.stopPropagation()"
                                                 class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-600 shadow-sm shadow-slate-200/60 transition hover:border-emerald-200 hover:text-emerald-700"
-                                                aria-label="View asset"
-                                                title="View asset"
+                                                aria-label="Open detail"
+                                                title="Open detail"
                                             >
                                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
-                                                    <circle cx="12" cy="12" r="3" />
+                                                    <path d="M14 3h7v7" />
+                                                    <path d="M10 14L21 3" />
+                                                    <path d="M21 14v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
                                                 </svg>
                                             </a>
                                             <a
@@ -612,52 +616,29 @@
                                                     <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
                                                 </svg>
                                             </a>
-                                            <div class="relative" x-data="{ open: false }">
+                                            <form
+                                                method="POST"
+                                                action="{{ route('assets.destroy', $asset) }}"
+                                                class="delete-asset-form"
+                                            >
+                                                @csrf
+                                                @method('DELETE')
                                                 <button
                                                     type="button"
-                                                    class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm shadow-slate-200/60 transition hover:border-emerald-200 hover:text-emerald-700"
-                                                    @click.stop="open = !open"
-                                                    @keydown.escape.window="open = false"
-                                                    @click.away="open = false"
-                                                    aria-label="More actions"
-                                                    title="More actions"
+                                                    data-asset="{{ $asset->asset_code }}"
+                                                    class="delete-asset-btn inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-red-600 shadow-sm shadow-slate-200/60 transition hover:border-red-200 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
+                                                    onclick="event.stopPropagation()"
+                                                    aria-label="Delete asset"
+                                                    title="Delete asset"
                                                 >
-                                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                        <circle cx="12" cy="6" r="1.5" />
-                                                        <circle cx="12" cy="12" r="1.5" />
-                                                        <circle cx="12" cy="18" r="1.5" />
+                                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M3 6h18" />
+                                                        <path d="M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6m2 0v14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V6h10Z" />
+                                                        <path d="M10 11v6" />
+                                                        <path d="M14 11v6" />
                                                     </svg>
                                                 </button>
-                                                <div
-                                                    x-show="open"
-                                                    x-transition
-                                                    x-cloak
-                                                    class="absolute right-0 z-20 mt-2 w-36 overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-lg shadow-slate-200"
-                                                >
-                                                    <form
-                                                        method="POST"
-                                                        action="{{ route('assets.destroy', $asset) }}"
-                                                        class="delete-asset-form"
-                                                    >
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button
-                                                            type="button"
-                                                            data-asset="{{ $asset->asset_code }}"
-                                                            class="delete-asset-btn flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
-                                                            @click.stop="open = false"
-                                                        >
-                                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                                                                <path d="M3 6h18" />
-                                                                <path d="M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6m2 0v14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V6h10Z" />
-                                                                <path d="M10 11v6" />
-                                                                <path d="M14 11v6" />
-                                                            </svg>
-                                                            Delete
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
