@@ -26,7 +26,7 @@ if (Test-Path $schtasksPath) {
         $null = & $schtasksPath /Query /TN "$taskName" 2>$null
         if ($LASTEXITCODE -ne 0) {
             # belum ada -> bikin
-            $scriptPath = $PSCommandPath
+            $scriptPath = (Resolve-Path $MyInvocation.MyCommand.Path).Path
 
             & $schtasksPath /Create `
                 /SC MONTHLY `
@@ -34,7 +34,7 @@ if (Test-Path $schtasksPath) {
                 /D 1 `
                 /ST 09:00 `
                 /TN "$taskName" `
-                /TR "powershell.exe -ExecutionPolicy Bypass -File `"$scriptPath`"" `
+                /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" `
                 /RL HIGHEST `
                 /F | Out-Null
 
