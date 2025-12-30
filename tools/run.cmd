@@ -1,2 +1,2 @@
 @echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync-asset.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\ZinusAssetSync\sync-asset.ps1"

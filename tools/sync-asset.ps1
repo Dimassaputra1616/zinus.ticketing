@@ -3,69 +3,85 @@
 # =========================
 $ErrorActionPreference = "Stop"
 
-# ===== 1. CONFIG =====
-$ServerUrl  = "http://10.62.38.225:8000/api/asset-sync"   # URL API di Laravel
-$Token      = "79e0d391c28351cd8fedad6af8e3bd236cf8e6017cd509a864468a5b94eae025"  # ASSET_SYNC_TOKEN
-$Factory    = "Zinus F1 Bogor"
-$Department = "IT"
+$scriptPath = (Resolve-Path $MyInvocation.MyCommand.Path).Path
+$scriptRoot = Split-Path -Parent $scriptPath
+$installRoot = Join-Path $env:ProgramData "ZinusAssetSync"
+$logRoot = Join-Path $installRoot "logs"
+$logFile = Join-Path $logRoot ("sync-{0}.log" -f (Get-Date -Format "yyyyMMdd"))
 
-Write-Host "=== ZINUS ASSET SYNC ===" -ForegroundColor Cyan
-Write-Host "Server : $ServerUrl"
-Write-Host ""
-
-
-# ===== 2. PASTIKAN SCHEDULE TASK ADA (1x/bulan tgl 1 jam 09:00) =====
-$taskName      = "Zinus Asset Monthly Sync"
-$schtasksPath  = Join-Path $env:WINDIR "System32\schtasks.exe"
-
-if (Test-Path $schtasksPath) {
-    try {
-        Write-Host "Cek / bikin scheduled task..." -ForegroundColor Yellow
-
-        # cek sudah ada atau belum
-        $null = & $schtasksPath /Query /TN "$taskName" 2>$null
-        if ($LASTEXITCODE -ne 0) {
-            # belum ada -> bikin
-            $scriptPath = (Resolve-Path $MyInvocation.MyCommand.Path).Path
-
-            & $schtasksPath /Create `
-                /SC MONTHLY `
-                /MO 1 `
-                /D 1 `
-                /ST 09:00 `
-                /TN "$taskName" `
-                /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" `
-                /RL HIGHEST `
-                /F | Out-Null
-
-            Write-Host "Scheduled task dibuat: jalan tiap tgl 1 jam 09:00." -ForegroundColor Green
-        } else {
-            Write-Host "Scheduled task OK (jalan tiap tgl 1 jam 09:00)." -ForegroundColor Green
-        }
-    } catch {
-        Write-Host "Gagal cek/bikin scheduled task: $($_.Exception.Message)" -ForegroundColor DarkYellow
-    }
-} else {
-    Write-Host "WARNING: schtasks.exe tidak ketemu, schedule tidak dibuat." -ForegroundColor DarkYellow
+if (-not (Test-Path $logRoot)) {
+    New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
 }
 
-Write-Host ""
+function Write-Log {
+    param(
+        [string]$Message,
+        [string]$Level = "INFO",
+        [switch]$ToConsole,
+        [string]$Color = "Gray"
+    )
 
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $line = "[$timestamp] [$Level] $Message"
+    Add-Content -Path $logFile -Value $line
 
-# ===== 3. COLLECT SYSTEM INFO =====
+    if ($ToConsole) {
+        Write-Host $Message -ForegroundColor $Color
+    }
+}
+
+$configPath = Join-Path $installRoot "config.json"
+if (-not (Test-Path $configPath)) {
+    $configPath = Join-Path $scriptRoot "config.json"
+}
+
+if (-not (Test-Path $configPath)) {
+    Write-Log "Config file not found. Expected at $installRoot or $scriptRoot." "ERROR" -ToConsole -Color "Red"
+    exit 1
+}
+
+try {
+    $config = Get-Content -Path $configPath -Raw | ConvertFrom-Json
+} catch {
+    Write-Log "Failed to read config: $($_.Exception.Message)" "ERROR" -ToConsole -Color "Red"
+    exit 1
+}
+
+$ServerUrl = $config.server_url
+$Token = $config.token
+$Factory = $config.factory
+$Department = $config.department
+$AgentVersion = if ($config.agent_version) { $config.agent_version } else { "unknown" }
+
+if (-not $ServerUrl -or -not $Token -or -not $Factory -or -not $Department) {
+    Write-Log "Missing required config fields (server_url, token, factory, department)." "ERROR" -ToConsole -Color "Red"
+    exit 1
+}
+
+try {
+    $AgentSha256 = (Get-FileHash -Path $scriptPath -Algorithm SHA256).Hash
+} catch {
+    Write-Log "Failed to compute agent SHA256: $($_.Exception.Message)" "ERROR" -ToConsole -Color "Red"
+    exit 1
+}
+
+Write-Log "=== ZINUS ASSET SYNC ===" "INFO" -ToConsole -Color "Cyan"
+Write-Log "Server: $ServerUrl" "INFO" -ToConsole -Color "Gray"
+Write-Log "Factory: $Factory | Department: $Department" "INFO"
+
+# ===== 1. COLLECT SYSTEM INFO =====
 $hostname = $env:COMPUTERNAME
 
-$cs   = Get-CimInstance Win32_ComputerSystem
+$cs = Get-CimInstance Win32_ComputerSystem
 $bios = Get-CimInstance Win32_BIOS
-$cpu  = Get-CimInstance Win32_Processor | Select-Object -First 1 -ExpandProperty Name
+$cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 -ExpandProperty Name
 
 # --- User lokal yang lagi login (BUKAN Administrator) ---
-$loginUser = $cs.UserName   # biasanya format: PC-NAME\User atau DOMAIN\User
+$loginUser = $cs.UserName
 if ($loginUser -and $loginUser.Contains("\")) {
-    $loginUser = $loginUser.Split("\")[-1]   # ambil bagian belakang saja
+    $loginUser = $loginUser.Split("\")[-1]
 }
 if (-not $loginUser) {
-    # fallback kalau entah kenapa kosong
     $loginUser = $env:USERNAME
 }
 $userName = $loginUser
@@ -85,8 +101,8 @@ try {
 $ramGb = [math]::Round($cs.TotalPhysicalMemory / 1GB)
 
 # --- Storage: detail per perangkat (SSD / HDD) ---
-$diskDrives      = Get-CimInstance Win32_DiskDrive
-$storageDevices  = @()
+$diskDrives = Get-CimInstance Win32_DiskDrive
+$storageDevices = @()
 
 foreach ($d in $diskDrives) {
     if (-not $d.Size) { continue }
@@ -94,7 +110,6 @@ foreach ($d in $diskDrives) {
     $sizeGb = [math]::Round($d.Size / 1GB)
     $diskType = "Unknown"
 
-    # coba tebak tipe disk
     if ($d.MediaType -match 'SSD' -or $d.Model -match 'SSD') {
         $diskType = "SSD"
     } elseif ($d.PSObject.Properties.Name -contains 'RotationRate' -and $d.RotationRate -gt 0) {
@@ -102,8 +117,8 @@ foreach ($d in $diskDrives) {
     }
 
     $storageDevices += [pscustomobject]@{
-        Model  = ($d.Model -replace '\s+',' ').Trim()
-        Type   = $diskType
+        Model = ($d.Model -replace '\s+',' ').Trim()
+        Type = $diskType
         SizeGB = $sizeGb
     }
 }
@@ -120,7 +135,7 @@ if ($storageDevices.Count -gt 0) {
 }
 
 # --- OS ---
-$os     = Get-CimInstance Win32_OperatingSystem
+$os = Get-CimInstance Win32_OperatingSystem
 $osName = $os.Caption
 
 # --- IP Address (skip 169.254.xxx) ---
@@ -135,19 +150,10 @@ if (-not $ip) {
         Select-Object -First 1 -ExpandProperty IPAddress)
 }
 
-# --- Preview di console biar kelihatan ---
-Write-Host "Hostname : $hostname"
-Write-Host "User     : $userName"
-Write-Host "Category : $Category"
-Write-Host "RAM      : $ramGb GB"
-Write-Host "Storage  : $storageSummary (Total: $storageTotalGb GB)"
-Write-Host "OS       : $osName"
-Write-Host "IP       : $ip"
-Write-Host ""
+Write-Log "Collected: Host=$hostname User=$userName Category=$Category RAM=${ramGb}GB OS=$osName IP=$ip" "INFO"
 
-
-# ===== 4. BUILD JSON PAYLOAD =====
-$body = @{
+# ===== 2. BUILD JSON PAYLOAD =====
+$payload = @{
     asset_code     = $hostname
     hostname       = $hostname
     user_name      = $userName
@@ -164,23 +170,61 @@ $body = @{
     os_name        = $osName
     ip_address     = $ip
     status         = "Active"
-} | ConvertTo-Json
+    agent_version  = $AgentVersion
+    agent_sha256   = $AgentSha256
+}
 
-Write-Host "Sending request to API..." -ForegroundColor Yellow
+$body = $payload | ConvertTo-Json
 
+# ===== 3. SEND REQUEST (RETRY) =====
+$maxAttempts = 5
+$backoffSeconds = 2
 
-# ===== 5. SEND REQUEST =====
-try {
-    $response = Invoke-RestMethod -Uri $ServerUrl -Method Post -Body $body `
-        -ContentType "application/json" `
-        -Headers @{ Authorization = "Bearer $Token" } `
-        -TimeoutSec 20
+for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+    try {
+        Write-Log "Sending request (attempt $attempt/$maxAttempts)" "INFO"
+        $response = Invoke-RestMethod -Uri $ServerUrl -Method Post -Body $body `
+            -ContentType "application/json" `
+            -Headers @{ Authorization = "Bearer $Token" } `
+            -TimeoutSec 20
 
-    Write-Host "Response:" -ForegroundColor Green
-    $response | ConvertTo-Json -Depth 5
-} catch {
-    Write-Host "Request failed: $($_.Exception.Message)" -ForegroundColor Red
-    if ($_.ErrorDetails) {
-        Write-Host $_.ErrorDetails -ForegroundColor DarkRed
+        Write-Log "Sync success." "INFO" -ToConsole -Color "Green"
+        Write-Log ("Response: {0}" -f ($response | ConvertTo-Json -Depth 5)) "INFO"
+        break
+    } catch {
+        $statusCode = $null
+        $responseBody = $null
+        $exception = $_.Exception
+
+        if ($exception.Response) {
+            try {
+                $statusCode = [int]$exception.Response.StatusCode.value__
+            } catch {
+                $statusCode = $null
+            }
+
+            try {
+                $reader = New-Object System.IO.StreamReader($exception.Response.GetResponseStream())
+                $responseBody = $reader.ReadToEnd()
+                $reader.Dispose()
+            } catch {
+                $responseBody = $null
+            }
+        }
+
+        if ($statusCode -ge 400 -and $statusCode -lt 500) {
+            Write-Log "Request failed with status $statusCode. Response: $responseBody" "ERROR" -ToConsole -Color "Red"
+            break
+        }
+
+        Write-Log "Request failed (attempt $attempt/$maxAttempts): $($exception.Message)" "WARN"
+
+        if ($attempt -ge $maxAttempts) {
+            Write-Log "Max retries reached. Sync failed." "ERROR" -ToConsole -Color "Red"
+            break
+        }
+
+        Start-Sleep -Seconds $backoffSeconds
+        $backoffSeconds = [Math]::Min($backoffSeconds * 2, 32)
     }
 }
