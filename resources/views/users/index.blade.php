@@ -83,6 +83,7 @@
             $controlBase = 'h-12 rounded-xl border border-slate-200 bg-slate-50/70 px-4 text-sm text-slate-800 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200';
             $inputClass = 'w-full ' . $controlBase;
             $labelClass = 'text-2xs font-semibold uppercase tracking-[0.24em] text-slate-500';
+            $isSuperAdmin = Auth::user()?->is_super_admin;
         @endphp
 
         <template x-teleport="body">
@@ -161,6 +162,7 @@
             </div>
         </x-ui.panel>
 
+        @if ($isSuperAdmin)
         <template x-teleport="body">
             <div
                 x-show="showReset"
@@ -325,6 +327,7 @@
                 </div>
             </div>
         </template>
+        @endif
 
         <template x-teleport="body">
             <div
@@ -485,6 +488,7 @@
             </div>
         </template>
 
+        @if ($isSuperAdmin)
         <template x-teleport="body">
             <div
                 x-show="showUpdate"
@@ -525,7 +529,9 @@
                 </div>
             </div>
         </template>
+        @endif
 
+        @if ($isSuperAdmin)
         <template x-teleport="body">
             <div
                 x-show="showConfirm"
@@ -545,6 +551,7 @@
                 </div>
             </div>
         </template>
+        @endif
     </div>
 
     <script>

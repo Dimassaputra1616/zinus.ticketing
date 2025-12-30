@@ -109,8 +109,8 @@ class UserController extends Controller
     {
         $authUser = Auth::user();
 
-        if (! $authUser->isAdmin()) {
-            abort(403, 'Akses ditolak - hanya untuk admin IT');
+        if (! $authUser || ! $authUser->isSuperAdmin()) {
+            abort(403, 'Akses ditolak - hanya untuk super admin');
         }
 
         $request->validate([
@@ -138,6 +138,10 @@ class UserController extends Controller
     public function destroy(Request $request, $userId)
     {
         $authUser = Auth::user();
+
+        if (! $authUser || ! $authUser->isSuperAdmin()) {
+            abort(403, 'Akses ditolak - hanya untuk super admin');
+        }
 
         $user = User::find($userId);
 
@@ -172,8 +176,8 @@ class UserController extends Controller
     {
         $authUser = Auth::user();
 
-        if (! $authUser->isAdmin()) {
-            abort(403, 'Akses ditolak - hanya untuk admin IT');
+        if (! $authUser || ! $authUser->isSuperAdmin()) {
+            abort(403, 'Akses ditolak - hanya untuk super admin');
         }
 
         $request->validate([
