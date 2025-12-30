@@ -23,9 +23,13 @@
             @forelse ($logs as $log)
                 <tr class="transition-all hover:bg-emerald-50/60 hover:shadow-sm hover:-translate-y-[1px] loan-row" data-loan-id="{{ $log->id }}">
                     <td class="px-3 py-3">
-                        <div class="font-semibold">{{ $log->device->name ?? '-' }}</div>
-                        @if ($log->device?->code)
-                            <div class="text-xs text-slate-500">{{ $log->device->code }}</div>
+                        @php
+                            $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
+                            $assetCode = $log->asset?->asset_code ?? $log->device?->code;
+                        @endphp
+                        <div class="font-semibold">{{ $assetName }}</div>
+                        @if ($assetCode)
+                            <div class="text-xs text-slate-500">{{ $assetCode }}</div>
                         @endif
                     </td>
                     <td class="px-3 py-3 text-[13px] text-slate-700">{{ optional($log->start_date)->format('d M Y') }}</td>
@@ -82,9 +86,13 @@
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <p class="text-xs font-semibold text-slate-500">Device</p>
-                    <p class="text-sm font-semibold text-slate-900">{{ $log->device->name ?? '-' }}</p>
-                    @if ($log->device?->code)
-                        <p class="text-xs text-slate-500">{{ $log->device->code }}</p>
+                    @php
+                        $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
+                        $assetCode = $log->asset?->asset_code ?? $log->device?->code;
+                    @endphp
+                    <p class="text-sm font-semibold text-slate-900">{{ $assetName }}</p>
+                    @if ($assetCode)
+                        <p class="text-xs text-slate-500">{{ $assetCode }}</p>
                     @endif
                 </div>
                 @php

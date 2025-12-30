@@ -30,13 +30,17 @@
                             <div class="text-xs text-slate-500">{{ $log->user->email ?? '-' }}</div>
                     </td>
                     <td class="px-3 py-3">
-                        <div class="font-semibold">{{ $log->device->name ?? '-' }}</div>
-                        @if ($log->device?->code)
-                            <div class="text-xs text-slate-500">{{ $log->device->code }}</div>
+                        @php
+                            $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
+                            $assetCode = $log->asset?->asset_code ?? $log->device?->code;
+                        @endphp
+                        <div class="font-semibold">{{ $assetName }}</div>
+                        @if ($assetCode)
+                            <div class="text-xs text-slate-500">{{ $assetCode }}</div>
                         @endif
                     </td>
                     <td class="px-3 py-3 text-[13px] text-slate-700">
-                        {{ $log->asset_code ?: '—' }}
+                        {{ $log->asset_code ?? $log->asset?->asset_code ?? '—' }}
                     </td>
                     <td class="px-3 py-3 text-[13px] text-slate-700">{{ optional($log->start_date)->format('d M Y') }}</td>
                     <td class="px-3 py-3 text-[13px] text-slate-700">{{ optional($log->end_date)->format('d M Y') }}</td>
@@ -73,7 +77,7 @@
                                             <input
                                                 type="text"
                                                 name="asset_code"
-                                                value="{{ $log->asset_code ?? $log->device->code }}"
+                                                value="{{ $log->asset_code ?? $log->asset?->asset_code ?? $log->device?->code }}"
                                                 placeholder="Kode asset"
                                                 class="w-32 rounded-lg border border-slate-200 px-2 py-1 text-xs focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                                                 required
@@ -152,9 +156,13 @@
             <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
                 <div>
                     <p class="font-semibold text-slate-500">Device</p>
-                    <p class="text-slate-800">{{ $log->device->name ?? '-' }}</p>
-                    @if ($log->device?->code)
-                        <p class="text-[11px] text-slate-500">{{ $log->device->code }}</p>
+                    @php
+                        $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
+                        $assetCode = $log->asset?->asset_code ?? $log->device?->code;
+                    @endphp
+                    <p class="text-slate-800">{{ $assetName }}</p>
+                    @if ($assetCode)
+                        <p class="text-[11px] text-slate-500">{{ $assetCode }}</p>
                     @endif
                 </div>
                 <div>
@@ -183,7 +191,7 @@
                             <input
                                 type="text"
                                 name="asset_code"
-                                value="{{ $log->asset_code ?? $log->device->code }}"
+                                value="{{ $log->asset_code ?? $log->asset?->asset_code ?? $log->device?->code }}"
                                 placeholder="Kode asset"
                                 class="w-28 rounded-lg border border-slate-200 px-2 py-1 text-xs focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                                 required

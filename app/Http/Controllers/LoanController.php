@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Asset;
 use App\Models\BorrowLog;
 use App\Models\Device;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class LoanController extends Controller
@@ -26,37 +26,51 @@ class LoanController extends Controller
 
         $search = trim((string) $request->query('search', ''));
         $statusFilter = $request->query('status');
-        $deviceFilter = $request->query('device_id');
+        $assetFilter = $request->query('asset_id');
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $logs = BorrowLog::with(['user', 'device', 'processedBy'])
+        $logs = BorrowLog::with(['user', 'asset', 'device', 'processedBy'])
             ->when(! $isAdmin, fn ($query) => $query->where('user_id', $user?->id))
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', '%' . $search . '%')
                         ->orWhere('email', 'like', '%' . $search . '%');
+                })->orWhereHas('asset', function ($assetQuery) use ($search) {
+                    $assetQuery->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('asset_code', 'like', '%' . $search . '%');
                 })->orWhereHas('device', function ($deviceQuery) use ($search) {
                     $deviceQuery->where('name', 'like', '%' . $search . '%')
                         ->orWhere('code', 'like', '%' . $search . '%');
                 });
             })
             ->when($statusFilter, fn ($query) => $query->where('status', $statusFilter))
-            ->when($deviceFilter, fn ($query) => $query->where('device_id', $deviceFilter))
+            ->when($assetFilter, fn ($query) => $query->where('asset_id', $assetFilter))
             ->when($startDate, fn ($query) => $query->whereDate('start_date', '>=', Carbon::parse($startDate)))
             ->when($endDate, fn ($query) => $query->whereDate('end_date', '<=', Carbon::parse($endDate)))
             ->orderByDesc('created_at')
             ->paginate(10)
             ->withQueryString();
 
-        $devices = Device::where('status', 'available')->orderBy('name')->get(['id', 'name', 'code']);
-
-        $spareDevicesQuery = Device::query()
-            ->whereIn('category', ['Laptop', 'Monitor'])
+        $assets = Asset::query()
             ->where('status', 'available')
-            ->when(Schema::hasColumn('devices', 'user_id'), fn ($query) => $query->whereNull('user_id'));
+            ->whereNull('user_id')
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get(['id', 'asset_code', 'name', 'category', 'category_id']);
 
-        $spareDevices = $spareDevicesQuery->orderBy('name')->get(['id', 'name', 'code']);
+        $spareDevicesQuery = Asset::query()
+            ->where('status', 'available')
+            ->whereNull('user_id')
+            ->whereNull('deleted_at')
+            ->where(function ($query) {
+                $query->where('category', 'Laptop')
+                    ->orWhere('category', 'Monitor')
+                    ->orWhereHas('categoryRel', fn ($categoryQuery) => $categoryQuery->where('name', 'Monitor'));
+            })
+            ->with('categoryRel');
+
+        $spareDevices = $spareDevicesQuery->orderBy('name')->get(['id', 'asset_code', 'name', 'category', 'category_id']);
 
         $statusBadge = [
             BorrowLog::STATUS_WAITING => 'bg-amber-100 text-amber-700 border border-amber-200',
@@ -73,12 +87,12 @@ class LoanController extends Controller
 
         return view('loans.index', compact(
             'logs',
-            'devices',
+            'assets',
             'spareDevices',
             'statuses',
             'search',
             'statusFilter',
-            'deviceFilter',
+            'assetFilter',
             'startDate',
             'endDate',
             'isAdmin',
@@ -89,27 +103,32 @@ class LoanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'device_id' => 'required|exists:devices,id',
+            'asset_id' => 'required|exists:assets,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'nullable|string|max:500',
         ]);
 
-        $deviceQuery = Device::query()
-            ->whereKey($request->device_id)
-            ->whereIn('category', ['Laptop', 'Monitor'])
+        $assetQuery = Asset::query()
+            ->whereKey($request->asset_id)
             ->where('status', 'available')
-            ->when(Schema::hasColumn('devices', 'user_id'), fn ($query) => $query->whereNull('user_id'));
+            ->whereNull('user_id')
+            ->whereNull('deleted_at')
+            ->where(function ($query) {
+                $query->where('category', 'Laptop')
+                    ->orWhere('category', 'Monitor')
+                    ->orWhereHas('categoryRel', fn ($categoryQuery) => $categoryQuery->where('name', 'Monitor'));
+            });
 
-        if (! $deviceQuery->exists()) {
+        if (! $assetQuery->exists()) {
             throw ValidationException::withMessages([
-                'device_id' => 'Device tidak tersedia untuk peminjaman.',
+                'asset_id' => 'Device tidak tersedia untuk peminjaman.',
             ]);
         }
 
         BorrowLog::create([
             'user_id' => $request->user()->id,
-            'device_id' => $request->device_id,
+            'asset_id' => $request->asset_id,
             'start_date' => Carbon::parse($request->start_date),
             'end_date' => Carbon::parse($request->end_date),
             'reason' => $request->reason,

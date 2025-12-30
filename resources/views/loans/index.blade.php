@@ -10,7 +10,7 @@
     @endphp
 
     <div x-data="loanPage({
-        devices: @js($devices),
+        assets: @js($assets),
         statuses: @js($statuses),
         csrf: '{{ csrf_token() }}',
         isAdmin: {{ $isAdmin ? 'true' : 'false' }},
@@ -82,11 +82,11 @@
                                     </select>
                                 </div>
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                    <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Device</label>
-                                    <select name="device_id" class="w-full sm:min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
-                                        <option value="">Semua Device</option>
-                                        @foreach ($devices as $device)
-                                            <option value="{{ $device->id }}" @selected($deviceFilter == $device->id)>{{ $device->name }}{{ $device->code ? ' • '.$device->code : '' }}</option>
+                                    <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Asset</label>
+                                    <select name="asset_id" class="w-full sm:min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
+                                        <option value="">Semua Asset</option>
+                                        @foreach ($assets as $asset)
+                                            <option value="{{ $asset->id }}" @selected($assetFilter == $asset->id)>{{ $asset->name }}{{ $asset->asset_code ? ' • '.$asset->asset_code : '' }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -153,14 +153,18 @@
                         <div class="space-y-1">
                             <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Device</label>
                             <select
-                                name="device_id"
+                                name="asset_id"
                                 class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 {{ $noSpareDevices ? 'bg-slate-100 text-slate-400' : '' }}"
                                 @disabled($noSpareDevices)
                                 required
                             >
                                 <option value="">{{ $noSpareDevices ? 'Tidak ada device spare tersedia' : 'Pilih device' }}</option>
-                                @foreach ($spareDevices as $device)
-                                    <option value="{{ $device->id }}">{{ $device->name }}{{ $device->code ? ' • '.$device->code : '' }}</option>
+                                @foreach ($spareDevices as $asset)
+                                    @php
+                                        $assetCategory = $asset->category === 'Monitor' || $asset->categoryRel?->name === 'Monitor' ? 'Monitor' : 'Laptop';
+                                        $assetCodeLabel = $asset->asset_code ? '[' . $asset->asset_code . '] ' : '';
+                                    @endphp
+                                    <option value="{{ $asset->id }}">{{ $assetCodeLabel }}{{ $asset->name }} ({{ $assetCategory }})</option>
                                 @endforeach
                             </select>
                             @if ($noSpareDevices)
@@ -231,7 +235,7 @@
     <script>
         function loanPage(config) {
             return {
-                devices: config.devices || [],
+                assets: config.assets || [],
                 statuses: config.statuses || {},
                 csrf: config.csrf,
                 isAdmin: config.isAdmin,

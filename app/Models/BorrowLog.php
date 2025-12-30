@@ -12,6 +12,7 @@ class BorrowLog extends Model
     protected $fillable = [
         'user_id',
         'device_id',
+        'asset_id',
         'asset_code',
         'start_date',
         'end_date',
@@ -53,6 +54,11 @@ class BorrowLog extends Model
     public function device()
     {
         return $this->belongsTo(Device::class);
+    }
+
+    public function asset()
+    {
+        return $this->belongsTo(Asset::class);
     }
 
     public function processedBy()

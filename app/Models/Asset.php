@@ -65,6 +65,11 @@ class Asset extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function categoryRel(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
