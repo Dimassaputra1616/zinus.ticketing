@@ -195,45 +195,6 @@
                     <form class="relative space-y-5 px-6 py-6" x-ref="resetForm" @submit.prevent="submitReset">
                         <div class="space-y-2">
                             <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                                <span>Password Admin</span>
-                                <span class="text-emerald-600">Wajib</span>
-                            </div>
-                            <div class="relative" x-data="{ show: false }">
-                                <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-500">
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2" /><path d="M8 11V7a4 4 0 1 1 8 0v4" /><rect x="6" y="11" width="12" height="10" rx="2" /></svg>
-                                </div>
-                                <input
-                                    :type="show ? 'text' : 'password'"
-                                    x-model="resetForm.admin_password"
-                                    name="admin_password"
-                                    placeholder="Masukkan password Anda"
-                                    required
-                                    class="w-full h-12 rounded-2xl border border-slate-200/80 bg-white/70 px-4 pl-11 pr-12 text-sm text-slate-900 shadow-sm transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:bg-white"
-                                >
-                                <button
-                                    type="button"
-                                    class="absolute inset-y-0 right-3 flex items-center text-emerald-500/80 hover:text-emerald-700"
-                                    @click="show = !show"
-                                    :aria-pressed="show"
-                                    :title="show ? 'Sembunyikan password' : 'Lihat password'"
-                                >
-                                    <svg x-show="!show" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" />
-                                        <circle cx="12" cy="12" r="3" />
-                                    </svg>
-                                    <svg x-show="show" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="m3 3 18 18" />
-                                        <path d="M10.58 10.58a2 2 0 0 0 2.84 2.84" />
-                                        <path d="M9.88 4.24A10.82 10.82 0 0 1 12 4c7 0 11 8 11 8a16.8 16.8 0 0 1-3.64 4.8" />
-                                        <path d="M6.61 6.61A16.85 16.85 0 0 0 1 12s4 8 11 8a10.94 10.94 0 0 0 5.39-1.61" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <p class="text-xs text-rose-500" x-text="errors.admin_password" x-show="errors.admin_password"></p>
-                        </div>
-
-                        <div class="space-y-2">
-                            <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
                                 <span>Password Baru</span>
                                 <span class="text-emerald-600">Min. 8 karakter</span>
                             </div>
@@ -584,7 +545,7 @@
                 suggestionsLoading: false,
                 resetName: '',
                 resetAction: '',
-                resetForm: { admin_password: '', password: '', password_confirmation: '' },
+                resetForm: { password: '', password_confirmation: '' },
                 addForm: { name: '', email: '', password: '', password_confirmation: '', role: 'user' },
                 updateForm: { id: null, name: '', email: '', role: 'user', action: '' },
                 confirmData: { name: '', action: '' },
@@ -624,7 +585,7 @@
                     console.debug('openReset', name, action);
                     this.resetName = name;
                     this.resetAction = action;
-                    this.resetForm = { admin_password: '', password: '', password_confirmation: '' };
+                    this.resetForm = { password: '', password_confirmation: '' };
                     this.showReset = true;
                     this.$nextTick(() => this.$refs.resetPassword?.focus());
                 },
@@ -632,7 +593,7 @@
                     this.showReset = false;
                     this.resetName = '';
                     this.resetAction = '';
-                    this.resetForm = { admin_password: '', password: '', password_confirmation: '' };
+                    this.resetForm = { password: '', password_confirmation: '' };
                 },
                 openConfirm(name, action) {
                     this.confirmData = { name, action };
@@ -718,16 +679,11 @@
                 async submitReset() {
                     if (!this.resetAction) return;
                     this.clearErrors();
-                    if (!this.resetForm.admin_password) {
-                        this.errors.admin_password = 'Password admin wajib diisi.';
-                        return;
-                    }
                     if (this.resetForm.password !== this.resetForm.password_confirmation) {
                         this.errors.password_confirmation = 'Password tidak sama.';
                         return;
                     }
                     const formData = new FormData();
-                    formData.append('admin_password', this.resetForm.admin_password);
                     formData.append('password', this.resetForm.password);
                     formData.append('password_confirmation', this.resetForm.password_confirmation);
                     formData.append('_token', this.csrf);
