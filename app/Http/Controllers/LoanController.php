@@ -7,6 +7,7 @@ use App\Models\Device;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class LoanController extends Controller
@@ -53,7 +54,7 @@ class LoanController extends Controller
         $spareDevicesQuery = Device::query()
             ->whereIn('category', ['Laptop', 'Monitor'])
             ->where('status', 'available')
-            ->whereNull('user_id');
+            ->when(Schema::hasColumn('devices', 'user_id'), fn ($query) => $query->whereNull('user_id'));
 
         $spareDevices = $spareDevicesQuery->orderBy('name')->get(['id', 'name', 'code']);
 
@@ -98,7 +99,7 @@ class LoanController extends Controller
             ->whereKey($request->device_id)
             ->whereIn('category', ['Laptop', 'Monitor'])
             ->where('status', 'available')
-            ->whereNull('user_id');
+            ->when(Schema::hasColumn('devices', 'user_id'), fn ($query) => $query->whereNull('user_id'));
 
         if (! $deviceQuery->exists()) {
             throw ValidationException::withMessages([
