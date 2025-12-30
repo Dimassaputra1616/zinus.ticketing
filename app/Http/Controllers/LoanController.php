@@ -7,7 +7,6 @@ use App\Models\Device;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class LoanController extends Controller
@@ -52,14 +51,9 @@ class LoanController extends Controller
         $devices = Device::where('status', 'available')->orderBy('name')->get(['id', 'name', 'code']);
 
         $spareDevicesQuery = Device::query()
+            ->whereIn('category', ['Laptop', 'Monitor'])
             ->where('status', 'available')
-            ->whereIn('category', ['Laptop', 'Monitor', 'laptop', 'monitor']);
-
-        if (Schema::hasColumn('devices', 'is_spare')) {
-            $spareDevicesQuery->where('is_spare', 1);
-        } elseif (Schema::hasColumn('devices', 'spare')) {
-            $spareDevicesQuery->where('spare', 1);
-        }
+            ->whereNull('user_id');
 
         $spareDevices = $spareDevicesQuery->orderBy('name')->get(['id', 'name', 'code']);
 
@@ -102,14 +96,9 @@ class LoanController extends Controller
 
         $deviceQuery = Device::query()
             ->whereKey($request->device_id)
+            ->whereIn('category', ['Laptop', 'Monitor'])
             ->where('status', 'available')
-            ->whereIn('category', ['Laptop', 'Monitor', 'laptop', 'monitor']);
-
-        if (Schema::hasColumn('devices', 'is_spare')) {
-            $deviceQuery->where('is_spare', 1);
-        } elseif (Schema::hasColumn('devices', 'spare')) {
-            $deviceQuery->where('spare', 1);
-        }
+            ->whereNull('user_id');
 
         if (! $deviceQuery->exists()) {
             throw ValidationException::withMessages([
