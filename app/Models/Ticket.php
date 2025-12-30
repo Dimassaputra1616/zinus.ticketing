@@ -50,6 +50,11 @@ class Ticket extends Model
         return $this->hasMany(TicketComment::class);
     }
 
+    public function ticketLogs(): HasMany
+    {
+        return $this->hasMany(TicketLog::class)->orderBy('created_at');
+    }
+
     public function attachments(): HasMany
     {
         return $this->hasMany(TicketAttachment::class);
@@ -57,6 +62,6 @@ class Ticket extends Model
 
     public function logs(): HasMany
     {
-        return $this->hasMany(TicketLog::class)->latest();
+        return $this->ticketLogs();
     }
 }

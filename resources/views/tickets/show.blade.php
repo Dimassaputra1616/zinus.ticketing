@@ -153,28 +153,38 @@
                         <ul class="space-y-4 text-sm text-ink-700">
                             @foreach ($statusLogs as $log)
                                 @php
-                                    $actorName = $log->user?->name ?? 'System';
-                                    $actorEmail = $log->user?->email;
+                                    $actorName = $log->actor_name ?? $log->user?->name ?? 'System';
+                                    $actorEmail = $log->actor_email ?? $log->user?->email;
                                     $oldLabel = $statuses[$log->old_value] ?? \Illuminate\Support\Str::title(str_replace('_', ' ', $log->old_value ?? ''));
                                     $newLabel = $statuses[$log->new_value] ?? \Illuminate\Support\Str::title(str_replace('_', ' ', $log->new_value ?? ''));
                                     $loggedAt = $log->created_at?->timezone($timezone);
                                 @endphp
                                 <li class="rounded-2xl border border-ink-100 bg-white px-4 py-3 shadow-sm shadow-ink-100/60">
                                     <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-400">
-                                        <span>
-                                            Admin: {{ $actorName }}@if ($actorEmail) <span class="text-ink-300">({{ $actorEmail }})</span>@endif
-                                        </span>
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="inline-flex items-center rounded-full bg-ink-50 px-2.5 py-1 text-2xs font-semibold uppercase tracking-[0.2em] text-ink-500">
+                                                Status Updated
+                                            </span>
+                                            <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-2xs font-semibold uppercase tracking-[0.2em] text-brand-700">
+                                                {{ $newLabel }}
+                                            </span>
+                                        </div>
                                         <span>{{ $loggedAt?->format('d M Y • H:i') }} WIB</span>
                                     </div>
-                                    <div class="mt-2 flex flex-wrap items-center gap-2">
-                                        <span class="inline-flex items-center rounded-full bg-ink-50 px-2.5 py-1 text-2xs font-semibold uppercase tracking-[0.2em] text-ink-500">
+                                    <p class="mt-2 text-sm text-ink-700">
+                                        <span class="font-semibold text-ink-900">{{ $actorName }}</span>
+                                        @if ($actorEmail)
+                                            <span class="text-ink-400">({{ $actorEmail }})</span>
+                                        @endif
+                                        mengubah status dari
+                                        <span class="inline-flex items-center rounded-full bg-ink-50 px-2 py-0.5 text-2xs font-semibold uppercase tracking-[0.18em] text-ink-500">
                                             {{ $oldLabel }}
                                         </span>
-                                        <span class="text-xs font-semibold text-ink-300">-&gt;</span>
-                                        <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-2xs font-semibold uppercase tracking-[0.2em] text-brand-700">
+                                        ke
+                                        <span class="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-2xs font-semibold uppercase tracking-[0.18em] text-brand-700">
                                             {{ $newLabel }}
                                         </span>
-                                    </div>
+                                    </p>
                                 </li>
                             @endforeach
                         </ul>

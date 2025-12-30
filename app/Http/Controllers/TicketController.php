@@ -202,9 +202,15 @@ class TicketController extends Controller
             'status' => 'open',
         ]);
 
+        $actor = $request->user();
+        $actorName = $actor?->name ?? 'System';
+        $actorEmail = $actor?->email;
+
         TicketLog::create([
             'ticket_id' => $ticket->id,
-            'user_id' => $request->user()?->id,
+            'user_id' => $actor?->id,
+            'actor_name' => $actorName,
+            'actor_email' => $actorEmail,
             'status' => 'open',
             'message' => 'Tiket dibuat oleh user',
             'action' => 'created',
@@ -232,7 +238,6 @@ class TicketController extends Controller
             $ticket->touch();
         }
 
-        $actor = $request->user();
         $ticket->loadMissing('user', 'category', 'department');
 
         $admins = $this->adminUsers($actor);
@@ -282,13 +287,14 @@ class TicketController extends Controller
             'closed' => 'Closed',
         ];
 
-        $statusLogs = $ticket->logs()
+        $statusLogs = $ticket->ticketLogs()
             ->where('action', 'status_updated')
             ->with('user')
+            ->orderByDesc('created_at')
             ->take(30)
             ->get();
 
-        $logs = $ticket->logs()->get()->sortBy('created_at');
+        $logs = $ticket->ticketLogs()->get();
 
         return view('tickets.show', [
             'ticket' => $ticket,
@@ -310,6 +316,8 @@ class TicketController extends Controller
 
         $previousStatus = $ticket->status;
         $actor = $request->user();
+        $actorName = $actor?->name ?? 'System';
+        $actorEmail = $actor?->email;
 
         $ticket->update([
             'status' => $request->status,
@@ -318,6 +326,8 @@ class TicketController extends Controller
         TicketLog::create([
             'ticket_id' => $ticket->id,
             'user_id' => $actor?->id,
+            'actor_name' => $actorName,
+            'actor_email' => $actorEmail,
             'status' => $request->status,
             'message' => null,
             'action' => 'status_updated',
