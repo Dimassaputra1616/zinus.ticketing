@@ -282,13 +282,20 @@ class TicketController extends Controller
             'closed' => 'Closed',
         ];
 
-        $logs = $ticket->logs()->orderBy('created_at', 'asc')->get();
+        $statusLogs = $ticket->logs()
+            ->where('action', 'status_updated')
+            ->with('user')
+            ->take(30)
+            ->get();
+
+        $logs = $ticket->logs()->get()->sortBy('created_at');
 
         return view('tickets.show', [
             'ticket' => $ticket,
             'statuses' => $statuses,
             'isAdmin' => $user->isAdmin(),
             'logs' => $logs,
+            'statusLogs' => $statusLogs,
         ]);
     }
 

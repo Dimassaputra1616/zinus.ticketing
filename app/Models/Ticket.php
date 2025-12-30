@@ -57,6 +57,6 @@ class Ticket extends Model
 
     public function logs(): HasMany
     {
-        return $this->hasMany(TicketLog::class);
+        return $this->hasMany(TicketLog::class)->latest();
     }
 }
