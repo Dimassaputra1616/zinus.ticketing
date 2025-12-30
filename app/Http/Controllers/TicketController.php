@@ -193,12 +193,17 @@ class TicketController extends Controller
             'attachments.*' => 'nullable|file|max:5120|mimes:pdf,jpeg,jpg,png,doc,docx,xls,xlsx,txt,zip',
         ]);
 
+        $reporterName = $request->user()?->name ?? $request->input('reporter_name');
+        $reporterEmail = $request->user()?->email ?? $request->input('reporter_email');
+
         $ticket = Ticket::create([
             'title' => $request->title,
             'description' => $request->description,
             'category_id' => $request->category_id,
             'department_id' => $request->department_id,
             'user_id' => auth()->id(),
+            'reporter_name' => $reporterName,
+            'reporter_email' => $reporterEmail,
             'status' => 'open',
         ]);
 

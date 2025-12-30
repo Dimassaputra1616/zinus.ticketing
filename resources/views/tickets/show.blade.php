@@ -30,6 +30,12 @@
         $backRouteName = $isAdmin ? 'tickets.index' : 'tickets.mine';
 
         $createdDifferentFromUpdated = $createdAt && $updatedAt && ! $createdAt->equalTo($updatedAt);
+
+        $reporterName = $ticket->user?->name ?? $ticket->reporter_name;
+        $reporterEmail = $ticket->user?->email ?? $ticket->reporter_email;
+        $reporterMissing = ! $reporterName && ! $reporterEmail;
+        $reporterDisplayName = $reporterName ?? $reporterEmail ?? 'Tidak terdaftar';
+        $reporterDisplayEmail = $reporterEmail ?? ($reporterMissing ? 'Tidak terdaftar' : '—');
     @endphp
 
     <div class="space-y-8">
@@ -72,7 +78,7 @@
                             </div>
                             <h1 class="text-2xl font-semibold leading-tight text-ink-900 sm:text-3xl">{{ $ticket->title }}</h1>
                             <p class="text-sm text-ink-500">
-                                Dilaporkan oleh {{ optional($ticket->user)->name ?? 'User eksternal' }}
+                                Dilaporkan oleh {{ $reporterDisplayName }}
                                 @if ($ticket->department)
                                     • Departemen {{ optional($ticket->department)->name }}
                                 @endif
@@ -92,7 +98,7 @@
                         </div>
                         <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 w-full sm:flex-1 sm:min-w-[200px]">
                             <p class="text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500">Email Pelapor</p>
-                            <p class="mt-2 text-sm font-semibold text-ink-900 break-words">{{ optional($ticket->user)->email ?? 'Tidak terdaftar' }}</p>
+                            <p class="mt-2 text-sm font-semibold text-ink-900 break-words">{{ $reporterDisplayEmail }}</p>
                         </div>
                         <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 w-full sm:flex-1 sm:min-w-[160px]">
                             <p class="text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500">Lampiran</p>
@@ -198,8 +204,8 @@
                         <div class="flex items-start justify-between gap-4">
                             <dt class="text-ink-500">Pelapor</dt>
                             <dd class="text-right text-ink-900">
-                                <div>{{ optional($ticket->user)->name ?? 'User eksternal' }}</div>
-                                <div class="text-xs text-ink-400">{{ optional($ticket->user)->email ?? 'Tidak terdaftar' }}</div>
+                                <div>{{ $reporterDisplayName }}</div>
+                                <div class="text-xs text-ink-400">{{ $reporterDisplayEmail }}</div>
                             </dd>
                         </div>
                         <div class="flex items-center justify-between gap-4">
@@ -285,7 +291,7 @@
                             <span class="mt-1.5 h-2.5 w-2.5 rounded-full bg-brand-500"></span>
                             <div>
                                 <p class="font-semibold text-ink-900">Tiket dibuat</p>
-                                <p class="text-xs text-ink-400">{{ $createdAt?->format('d M Y • H:i') }} WIB oleh {{ optional($ticket->user)->name ?? 'User eksternal' }}</p>
+                                <p class="text-xs text-ink-400">{{ $createdAt?->format('d M Y • H:i') }} WIB oleh {{ $reporterDisplayName }}</p>
                             </div>
                         </li>
                         @if ($createdDifferentFromUpdated)

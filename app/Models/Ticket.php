@@ -18,6 +18,8 @@ class Ticket extends Model
 
     protected $fillable = [
         'user_id',
+        'reporter_name',
+        'reporter_email',
         'department_id',
         'category_id',
         'title',
