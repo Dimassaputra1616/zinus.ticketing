@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use App\Notifications\UserRegisteredNotification;
 
 class UserController extends Controller
@@ -176,8 +177,15 @@ class UserController extends Controller
         }
 
         $request->validate([
+            'admin_password' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ]);
+
+        if (! Hash::check($request->admin_password, $authUser->password)) {
+            throw ValidationException::withMessages([
+                'admin_password' => 'Password admin salah.',
+            ]);
+        }
 
         $user->password = Hash::make($request->password);
         $user->save();
