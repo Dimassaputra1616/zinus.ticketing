@@ -7,6 +7,8 @@ use App\Models\Device;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class LoanController extends Controller
 {
@@ -49,6 +51,18 @@ class LoanController extends Controller
 
         $devices = Device::where('status', 'available')->orderBy('name')->get(['id', 'name', 'code']);
 
+        $spareDevicesQuery = Device::query()
+            ->where('status', 'available')
+            ->whereIn('category', ['Laptop', 'Monitor', 'laptop', 'monitor']);
+
+        if (Schema::hasColumn('devices', 'is_spare')) {
+            $spareDevicesQuery->where('is_spare', 1);
+        } elseif (Schema::hasColumn('devices', 'spare')) {
+            $spareDevicesQuery->where('spare', 1);
+        }
+
+        $spareDevices = $spareDevicesQuery->orderBy('name')->get(['id', 'name', 'code']);
+
         $statusBadge = [
             BorrowLog::STATUS_WAITING => 'bg-amber-100 text-amber-700 border border-amber-200',
             BorrowLog::STATUS_APPROVED => 'bg-emerald-100 text-emerald-700 border border-emerald-200',
@@ -65,6 +79,7 @@ class LoanController extends Controller
         return view('loans.index', compact(
             'logs',
             'devices',
+            'spareDevices',
             'statuses',
             'search',
             'statusFilter',
@@ -84,6 +99,23 @@ class LoanController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'nullable|string|max:500',
         ]);
+
+        $deviceQuery = Device::query()
+            ->whereKey($request->device_id)
+            ->where('status', 'available')
+            ->whereIn('category', ['Laptop', 'Monitor', 'laptop', 'monitor']);
+
+        if (Schema::hasColumn('devices', 'is_spare')) {
+            $deviceQuery->where('is_spare', 1);
+        } elseif (Schema::hasColumn('devices', 'spare')) {
+            $deviceQuery->where('spare', 1);
+        }
+
+        if (! $deviceQuery->exists()) {
+            throw ValidationException::withMessages([
+                'device_id' => 'Device tidak tersedia untuk peminjaman.',
+            ]);
+        }
 
         BorrowLog::create([
             'user_id' => $request->user()->id,

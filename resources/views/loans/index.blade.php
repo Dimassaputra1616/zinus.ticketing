@@ -144,16 +144,31 @@
                         </button>
                     </div>
 
+                    @php
+                        $spareDevices = $spareDevices ?? collect();
+                        $noSpareDevices = $spareDevices->isEmpty();
+                    @endphp
                     <form class="px-6 py-5 space-y-4" method="POST" action="{{ route('loans.store') }}">
                         @csrf
                         <div class="space-y-1">
                             <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Device</label>
-                            <select name="device_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" required>
-                                <option value="">Pilih device</option>
-                                @foreach ($devices as $device)
+                            <select
+                                name="device_id"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 {{ $noSpareDevices ? 'bg-slate-100 text-slate-400' : '' }}"
+                                @disabled($noSpareDevices)
+                                required
+                            >
+                                <option value="">{{ $noSpareDevices ? 'Tidak ada device spare tersedia' : 'Pilih device' }}</option>
+                                @foreach ($spareDevices as $device)
                                     <option value="{{ $device->id }}">{{ $device->name }}{{ $device->code ? ' • '.$device->code : '' }}</option>
                                 @endforeach
                             </select>
+                            @if ($noSpareDevices)
+                                <div class="mt-2 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                    Stok spare habis untuk Laptop/Monitor yang available.
+                                </div>
+                            @endif
                         </div>
                         <div class="grid gap-3 lg:grid-cols-2">
                             <div class="space-y-1">
@@ -171,7 +186,7 @@
                         </div>
                         <div class="flex items-center justify-end gap-3 pt-2">
                             <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeAdd()">Batal</button>
-                            <x-ui.button type="submit" size="md" variant="primary" class="shadow-button">
+                            <x-ui.button type="submit" size="md" variant="primary" class="shadow-button {{ $noSpareDevices ? 'opacity-50 cursor-not-allowed' : '' }}" :disabled="$noSpareDevices">
                                 Kirim Pengajuan
                             </x-ui.button>
                         </div>
