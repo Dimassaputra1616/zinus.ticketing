@@ -421,7 +421,7 @@
                                     >
                                         <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                             <path fill-rule="evenodd" d="M2.5 5.75A2.75 2.75 0 0 1 5.25 3h3a.75.75 0 0 1 0 1.5h-3A1.25 1.25 0 0 0 4 5.75v8.5A1.25 1.25 0 0 0 5.25 15.5h9.5A1.25 1.25 0 0 0 16 14.25v-8.5A1.25 1.25 0 0 0 14.75 4.5h-3a.75.75 0 0 1 0-1.5h3A2.75 2.75 0 0 1 17.5 5.75v8.5A2.75 2.75 0 0 1 14.75 17h-9.5A2.75 2.75 0 0 1 2.5 14.25v-8.5Zm6.53 2.22a.75.75 0 1 0-1.06 1.06l1.22 1.22H7a.75.75 0 0 0 0 1.5h2.19l-1.22 1.22a.75.75 0 0 0 1.06 1.06l2.5-2.5a.75.75 0 0 0 0-1.06l-2.5-2.5Zm2.72 1.28a.75.75 0 0 0 0 1.5h1a.75.75 0 0 0 0-1.5h-1Zm0 2a.75.75 0 0 0 0 1.5h1a.75.75 0 0 0 0-1.5h-1Z" clip-rule="evenodd" />
-                                        <span class="max-w-[140px] truncate align-middle">{{ $attachment->original_name }}</span>
+                                        <span class="max-w-[140px] truncate align-middle">{{ $attachment->original_name ?? $attachment->file_name ?? 'Attachment' }}</span>
                                     </a>
                                 @endforeach
                             </div>
@@ -588,7 +588,7 @@
                                                                     <path d="M13.5 6.5 20 13a3.536 3.536 0 0 1-5 5l-7.5-7.5a3 3 0 1 1 4.243-4.243L16.5 11.5" />
                                                                     <path d="M8.5 12.5 11 15" />
                                                                 </svg>
-                                                                <span class="max-w-[140px] truncate align-middle">{{ $attachment->original_name }}</span>
+                                                                <span class="max-w-[140px] truncate align-middle">{{ $attachment->original_name ?? $attachment->file_name ?? 'Attachment' }}</span>
                                                             </a>
                                                         @endforeach
                                                     </div>

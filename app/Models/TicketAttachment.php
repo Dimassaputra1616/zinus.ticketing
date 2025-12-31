@@ -17,6 +17,9 @@ class TicketAttachment extends Model
         'mime_type',
         'file_size',
         'disk',
+        'file_name',
+        'file_path',
+        'file_type',
     ];
 
     public function ticket(): BelongsTo

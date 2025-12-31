@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class TicketController extends Controller
 {
@@ -231,13 +232,24 @@ class TicketController extends Controller
 
                 $storedPath = $uploadedFile->store('tickets', 'public');
 
-                $ticket->attachments()->create([
-                    'original_name' => $uploadedFile->getClientOriginalName(),
-                    'stored_name' => $storedPath,
-                    'mime_type' => $uploadedFile->getClientMimeType(),
-                    'file_size' => $uploadedFile->getSize(),
-                    'disk' => 'public',
-                ]);
+                $attachmentPayload = [];
+                if (Schema::hasColumn('ticket_attachments', 'original_name')) {
+                    $attachmentPayload = [
+                        'original_name' => $uploadedFile->getClientOriginalName(),
+                        'stored_name' => $storedPath,
+                        'mime_type' => $uploadedFile->getClientMimeType(),
+                        'file_size' => $uploadedFile->getSize(),
+                        'disk' => 'public',
+                    ];
+                } else {
+                    $attachmentPayload = [
+                        'file_name' => $uploadedFile->getClientOriginalName(),
+                        'file_path' => $storedPath,
+                        'file_type' => $uploadedFile->getClientMimeType(),
+                    ];
+                }
+
+                $ticket->attachments()->create($attachmentPayload);
             }
 
             $ticket->touch();

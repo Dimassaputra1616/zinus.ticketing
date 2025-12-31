@@ -25,11 +25,13 @@ class TicketAttachmentController extends Controller
         }
 
         $disk = $attachment->disk ?? 'public';
+        $storedName = $attachment->stored_name ?? $attachment->file_path;
+        $originalName = $attachment->original_name ?? $attachment->file_name ?? 'attachment';
 
-        if (! Storage::disk($disk)->exists($attachment->stored_name)) {
+        if (! $storedName || ! Storage::disk($disk)->exists($storedName)) {
             abort(404);
         }
 
-        return Storage::disk($disk)->download($attachment->stored_name, $attachment->original_name);
+        return Storage::disk($disk)->download($storedName, $originalName);
     }
 }

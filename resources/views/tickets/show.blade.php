@@ -236,7 +236,8 @@
                         <ul class="space-y-3">
                             @foreach ($ticket->attachments as $attachment)
                                 @php
-                                    $extension = \Illuminate\Support\Str::lower(pathinfo($attachment->original_name, PATHINFO_EXTENSION) ?: 'file');
+                                    $attachmentName = $attachment->original_name ?? $attachment->file_name ?? 'Attachment';
+                                    $extension = \Illuminate\Support\Str::lower(pathinfo($attachmentName, PATHINFO_EXTENSION) ?: 'file');
                                     $extensionBadge = match ($extension) {
                                         'pdf' => 'bg-rose-100 text-rose-700',
                                         'xls', 'xlsx' => 'bg-brand-50 text-brand-800 border border-brand-100',
@@ -264,7 +265,7 @@
                                             {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::limit($extension, 4, '')) }}
                                         </span>
                                         <div>
-                                            <p class="text-sm font-semibold text-ink-900">{{ $attachment->original_name }}</p>
+                                            <p class="text-sm font-semibold text-ink-900">{{ $attachmentName }}</p>
                                             <p class="text-xs text-ink-400">{{ $formattedSize }}</p>
                                         </div>
                                     </div>
