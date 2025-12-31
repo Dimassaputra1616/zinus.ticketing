@@ -861,6 +861,21 @@
                         category_id: form.querySelector('[data-validate-field="category_id"]'),
                         department_id: form.querySelector('[data-validate-field="department_id"]'),
                     };
+                    const idempotencyInput = form.querySelector('[data-idempotency-key]');
+                    const submitBtn = form.querySelector('[data-submit-btn]');
+                    const submitLabel = form.querySelector('[data-submit-label]');
+                    const submitSpinner = form.querySelector('[data-submit-spinner]');
+
+                    const generateKey = () => {
+                        if (window.crypto?.randomUUID) {
+                            return window.crypto.randomUUID();
+                        }
+                        return 'idemp-' + Math.random().toString(16).slice(2) + Date.now().toString(16);
+                    };
+
+                    if (idempotencyInput && !idempotencyInput.value) {
+                        idempotencyInput.value = generateKey();
+                    }
 
                     const errorTargets = {
                         title: form.querySelector('[data-field-error="title"]'),
@@ -927,6 +942,24 @@
                             event.preventDefault();
                             firstInvalid?.focus();
                             firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            return;
+                        }
+
+                        if (form.dataset.submitted === 'true') {
+                            event.preventDefault();
+                            return;
+                        }
+
+                        form.dataset.submitted = 'true';
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                        }
+                        if (submitLabel) {
+                            submitLabel.textContent = 'Mengirim...';
+                        }
+                        if (submitSpinner) {
+                            submitSpinner.classList.remove('hidden');
                         }
                     });
 

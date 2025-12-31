@@ -11,8 +11,9 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data" data-ticket-form>
         @csrf
+        <input type="hidden" name="idempotency_key" value="" data-idempotency-key>
 
         <div class="mb-3">
             <label class="block text-sm font-medium text-gray-700 mb-1">Judul Tiket</label>
@@ -69,9 +70,49 @@
             @endif
         </div>
 
-        <button type="submit" class="rounded bg-[#00bfa5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#00a892]">
-            Kirim Tiket
+        <button type="submit" class="rounded bg-[#00bfa5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#00a892] inline-flex items-center justify-center gap-2" data-submit-btn>
+            <span data-submit-label>Kirim Tiket</span>
+            <span class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" data-submit-spinner></span>
         </button>
     </form>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-ticket-form]').forEach(form => {
+            const idempotencyInput = form.querySelector('[data-idempotency-key]');
+            const submitBtn = form.querySelector('[data-submit-btn]');
+            const submitLabel = form.querySelector('[data-submit-label]');
+            const submitSpinner = form.querySelector('[data-submit-spinner]');
+
+            const generateKey = () => {
+                if (window.crypto?.randomUUID) {
+                    return window.crypto.randomUUID();
+                }
+                return 'idemp-' + Math.random().toString(16).slice(2) + Date.now().toString(16);
+            };
+
+            if (idempotencyInput && !idempotencyInput.value) {
+                idempotencyInput.value = generateKey();
+            }
+
+            form.addEventListener('submit', event => {
+                if (form.dataset.submitted === 'true') {
+                    event.preventDefault();
+                    return;
+                }
+                form.dataset.submitted = 'true';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                }
+                if (submitLabel) {
+                    submitLabel.textContent = 'Mengirim...';
+                }
+                if (submitSpinner) {
+                    submitSpinner.classList.remove('hidden');
+                }
+            });
+        });
+    });
+</script>
 @endsection

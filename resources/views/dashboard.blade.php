@@ -98,6 +98,7 @@
                                 novalidate
                             >
                                 @csrf
+                                <input type="hidden" name="idempotency_key" value="" data-idempotency-key>
                                 <div class="md:col-span-2 space-y-2">
                                     <label class="text-[11px] font-medium text-gray-500">Judul Tiket</label>
                                     <input
@@ -208,9 +209,11 @@
                                     <button
                                         type="submit"
                                         class="btn-primary inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:shadow-emerald-500/30"
+                                        data-submit-btn
                                     >
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
-                                        Kirim Tiket
+                                        <span data-submit-label>Kirim Tiket</span>
+                                        <span class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" data-submit-spinner></span>
                                     </button>
                                 </div>
                             </form>

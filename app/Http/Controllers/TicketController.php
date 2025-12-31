@@ -16,6 +16,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class TicketController extends Controller
 {
@@ -192,6 +193,82 @@ class TicketController extends Controller
             'department_id' => 'required|exists:departments,id',
             'attachments' => 'nullable|array|max:5',
             'attachments.*' => 'nullable|file|max:5120|mimes:pdf,jpeg,jpg,png,doc,docx,xls,xlsx,txt,zip',
+            'idempotency_key' => 'nullable|string|max:64',
+        ]);
+
+        $idempotencyKey = $request->input('idempotency_key') ?: (string) Str::uuid();
+        $userId = $request->user()?->id;
+        $sessionId = $request->session()->getId();
+        $dedupeWindow = now()->subSeconds(60);
+        $attachmentMeta = collect($request->file('attachments', []))
+            ->filter()
+            ->map(fn ($file) => $file->getClientOriginalName() . '|' . $file->getSize())
+            ->values()
+            ->all();
+        $payloadHash = hash('sha256', json_encode([
+            'user_id' => $userId,
+            'session_id' => $sessionId,
+            'title' => $request->title,
+            'description' => $request->description,
+            'category_id' => $request->category_id,
+            'department_id' => $request->department_id,
+            'attachments' => $attachmentMeta,
+        ]));
+
+        $idempotencyQuery = DB::table('ticket_idempotency_keys')
+            ->where('idempotency_key', $idempotencyKey)
+            ->where('created_at', '>=', $dedupeWindow);
+
+        if ($userId) {
+            $idempotencyQuery->where('user_id', $userId);
+        } else {
+            $idempotencyQuery->where('session_id', $sessionId);
+        }
+
+        $existingKey = $idempotencyQuery->first();
+        if ($existingKey) {
+            if ($existingKey->ticket_id) {
+                return redirect()
+                    ->route('tickets.show', $existingKey->ticket_id)
+                    ->with('success', '✅ Tiket sudah dibuat. Duplikasi dicegah.');
+            }
+
+            return redirect()
+                ->back()
+                ->with('success', '⏳ Permintaan sedang diproses. Mohon tunggu sebentar.');
+        }
+
+        $duplicatePayloadQuery = DB::table('ticket_idempotency_keys')
+            ->where('payload_hash', $payloadHash)
+            ->where('created_at', '>=', $dedupeWindow);
+
+        if ($userId) {
+            $duplicatePayloadQuery->where('user_id', $userId);
+        } else {
+            $duplicatePayloadQuery->where('session_id', $sessionId);
+        }
+
+        $duplicatePayload = $duplicatePayloadQuery->orderByDesc('created_at')->first();
+        if ($duplicatePayload) {
+            if ($duplicatePayload->ticket_id) {
+                return redirect()
+                    ->route('tickets.show', $duplicatePayload->ticket_id)
+                    ->with('success', '✅ Tiket sudah dibuat. Duplikasi dicegah.');
+            }
+
+            return redirect()
+                ->back()
+                ->with('success', '⏳ Permintaan sedang diproses. Mohon tunggu sebentar.');
+        }
+
+        DB::table('ticket_idempotency_keys')->insert([
+            'user_id' => $userId,
+            'session_id' => $sessionId,
+            'idempotency_key' => $idempotencyKey,
+            'payload_hash' => $payloadHash,
+            'ticket_id' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $reporterName = $request->user()?->name ?? $request->input('reporter_name');
@@ -207,6 +284,15 @@ class TicketController extends Controller
             'reporter_email' => $reporterEmail,
             'status' => 'open',
         ]);
+
+        DB::table('ticket_idempotency_keys')
+            ->where('idempotency_key', $idempotencyKey)
+            ->when($userId, fn ($query) => $query->where('user_id', $userId))
+            ->when(! $userId, fn ($query) => $query->where('session_id', $sessionId))
+            ->update([
+                'ticket_id' => $ticket->id,
+                'updated_at' => now(),
+            ]);
 
         $actor = $request->user();
         $actorName = $actor?->name ?? 'System';
