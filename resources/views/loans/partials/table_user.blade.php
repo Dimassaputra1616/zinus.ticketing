@@ -8,21 +8,28 @@
 @endphp
 
 <div class="hidden md:block pt-2" data-loan-table>
-    <div class="overflow-x-auto">
     <table class="w-full table-auto divide-y divide-slate-200">
         <thead class="bg-slate-50/90 backdrop-blur text-2xs uppercase tracking-[0.2em] text-slate-800 font-semibold sticky top-0 z-10">
             <tr>
-                <th class="px-3 py-2 text-left">Device</th>
-                <th class="px-3 py-2 text-left">Tgl Pinjam</th>
-                <th class="px-3 py-2 text-left">Tgl Kembali</th>
-                <th class="px-3 py-2 text-left">Status</th>
+                <th class="px-3 py-2 text-left">Departemen</th>
+                <th class="px-3 py-2 text-left">Asset</th>
+                <th class="px-3 py-2 text-left whitespace-nowrap">Tgl Pinjam</th>
+                <th class="px-3 py-2 text-left whitespace-nowrap">Tgl Kembali</th>
+                <th class="px-3 py-2 text-left whitespace-nowrap">Status</th>
                 <th class="px-3 py-2 text-left">Keterangan</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 bg-white text-sm text-slate-800">
             @forelse ($logs as $log)
                 <tr class="transition-all hover:bg-emerald-50/60 hover:shadow-sm hover:-translate-y-[1px] loan-row" data-loan-id="{{ $log->id }}">
-                    <td class="px-3 py-3">
+                    <td class="px-3 py-3 text-[13px] text-slate-700">
+                        @if ($log->user?->department?->name)
+                            {{ $log->user->department->name }}
+                        @else
+                            <span class="text-slate-400">-</span>
+                        @endif
+                    </td>
+                    <td class="px-3 py-3 max-w-[220px] break-words">
                         @php
                             $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
                             $assetCode = $log->asset?->asset_code ?? $log->device?->code;
@@ -32,8 +39,8 @@
                             <div class="text-xs text-slate-500">{{ $assetCode }}</div>
                         @endif
                     </td>
-                    <td class="px-3 py-3 text-[13px] text-slate-700">{{ optional($log->start_date)->format('d M Y') }}</td>
-                    <td class="px-3 py-3 text-[13px] text-slate-700">{{ optional($log->end_date)->format('d M Y') }}</td>
+                    <td class="px-3 py-3 text-[13px] text-slate-700 whitespace-nowrap">{{ optional($log->start_date)->format('d M Y') }}</td>
+                    <td class="px-3 py-3 text-[13px] text-slate-700 whitespace-nowrap">{{ optional($log->end_date)->format('d M Y') }}</td>
                     <td class="px-3 py-3">
                         @php
                             $statusIcon = [
@@ -54,30 +61,27 @@
                             {{ ucfirst($statuses[$log->status] ?? $log->status) }}
                         </span>
                     </td>
-                    <td class="px-3 py-3 text-[13px] text-slate-700">
+                    <td class="px-3 py-3 text-[13px] text-slate-700 max-w-[220px] break-words">
                         {{ $log->reason ? Str::limit($log->reason, 80) : '—' }}
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500">Belum ada log peminjaman.</td>
+                    <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">Belum ada log peminjaman.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
-    </div>
-    <div class="flex flex-wrap items-center justify-between px-4 py-3 text-sm text-slate-600">
-        <div>
-            @if ($logs->count())
+    @if ($logs->count())
+        <div class="flex flex-wrap items-center justify-between px-4 py-3 text-sm text-slate-600">
+            <div>
                 Menampilkan {{ $logs->firstItem() }}–{{ $logs->lastItem() }} dari {{ $logs->total() }} data
-            @else
-                Tidak ada data
-            @endif
+            </div>
+            <div>
+                {{ $logs->links() }}
+            </div>
         </div>
-        <div>
-            {{ $logs->links() }}
-        </div>
-    </div>
+    @endif
 </div>
 
 <div class="md:hidden space-y-3">
@@ -85,7 +89,7 @@
         <article class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:-translate-y-[1px] hover:shadow-md loan-row" data-loan-id="{{ $log->id }}">
             <div class="flex items-start justify-between gap-3">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500">Device</p>
+                    <p class="text-xs font-semibold text-slate-500">Asset</p>
                     @php
                         $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
                         $assetCode = $log->asset?->asset_code ?? $log->device?->code;
@@ -116,6 +120,14 @@
             </div>
             <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
                 <div>
+                    <p class="font-semibold text-slate-500">Departemen</p>
+                    @if ($log->user?->department?->name)
+                        <p class="text-slate-800">{{ $log->user->department->name }}</p>
+                    @else
+                        <p class="text-slate-400">-</p>
+                    @endif
+                </div>
+                <div>
                     <p class="font-semibold text-slate-500">Tgl Pinjam</p>
                     <p class="text-slate-800">{{ optional($log->start_date)->format('d M Y') }}</p>
                 </div>
@@ -132,7 +144,9 @@
     @empty
         <div class="px-1 py-4 text-center text-sm text-slate-500">Belum ada log peminjaman.</div>
     @endforelse
-    <div class="px-1">
-        {{ $logs->links() }}
-    </div>
+    @if ($logs->count())
+        <div class="px-1">
+            {{ $logs->links() }}
+        </div>
+    @endif
 </div>

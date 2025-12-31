@@ -30,7 +30,7 @@ class LoanController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $logs = BorrowLog::with(['user', 'asset', 'device', 'processedBy'])
+        $logs = BorrowLog::with(['user.department', 'asset', 'device', 'processedBy'])
             ->when(! $isAdmin, fn ($query) => $query->where('user_id', $user?->id))
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('user', function ($userQuery) use ($search) {

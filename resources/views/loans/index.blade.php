@@ -48,14 +48,9 @@
         <x-ui.panel class="shadow-md border-ink-100/80 bg-gradient-to-br from-[#F6F9F8] via-white to-[#EDF3F2] w-full max-w-none mx-0 px-0">
             <div class="space-y-4">
                 <div class="border-b border-slate-100 pb-3">
-                    <form method="GET" action="{{ route('loans.index') }}" class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between" data-live-form>
-                        <div class="flex flex-col gap-3 w-full md:flex-row md:flex-wrap md:items-center">
-                            @unless($isAdmin)
-                                <x-ui.button type="button" size="sm" variant="primary" class="shadow-button" @click="openAdd()">
-                                    + Ajukan Peminjaman
-                                </x-ui.button>
-                            @endunless
-                            <div class="flex-1 min-w-0 w-full md:min-w-[260px]">
+                    <form method="GET" action="{{ route('loans.index') }}" class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" data-live-form>
+                        <div class="grid w-full gap-3 lg:grid-cols-5">
+                            <div class="min-w-0">
                                 <label class="sr-only" for="search">Cari</label>
                                 <div class="flex items-center gap-2 rounded-[16px] border border-slate-200 bg-white px-3 py-2 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100">
                                     <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
@@ -64,52 +59,53 @@
                                         id="search"
                                         name="search"
                                         x-model="searchTerm"
-                                        placeholder="{{ $isAdmin ? 'Cari user/device...' : 'Cari device atau catatan kamu...' }}"
+                                        placeholder="{{ $isAdmin ? 'Cari user/asset...' : 'Cari asset atau catatan kamu...' }}"
                                         class="w-full border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:ring-0"
                                         @input="queueSearch"
                                     >
                                 </div>
                             </div>
 
+                            <div class="flex flex-col gap-2">
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Status</label>
+                                <select name="status" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
+                                    <option value="">Semua</option>
+                                    @foreach ($statuses as $key => $label)
+                                        <option value="{{ $key }}" @selected($statusFilter === $key)>{{ ucfirst($label) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             @if ($isAdmin)
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                    <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Status</label>
-                                    <select name="status" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
-                                        <option value="">Semua</option>
-                                        @foreach ($statuses as $key => $label)
-                                            <option value="{{ $key }}" @selected($statusFilter === $key)>{{ ucfirst($label) }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <div class="flex flex-col gap-2">
                                     <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Asset</label>
-                                    <select name="asset_id" class="w-full sm:min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
+                                    <select name="asset_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                                         <option value="">Semua Asset</option>
                                         @foreach ($assets as $asset)
                                             <option value="{{ $asset->id }}" @selected($assetFilter == $asset->id)>{{ $asset->name }}{{ $asset->asset_code ? ' • '.$asset->asset_code : '' }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <div class="flex flex-col gap-2">
                                     <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Mulai</label>
-                                    <input type="date" name="start_date" value="{{ $startDate }}" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
+                                    <input type="date" name="start_date" value="{{ $startDate }}" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                                 </div>
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <div class="flex flex-col gap-2">
                                     <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Selesai</label>
-                                    <input type="date" name="end_date" value="{{ $endDate }}" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
+                                    <input type="date" name="end_date" value="{{ $endDate }}" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                                 </div>
-                                <x-ui.button type="submit" size="sm" variant="primary">Terapkan</x-ui.button>
                             @else
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                    <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Status</label>
-                                    <select name="status" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" onchange="this.form.submit()">
-                                        <option value="">Semua</option>
-                                        @foreach ($statuses as $key => $label)
-                                            <option value="{{ $key }}" @selected($statusFilter === $key)>{{ ucfirst($label) }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                <div class="hidden lg:block"></div>
+                                <div class="hidden lg:block"></div>
+                                <div class="hidden lg:block"></div>
                             @endif
+                        </div>
+
+                        <div class="flex items-center gap-2 lg:justify-end">
+                            <a href="{{ route('loans.index') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700">
+                                Reset
+                            </a>
+                            <x-ui.button type="submit" size="sm" variant="primary">Terapkan</x-ui.button>
                         </div>
                     </form>
                 </div>
