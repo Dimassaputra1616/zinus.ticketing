@@ -162,7 +162,10 @@ class LoanController extends Controller
         $loan->processed_at = now();
 
         if ($status === BorrowLog::STATUS_APPROVED) {
-            $loan->asset_code = $validated['asset_code'] ?: $loan->asset_code;
+            $assetCode = $validated['asset_code'] ?? null;
+            if ($assetCode !== null && $assetCode !== '') {
+                $loan->asset_code = $assetCode;
+            }
         }
 
         if ($status === BorrowLog::STATUS_RETURNED) {
