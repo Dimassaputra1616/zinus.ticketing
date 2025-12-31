@@ -7,6 +7,8 @@
             'returned' => 'bg-sky-100 text-sky-700 border border-sky-200',
             'rejected' => 'bg-rose-100 text-rose-700 border border-rose-200',
         ];
+        $authUser = auth()->user();
+        $showLoanForm = $authUser && ! $authUser->isAdmin();
     @endphp
 
     <div x-data="loanPage({
@@ -29,14 +31,14 @@
                     <path d="M14 17v4" />
                 </svg>
             </x-slot:icon>
-            @unless($isAdmin)
+            @if($showLoanForm)
                 <x-slot:side>
                     <x-ui.button type="button" size="sm" variant="primary" class="shadow-button" @click="openAdd()">
                         + Ajukan Peminjaman
                     </x-ui.button>
                     <p class="text-xs text-emerald-800 mt-1">Lihat status pengajuanmu atau ajukan peminjaman baru.</p>
                 </x-slot:side>
-            @endunless
+            @endif
         </x-ui.section-hero>
 
         @if (session('ok'))
@@ -110,7 +112,7 @@
             </div>
         </x-ui.panel>
 
-        @unless($isAdmin)
+        @if($showLoanForm)
         <template x-teleport="body">
             <div
                 x-show="showAdd"
@@ -138,10 +140,26 @@
 
                     @php
                         $spareDevices = $spareDevices ?? collect();
+                        $departments = $departments ?? collect();
                         $noSpareDevices = $spareDevices->isEmpty();
                     @endphp
                     <form class="px-6 py-5 space-y-4" method="POST" action="{{ route('loans.store') }}">
                         @csrf
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Departemen</label>
+                            <select
+                                name="department_id"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
+                                required
+                            >
+                                <option value="">Pilih departemen</option>
+                                @foreach ($departments as $department)
+                                    <option value="{{ $department->id }}" @selected(old('department_id', $authUser?->department_id) == $department->id)>
+                                        {{ $department->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="space-y-1">
                             <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Device</label>
                             <select
@@ -190,7 +208,7 @@
                 </div>
             </div>
         </template>
-        @endunless
+        @endif
 
     </div>
 

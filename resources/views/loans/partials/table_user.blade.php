@@ -2,7 +2,7 @@
     $statusBadge = $statusBadge ?? [
         'waiting' => 'bg-amber-100 text-amber-700 border border-amber-200',
         'approved' => 'bg-emerald-100 text-emerald-700 border border-emerald-200',
-        'returned' => 'bg-sky-100 text-sky-700 border border-sky-200',
+        'returned' => 'bg-slate-100 text-slate-600 border border-slate-200',
         'rejected' => 'bg-rose-100 text-rose-700 border border-rose-200',
     ];
 @endphp
@@ -23,10 +23,12 @@
             @forelse ($logs as $log)
                 <tr class="transition-all hover:bg-emerald-50/60 hover:shadow-sm hover:-translate-y-[1px] loan-row" data-loan-id="{{ $log->id }}">
                     <td class="px-3 py-3 text-[13px] text-slate-700">
-                        @if ($log->user?->department?->name)
+                        @if ($log->department?->name)
+                            {{ $log->department->name }}
+                        @elseif ($log->user?->department?->name)
                             {{ $log->user->department->name }}
                         @else
-                            <span class="text-slate-400">-</span>
+                            <span class="text-slate-400">Tidak diset</span>
                         @endif
                     </td>
                     <td class="px-3 py-3 max-w-[220px] break-words">
@@ -53,7 +55,7 @@
                         <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] {{ match($log->status) {
                             'approved' => 'bg-emerald-100 text-emerald-700 border border-emerald-200',
                             'waiting' => 'bg-amber-100 text-amber-700 border border-amber-200',
-                            'returned' => 'bg-sky-100 text-sky-700 border border-sky-200',
+                            'returned' => 'bg-slate-100 text-slate-600 border border-slate-200',
                             'rejected' => 'bg-rose-100 text-rose-700 border border-rose-200',
                             default => 'bg-slate-100 text-slate-700 border border-slate-200'
                         } }}">
@@ -67,7 +69,15 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">Belum ada log peminjaman.</td>
+                    <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">
+                        <div class="mx-auto flex max-w-xl flex-col items-center gap-3">
+                            <p class="text-slate-600">Kamu belum pernah meminjam perangkat. Klik &quot;Ajukan Peminjaman&quot; untuk mulai.</p>
+                            <x-ui.button type="button" size="sm" variant="primary" class="shadow-button" @click="openAdd()">
+                                Ajukan Peminjaman
+                            </x-ui.button>
+                            <p class="text-xs text-slate-400">Catatan: maksimal 1 pengajuan aktif dalam satu waktu.</p>
+                        </div>
+                    </td>
                 </tr>
             @endforelse
         </tbody>
@@ -110,7 +120,7 @@
                 <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] {{ match($log->status) {
                     'approved' => 'bg-emerald-100 text-emerald-700 border border-emerald-200',
                     'waiting' => 'bg-amber-100 text-amber-700 border border-amber-200',
-                    'returned' => 'bg-sky-100 text-sky-700 border border-sky-200',
+                    'returned' => 'bg-slate-100 text-slate-600 border border-slate-200',
                     'rejected' => 'bg-rose-100 text-rose-700 border border-rose-200',
                     default => 'bg-slate-100 text-slate-700 border border-slate-200'
                 } }}">
@@ -121,10 +131,12 @@
             <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
                 <div>
                     <p class="font-semibold text-slate-500">Departemen</p>
-                    @if ($log->user?->department?->name)
+                    @if ($log->department?->name)
+                        <p class="text-slate-800">{{ $log->department->name }}</p>
+                    @elseif ($log->user?->department?->name)
                         <p class="text-slate-800">{{ $log->user->department->name }}</p>
                     @else
-                        <p class="text-slate-400">-</p>
+                        <p class="text-slate-400">Tidak diset</p>
                     @endif
                 </div>
                 <div>
@@ -142,7 +154,15 @@
             </div>
         </article>
     @empty
-        <div class="px-1 py-4 text-center text-sm text-slate-500">Belum ada log peminjaman.</div>
+        <div class="px-1 py-6 text-center text-sm text-slate-500">
+            <div class="mx-auto flex max-w-sm flex-col items-center gap-3">
+                <p class="text-slate-600">Kamu belum pernah meminjam perangkat. Klik &quot;Ajukan Peminjaman&quot; untuk mulai.</p>
+                <x-ui.button type="button" size="sm" variant="primary" class="shadow-button" @click="openAdd()">
+                    Ajukan Peminjaman
+                </x-ui.button>
+                <p class="text-xs text-slate-400">Catatan: maksimal 1 pengajuan aktif dalam satu waktu.</p>
+            </div>
+        </div>
     @endforelse
     @if ($logs->count())
         <div class="px-1">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\BorrowLog;
+use App\Models\Department;
 use App\Models\Device;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class LoanController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $logs = BorrowLog::with(['user.department', 'asset', 'device', 'processedBy'])
+        $logs = BorrowLog::with(['department', 'user.department', 'asset', 'device', 'processedBy'])
             ->when(! $isAdmin, fn ($query) => $query->where('user_id', $user?->id))
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('user', function ($userQuery) use ($search) {
@@ -72,6 +73,10 @@ class LoanController extends Controller
 
         $spareDevices = $spareDevicesQuery->orderBy('name')->get(['id', 'asset_code', 'name', 'category', 'category_id']);
 
+        $departments = Department::query()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         $statusBadge = [
             BorrowLog::STATUS_WAITING => 'bg-amber-100 text-amber-700 border border-amber-200',
             BorrowLog::STATUS_APPROVED => 'bg-emerald-100 text-emerald-700 border border-emerald-200',
@@ -89,6 +94,7 @@ class LoanController extends Controller
             'logs',
             'assets',
             'spareDevices',
+            'departments',
             'statuses',
             'search',
             'statusFilter',
@@ -104,6 +110,7 @@ class LoanController extends Controller
     {
         $request->validate([
             'asset_id' => 'required|exists:assets,id',
+            'department_id' => 'required|exists:departments,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'nullable|string|max:500',
@@ -128,6 +135,7 @@ class LoanController extends Controller
 
         BorrowLog::create([
             'user_id' => $request->user()->id,
+            'department_id' => $request->department_id,
             'asset_id' => $request->asset_id,
             'start_date' => Carbon::parse($request->start_date),
             'end_date' => Carbon::parse($request->end_date),
