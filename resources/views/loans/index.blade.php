@@ -49,7 +49,7 @@
             <div class="space-y-4">
                 <div class="border-b border-slate-100 pb-3">
                     <form method="GET" action="{{ route('loans.index') }}" class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" data-live-form>
-                        <div class="grid w-full gap-3 lg:grid-cols-5">
+                        <div class="grid w-full gap-3 {{ $isAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-2' }}">
                             <div class="min-w-0">
                                 <label class="sr-only" for="search">Cari</label>
                                 <div class="flex items-center gap-2 rounded-[16px] border border-slate-200 bg-white px-3 py-2 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100">
@@ -94,10 +94,6 @@
                                     <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Selesai</label>
                                     <input type="date" name="end_date" value="{{ $endDate }}" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                                 </div>
-                            @else
-                                <div class="hidden lg:block"></div>
-                                <div class="hidden lg:block"></div>
-                                <div class="hidden lg:block"></div>
                             @endif
                         </div>
 
