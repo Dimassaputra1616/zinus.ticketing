@@ -37,43 +37,46 @@ class AssetSyncController extends Controller
             'ip_address' => ['nullable', 'string', 'max:150'],
             'status' => ['nullable', 'string', 'max:50'],
             'agent_version' => ['nullable', 'string', 'max:50'],
-            'agent_sha256' => ['required', 'string', 'size:64'],
-            'idempotency_key' => ['required', 'string', 'max:120'],
+            'agent_sha256' => ['nullable', 'string', 'size:64'],
+            'idempotency_key' => ['nullable', 'string', 'max:128'],
         ]);
 
         if ($validator->fails()) {
-            Log::warning('asset-sync validation failed', [
-                'errors' => $validator->errors()->toArray(),
-                'payload' => $request->all(),
-                'request_ip' => $request->ip(),
-                'headers' => $this->sanitizeHeaders($request->headers->all()),
-                'route' => $request->path(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->validationErrorResponse($request, $validator->errors()->toArray());
         }
 
         $data = $validator->validated();
         $serialNumber = trim((string) $data['serial_number']);
         if ($serialNumber === '') {
-            return response()->json([
-                'success' => false,
-                'errors' => ['serial_number' => ['Serial number is required.']],
-            ], 422);
+            return $this->validationErrorResponse($request, [
+                'serial_number' => ['Serial number is required.'],
+            ]);
         }
         if (! empty($data['asset_code']) && trim((string) $data['asset_code']) !== $serialNumber) {
-            return response()->json([
-                'success' => false,
-                'errors' => ['asset_code' => ['Asset code must match serial number.']],
-            ], 422);
+            return $this->validationErrorResponse($request, [
+                'asset_code' => ['Asset code must match serial number.'],
+            ]);
         }
         $assetCode = $serialNumber;
         $ip = $request->ip();
         $hostname = $data['hostname'] ?? null;
         $userName = $data['user_name'] ?? null;
+        $agentSha = $data['agent_sha256'] ?? null;
+        if (! $agentSha) {
+            $headerSha = trim((string) $request->header('X-Agent-SHA256'));
+            if ($headerSha !== '') {
+                $agentSha = $headerSha;
+            } else {
+                $agentSha = hash('sha256', $request->ip() . '|' . (string) $request->userAgent());
+            }
+            $data['agent_sha256'] = $agentSha;
+        }
+
+        $idempotencyKey = $data['idempotency_key'] ?? null;
+        if (! $idempotencyKey) {
+            $idempotencyKey = (string) Str::uuid();
+            $data['idempotency_key'] = $idempotencyKey;
+        }
 
         try {
             $token = trim((string) $request->bearerToken());
@@ -93,7 +96,6 @@ class AssetSyncController extends Controller
                 ], 403);
             }
 
-            $idempotencyKey = $data['idempotency_key'] ?? null;
             if ($idempotencyKey) {
                 $cacheKey = 'asset-sync:' . hash('sha256', $idempotencyKey);
                 if (! Cache::add($cacheKey, true, now()->addMinutes(10))) {
@@ -258,6 +260,23 @@ class AssetSyncController extends Controller
                 'error_id' => $errorId,
             ], 500);
         }
+    }
+
+    protected function validationErrorResponse(Request $request, array $errors): JsonResponse
+    {
+        Log::warning('asset-sync validation failed', [
+            'errors' => $errors,
+            'payload' => $request->all(),
+            'request_ip' => $request->ip(),
+            'headers' => $this->sanitizeHeaders($request->headers->all()),
+            'route' => $request->path(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $errors,
+        ], 422);
     }
 
     protected function sanitizeHeaders(array $headers): array
