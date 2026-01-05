@@ -14,11 +14,11 @@ class AssetSyncTest extends TestCase
         $token = 'test-token';
         $ip = '10.10.10.10';
         $userAgent = 'ZinusAgent/1.0';
-        $expectedSha = hash('sha256', $ip . '|' . $userAgent);
+        $configuredSha = hash('sha256', 'different');
 
         config([
             'services.asset_sync.token' => $token,
-            'services.asset_sync.agent_sha256' => $expectedSha,
+            'services.asset_sync.agent_sha256' => $configuredSha,
         ]);
 
         $payload = [

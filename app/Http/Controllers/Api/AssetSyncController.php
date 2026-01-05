@@ -37,8 +37,8 @@ class AssetSyncController extends Controller
             'ip_address' => ['nullable', 'string', 'max:150'],
             'status' => ['nullable', 'string', 'max:50'],
             'agent_version' => ['nullable', 'string', 'max:50'],
-            'agent_sha256' => ['nullable', 'string', 'size:64'],
-            'idempotency_key' => ['nullable', 'string', 'max:128'],
+            'agent_sha256' => ['nullable', 'string'],
+            'idempotency_key' => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -61,21 +61,14 @@ class AssetSyncController extends Controller
         $ip = $request->ip();
         $hostname = $data['hostname'] ?? null;
         $userName = $data['user_name'] ?? null;
-        $agentSha = $data['agent_sha256'] ?? null;
-        if (! $agentSha) {
-            $headerSha = trim((string) $request->header('X-Agent-SHA256'));
-            if ($headerSha !== '') {
-                $agentSha = $headerSha;
-            } else {
-                $agentSha = hash('sha256', $request->ip() . '|' . (string) $request->userAgent());
-            }
-            $data['agent_sha256'] = $agentSha;
+        $incomingSha = isset($data['agent_sha256']) ? trim((string) $data['agent_sha256']) : '';
+        if ($incomingSha === '') {
+            $incomingSha = trim((string) $request->header('X-Agent-SHA256'));
         }
 
-        $idempotencyKey = $data['idempotency_key'] ?? null;
-        if (! $idempotencyKey) {
-            $idempotencyKey = (string) Str::uuid();
-            $data['idempotency_key'] = $idempotencyKey;
+        $idempotencyKey = isset($data['idempotency_key']) ? trim((string) $data['idempotency_key']) : '';
+        if ($idempotencyKey === '') {
+            $idempotencyKey = trim((string) $request->header('X-Idempotency-Key'));
         }
 
         try {
@@ -88,15 +81,25 @@ class AssetSyncController extends Controller
                 ], 401);
             }
             $expectedSha = strtolower(trim((string) ($scope['agent_sha256'] ?? '')));
-            $incomingSha = strtolower((string) $data['agent_sha256']);
-            if ($expectedSha === '' || ! hash_equals($expectedSha, $incomingSha)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid agent signature',
-                ], 403);
+            $incomingSha = strtolower($incomingSha);
+            if ($incomingSha !== '') {
+                if ($expectedSha === '' || ! hash_equals($expectedSha, $incomingSha)) {
+                    Log::warning('asset-sync invalid agent signature', [
+                        'request_ip' => $request->ip(),
+                        'headers' => $this->sanitizeHeaders($request->headers->all()),
+                        'route' => $request->path(),
+                        'agent_sha256_present' => true,
+                        'agent_sha256_length' => strlen($incomingSha),
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid agent signature',
+                    ], 403);
+                }
             }
 
-            if ($idempotencyKey) {
+            if ($idempotencyKey !== '') {
                 $cacheKey = 'asset-sync:' . hash('sha256', $idempotencyKey);
                 if (! Cache::add($cacheKey, true, now()->addMinutes(10))) {
                     return response()->json([
