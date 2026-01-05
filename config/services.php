@@ -37,6 +37,10 @@ return [
 
     'asset_sync' => [
         'token' => env('ASSET_SYNC_TOKEN'),
+        'tokens' => env('ASSET_SYNC_TOKENS') ? json_decode(env('ASSET_SYNC_TOKENS'), true) : null,
+        'agent_sha256' => env('ASSET_SYNC_AGENT_SHA256'),
+        'department' => env('ASSET_SYNC_DEPARTMENT'),
+        'factory' => env('ASSET_SYNC_FACTORY'),
     ],
 
 ];

@@ -153,8 +153,18 @@ if (-not $ip) {
 Write-Log "Collected: Host=$hostname User=$userName Category=$Category RAM=${ramGb}GB OS=$osName IP=$ip" "INFO"
 
 # ===== 2. BUILD JSON PAYLOAD =====
+$serialNumber = $bios.SerialNumber
+if ($serialNumber) {
+    $serialNumber = $serialNumber.Trim()
+}
+if (-not $serialNumber) {
+    Write-Log "Missing BIOS serial number. Sync aborted." "ERROR" -ToConsole -Color "Red"
+    exit 1
+}
+$idempotencyKey = [guid]::NewGuid().ToString()
+
 $payload = @{
-    asset_code     = $hostname
+    asset_code     = $serialNumber
     hostname       = $hostname
     user_name      = $userName
     factory        = $Factory
@@ -162,7 +172,7 @@ $payload = @{
     category       = $Category
     brand          = $cs.Manufacturer
     model          = $cs.Model
-    serial_number  = $bios.SerialNumber
+    serial_number  = $serialNumber
     cpu            = $cpu
     ram_gb         = $ramGb
     storage_gb     = $storageTotalGb
@@ -172,6 +182,7 @@ $payload = @{
     status         = "Active"
     agent_version  = $AgentVersion
     agent_sha256   = $AgentSha256
+    idempotency_key = $idempotencyKey
 }
 
 $body = $payload | ConvertTo-Json
