@@ -7,6 +7,7 @@ use App\Models\Asset;
 use App\Models\Category;
 use App\Models\Department;
 use App\Models\AssetSyncLog;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -87,6 +88,7 @@ class AssetSyncController extends Controller
                     Log::warning('asset-sync invalid agent signature', [
                         'request_ip' => $request->ip(),
                         'headers' => $this->sanitizeHeaders($request->headers->all()),
+                        'payload' => $this->sanitizePayload($request->all()),
                         'route' => $request->path(),
                         'agent_sha256_present' => true,
                         'agent_sha256_length' => strlen($incomingSha),
@@ -216,23 +218,33 @@ class AssetSyncController extends Controller
 
             return response()->json([
                 'success' => true,
-                'asset_id' => $asset->id,
-                'mode' => $mode,
+                'message' => 'Asset synced',
+                'data' => [
+                    'asset_id' => $asset->id,
+                    'mode' => $mode,
+                ],
             ]);
         } catch (Throwable $e) {
             $errorId = (string) Str::uuid();
-            Log::error('asset-sync failed', [
+            $context = [
                 'error_id' => $errorId,
+                'exception_class' => get_class($e),
                 'exception' => $e->getMessage(),
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
-                'payload' => $request->all(),
+                'payload' => $this->sanitizePayload($request->all()),
                 'request_ip' => $request->ip(),
                 'headers' => $this->sanitizeHeaders($request->headers->all()),
                 'route' => $request->path(),
-            ]);
+            ];
+            if ($e instanceof QueryException) {
+                $context['sql'] = $e->getSql();
+                $context['bindings'] = $this->sanitizeBindings($e->getBindings());
+            }
+
+            Log::error('asset-sync failed', $context);
 
             try {
                 AssetSyncLog::create([
@@ -248,6 +260,7 @@ class AssetSyncController extends Controller
             } catch (Throwable $logException) {
                 Log::warning('asset-sync audit log failed', [
                     'error_id' => $errorId,
+                    'exception_class' => get_class($logException),
                     'message' => $logException->getMessage(),
                     'file' => $logException->getFile(),
                     'line' => $logException->getLine(),
@@ -269,7 +282,7 @@ class AssetSyncController extends Controller
     {
         Log::warning('asset-sync validation failed', [
             'errors' => $errors,
-            'payload' => $request->all(),
+            'payload' => $this->sanitizePayload($request->all()),
             'request_ip' => $request->ip(),
             'headers' => $this->sanitizeHeaders($request->headers->all()),
             'route' => $request->path(),
@@ -280,6 +293,64 @@ class AssetSyncController extends Controller
             'message' => 'Validation failed',
             'errors' => $errors,
         ], 422);
+    }
+
+    protected function sanitizePayload(array $payload): array
+    {
+        $redactKeys = ['token', 'authorization', 'password', 'secret', 'agent_sha256', 'idempotency_key'];
+
+        return $this->redactArray($payload, $redactKeys);
+    }
+
+    protected function redactArray(array $payload, array $redactKeys): array
+    {
+        $sanitized = [];
+        foreach ($payload as $key => $value) {
+            $keyString = strtolower((string) $key);
+            if (in_array($keyString, $redactKeys, true)) {
+                $sanitized[$key] = '[redacted]';
+                continue;
+            }
+
+            if (is_array($value)) {
+                $sanitized[$key] = $this->redactArray($value, $redactKeys);
+                continue;
+            }
+
+            $sanitized[$key] = $this->redactSensitiveValue($value);
+        }
+
+        return $sanitized;
+    }
+
+    protected function sanitizeBindings(array $bindings): array
+    {
+        return array_map(function ($binding) {
+            return $this->redactSensitiveValue($binding);
+        }, $bindings);
+    }
+
+    protected function redactSensitiveValue(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return $value;
+        }
+
+        $expectedToken = trim((string) config('services.asset_sync.token'));
+        if ($expectedToken !== '' && hash_equals($expectedToken, $trimmed)) {
+            return '[redacted]';
+        }
+
+        if (stripos($trimmed, 'bearer ') === 0) {
+            return $this->redactAuthorization($trimmed);
+        }
+
+        return $value;
     }
 
     protected function sanitizeHeaders(array $headers): array

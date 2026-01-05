@@ -22,9 +22,12 @@ class AssetSyncTest extends TestCase
         ]);
 
         $payload = [
+            'asset_code' => 'SN-001',
             'hostname' => 'laptop-01',
             'serial_number' => 'SN-001',
-            'category' => 'Laptop',
+            'factory' => 'Factory A',
+            'department' => 'IT',
+            'user_name' => 'Jane Doe',
         ];
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
@@ -35,6 +38,7 @@ class AssetSyncTest extends TestCase
         $response->assertStatus(200)
             ->assertJson([
                 'success' => true,
+                'message' => 'Asset synced',
             ]);
 
         $this->assertDatabaseHas('assets', [

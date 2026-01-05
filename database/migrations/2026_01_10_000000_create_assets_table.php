@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('asset_code')->unique();
             $table->string('name');
-            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('serial_number')->nullable();
             $table->enum('status', ['available', 'in_use', 'maintenance', 'broken'])->default('available');
             $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
