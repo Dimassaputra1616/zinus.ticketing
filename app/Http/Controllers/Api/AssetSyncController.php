@@ -138,8 +138,9 @@ class AssetSyncController extends Controller
             }
 
             $departmentId = null;
-            $departmentName = $scope['department'] ?? null;
+            $departmentName = $scope['department'] ?? ($data['department'] ?? null);
             if ($departmentName) {
+                $departmentName = trim((string) $departmentName);
                 $department = Department::firstOrCreate(['name' => $departmentName]);
                 $departmentId = $department->id;
             }
