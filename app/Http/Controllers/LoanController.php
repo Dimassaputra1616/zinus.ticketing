@@ -64,11 +64,6 @@ class LoanController extends Controller
             ->where('status', 'available')
             ->whereNull('user_id')
             ->whereNull('deleted_at')
-            ->where(function ($query) {
-                $query->where('category', 'Laptop')
-                    ->orWhere('category', 'Monitor')
-                    ->orWhereHas('categoryRel', fn ($categoryQuery) => $categoryQuery->where('name', 'Monitor'));
-            })
             ->with('categoryRel');
 
         $spareDevices = $spareDevicesQuery->orderBy('name')->get(['id', 'asset_code', 'name', 'category', 'category_id']);
@@ -120,12 +115,7 @@ class LoanController extends Controller
             ->whereKey($request->asset_id)
             ->where('status', 'available')
             ->whereNull('user_id')
-            ->whereNull('deleted_at')
-            ->where(function ($query) {
-                $query->where('category', 'Laptop')
-                    ->orWhere('category', 'Monitor')
-                    ->orWhereHas('categoryRel', fn ($categoryQuery) => $categoryQuery->where('name', 'Monitor'));
-            });
+            ->whereNull('deleted_at');
 
         if (! $assetQuery->exists()) {
             throw ValidationException::withMessages([

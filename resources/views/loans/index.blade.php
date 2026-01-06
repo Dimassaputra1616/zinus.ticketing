@@ -171,7 +171,7 @@
                                 <option value="">{{ $noSpareDevices ? 'Tidak ada device spare tersedia' : 'Pilih device' }}</option>
                                 @foreach ($spareDevices as $asset)
                                     @php
-                                        $assetCategory = $asset->category === 'Monitor' || $asset->categoryRel?->name === 'Monitor' ? 'Monitor' : 'Laptop';
+                                        $assetCategory = $asset->category ?? $asset->categoryRel?->name ?? 'Asset';
                                         $assetCodeLabel = $asset->asset_code ? '[' . $asset->asset_code . '] ' : '';
                                     @endphp
                                     <option value="{{ $asset->id }}">{{ $assetCodeLabel }}{{ $asset->name }} ({{ $assetCategory }})</option>
@@ -180,7 +180,7 @@
                             @if ($noSpareDevices)
                                 <div class="mt-2 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
                                     <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                                    Stok spare habis untuk Laptop/Monitor yang available.
+                                    Stok spare habis untuk asset yang available.
                                 </div>
                             @endif
                         </div>
