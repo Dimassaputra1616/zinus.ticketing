@@ -61,6 +61,9 @@ class AssetSyncController extends Controller
         $assetCode = $serialNumber;
         $ip = $request->ip();
         $hostname = $data['hostname'] ?? null;
+        if ($hostname !== null) {
+            $hostname = trim((string) $hostname);
+        }
         $userName = $data['user_name'] ?? null;
         $incomingSha = isset($data['agent_sha256']) ? trim((string) $data['agent_sha256']) : '';
         if ($incomingSha === '') {
@@ -137,6 +140,23 @@ class AssetSyncController extends Controller
                 ], 409);
             }
 
+            if ($hostname !== '') {
+                $hostnameConflict = Asset::query()
+                    ->where('sync_source', 'agent')
+                    ->where(function ($query) use ($hostname) {
+                        $query->where('hostname', $hostname)
+                            ->orWhere('name', $hostname);
+                    })
+                    ->where('serial_number', '!=', $serialNumber)
+                    ->exists();
+                if ($hostnameConflict) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Hostname already used by another asset.',
+                    ], 409);
+                }
+            }
+
             $departmentId = null;
             $departmentName = $scope['department'] ?? ($data['department'] ?? null);
             if ($departmentName) {
@@ -170,6 +190,7 @@ class AssetSyncController extends Controller
 
             $payload = [
                 'name' => $hostname,
+                'hostname' => $hostname,
                 'factory' => $factory,
                 'category' => $categoryName,
                 'category_id' => $categoryId,
