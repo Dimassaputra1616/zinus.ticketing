@@ -17,7 +17,7 @@
                     <th class="px-3 py-2 text-left">User</th>
                     <th class="px-3 py-2 text-left">Departemen</th>
                     <th class="px-3 py-2 text-left">Asset</th>
-                    <th class="px-3 py-2 text-left">Kode Asset</th>
+                    <th class="px-3 py-2 text-left">Serial Number</th>
                     <th class="px-3 py-2 text-left whitespace-nowrap">Tgl Pinjam</th>
                     <th class="px-3 py-2 text-left whitespace-nowrap">Tgl Kembali</th>
                     <th class="px-3 py-2 text-left whitespace-nowrap">Status</th>
@@ -44,15 +44,19 @@
                     <td class="px-3 py-3 max-w-[220px] break-words">
                         @php
                             $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
-                            $assetCode = $log->asset?->asset_code ?? $log->device?->code;
+                            $assetSerial = $log->asset?->serial_number
+                                ?? $log->device?->serial_number
+                                ?? $log->asset_code
+                                ?? $log->asset?->asset_code
+                                ?? $log->device?->code;
                         @endphp
                         <div class="font-semibold">{{ $assetName }}</div>
-                        @if ($assetCode)
-                            <div class="text-xs text-slate-500">{{ $assetCode }}</div>
+                        @if ($assetSerial)
+                            <div class="text-xs text-slate-500">{{ $assetSerial }}</div>
                         @endif
                     </td>
                     <td class="px-3 py-3 text-[13px] text-slate-700 whitespace-nowrap">
-                        {{ $log->asset_code ?? $log->asset?->asset_code ?? '—' }}
+                        {{ $assetSerial ?? '—' }}
                     </td>
                     <td class="px-3 py-3 text-[13px] text-slate-700 whitespace-nowrap">{{ optional($log->start_date)->format('d M Y') }}</td>
                     <td class="px-3 py-3 text-[13px] text-slate-700 whitespace-nowrap">{{ optional($log->end_date)->format('d M Y') }}</td>
@@ -184,16 +188,20 @@
                     <p class="font-semibold text-slate-500">Asset</p>
                     @php
                         $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
-                        $assetCode = $log->asset?->asset_code ?? $log->device?->code;
+                        $assetSerial = $log->asset?->serial_number
+                            ?? $log->device?->serial_number
+                            ?? $log->asset_code
+                            ?? $log->asset?->asset_code
+                            ?? $log->device?->code;
                     @endphp
                     <p class="text-slate-800">{{ $assetName }}</p>
-                    @if ($assetCode)
-                        <p class="text-[11px] text-slate-500">{{ $assetCode }}</p>
+                    @if ($assetSerial)
+                        <p class="text-[11px] text-slate-500">{{ $assetSerial }}</p>
                     @endif
                 </div>
                 <div>
-                    <p class="font-semibold text-slate-500">Kode Asset</p>
-                    <p class="text-slate-800">{{ $log->asset_code ?? $log->asset?->asset_code ?? '—' }}</p>
+                    <p class="font-semibold text-slate-500">Serial Number</p>
+                    <p class="text-slate-800">{{ $assetSerial ?? '—' }}</p>
                 </div>
                 <div>
                     <p class="font-semibold text-slate-500">Departemen</p>

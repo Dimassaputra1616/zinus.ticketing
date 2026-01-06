@@ -32,14 +32,18 @@
                         @endif
                     </td>
                     <td class="px-3 py-3 max-w-[220px] break-words">
-                        @php
-                            $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
-                            $assetCode = $log->asset?->asset_code ?? $log->device?->code;
-                        @endphp
-                        <div class="font-semibold">{{ $assetName }}</div>
-                        @if ($assetCode)
-                            <div class="text-xs text-slate-500">{{ $assetCode }}</div>
-                        @endif
+                    @php
+                        $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
+                        $assetSerial = $log->asset?->serial_number
+                            ?? $log->device?->serial_number
+                            ?? $log->asset_code
+                            ?? $log->asset?->asset_code
+                            ?? $log->device?->code;
+                    @endphp
+                    <div class="font-semibold">{{ $assetName }}</div>
+                    @if ($assetSerial)
+                        <div class="text-xs text-slate-500">{{ $assetSerial }}</div>
+                    @endif
                     </td>
                     <td class="px-3 py-3 text-[13px] text-slate-700 whitespace-nowrap">{{ optional($log->start_date)->format('d M Y') }}</td>
                     <td class="px-3 py-3 text-[13px] text-slate-700 whitespace-nowrap">{{ optional($log->end_date)->format('d M Y') }}</td>
@@ -102,11 +106,15 @@
                     <p class="text-xs font-semibold text-slate-500">Asset</p>
                     @php
                         $assetName = $log->asset?->name ?? $log->device?->name ?? '-';
-                        $assetCode = $log->asset?->asset_code ?? $log->device?->code;
+                        $assetSerial = $log->asset?->serial_number
+                            ?? $log->device?->serial_number
+                            ?? $log->asset_code
+                            ?? $log->asset?->asset_code
+                            ?? $log->device?->code;
                     @endphp
                     <p class="text-sm font-semibold text-slate-900">{{ $assetName }}</p>
-                    @if ($assetCode)
-                        <p class="text-xs text-slate-500">{{ $assetCode }}</p>
+                    @if ($assetSerial)
+                        <p class="text-xs text-slate-500">{{ $assetSerial }}</p>
                     @endif
                 </div>
                 @php
