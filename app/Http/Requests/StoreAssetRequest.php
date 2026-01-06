@@ -22,7 +22,7 @@ class StoreAssetRequest extends FormRequest
             'factory' => ['nullable', 'string', 'max:150'],
             'brand' => ['nullable', 'string', 'max:150'],
             'model' => ['nullable', 'string', 'max:150'],
-            'serial_number' => ['nullable', 'string', 'max:191'],
+            'serial_number' => ['nullable', 'string', 'max:191', 'unique:assets,serial_number'],
             'specs' => ['nullable', 'string', 'max:5000'],
             'status' => ['required', Rule::in(Asset::STATUSES)],
             'department_id' => ['nullable', 'exists:departments,id'],

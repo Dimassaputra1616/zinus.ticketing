@@ -383,8 +383,8 @@
                         <article class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
-                                    <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Asset Code</p>
-                                    <p class="text-sm font-semibold text-slate-900 truncate">{{ $asset->asset_code }}</p>
+                                    <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Hostname</p>
+                                    <p class="text-sm font-semibold text-slate-900 truncate" title="Asset Code: {{ $asset->asset_code }}">{{ $asset->hostname ?? $asset->name ?? $asset->asset_code }}</p>
                                     <p class="text-xs text-slate-500 truncate">{{ $asset->brand ?? '-' }} • {{ $asset->model ?? ($asset->name ?? '-') }}</p>
                                 </div>
                                 <span class="inline-flex items-center rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.25em] {{ $statusTone }}">
@@ -508,7 +508,7 @@
                     <table class="w-full table-auto text-sm border-separate border-spacing-y-2">
                         <thead>
                             <tr class="text-left text-xs font-semibold tracking-[0.15em] text-slate-500">
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Asset Code</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Hostname</th>
                                 <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Factory</th>
                                 <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Department</th>
                                 <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Category</th>
@@ -545,7 +545,7 @@
                                     onclick="window.location='{{ route('assets.show', $asset) }}'"
                                 >
                                     <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-900">
-                                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.3em] text-emerald-700 ring-1 ring-emerald-200/70">{{ $asset->asset_code }}</span>
+                                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.3em] text-emerald-700 ring-1 ring-emerald-200/70" title="Asset Code: {{ $asset->asset_code }}">{{ $asset->hostname ?? $asset->name ?? $asset->asset_code }}</span>
                                     </td>
                                     <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->factory ?? $asset->location ?? '-' }}</td>
                                     <td class="px-3 py-2.5 text-slate-800 break-words">{{ $asset->department->name ?? '-' }}</td>

@@ -1,11 +1,8 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [string]$Token,
-    [Parameter(Mandatory = $true)]
-    [string]$Factory,
-    [Parameter(Mandatory = $true)]
-    [string]$Department,
-    [string]$ServerUrl = "http://10.62.38.225:8000/api/asset-sync",
+    [string]$Token = "qAccfWhyBO79J0GkaTVOkhGzFXbIfdiuhMmpdMiPLtZxkkNCw3qijMZF9oaGEBXQ",
+    [string]$Factory = "GCI-HWANG",
+    [string]$Department = "IT",
+    [string]$ServerUrl = "http://10.62.38.208/api/asset-sync",
     [string]$AgentVersion = "1.0.0",
     [switch]$SkipRun
 )
@@ -55,12 +52,12 @@ Copy-Item -Path $sourceCmd -Destination $installCmd -Force
 $agentHash = (Get-FileHash -Path $installScript -Algorithm SHA256).Hash
 
 $config = [ordered]@{
-    server_url = $ServerUrl
-    token = $Token
-    factory = $Factory
-    department = $Department
+    server_url    = $ServerUrl
+    token         = $Token
+    factory       = $Factory
+    department    = $Department
     agent_version = $AgentVersion
-    agent_sha256 = $agentHash
+    agent_sha256  = $agentHash
 }
 
 $config | ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8

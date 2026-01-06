@@ -116,8 +116,21 @@ class AssetSyncController extends Controller
 
             $status = $this->normalizeStatus($data['status'] ?? null);
 
-            $conflictingAssetCode = Asset::query()
+            $existingAsset = Asset::withTrashed()
+                ->where('serial_number', $serialNumber)
+                ->orWhere('asset_code', $serialNumber)
+                ->first();
+            $restored = false;
+            if ($existingAsset && $existingAsset->trashed()) {
+                $existingAsset->restore();
+                $restored = true;
+            }
+
+            $conflictingAssetCode = Asset::withTrashed()
                 ->where('asset_code', $serialNumber)
+                ->when($existingAsset, function ($query) use ($existingAsset) {
+                    $query->where('id', '!=', $existingAsset->id);
+                })
                 ->where(function ($query) use ($serialNumber) {
                     $query->whereNull('serial_number')
                         ->orWhere('serial_number', '!=', $serialNumber);
@@ -130,8 +143,11 @@ class AssetSyncController extends Controller
                 ], 409);
             }
 
-            $serialDuplicates = Asset::query()
+            $serialDuplicates = Asset::withTrashed()
                 ->where('serial_number', $serialNumber)
+                ->when($existingAsset, function ($query) use ($existingAsset) {
+                    $query->where('id', '!=', $existingAsset->id);
+                })
                 ->count();
             if ($serialDuplicates > 1) {
                 return response()->json([
@@ -141,13 +157,15 @@ class AssetSyncController extends Controller
             }
 
             if ($hostname !== '') {
-                $hostnameConflict = Asset::query()
+                $hostnameConflict = Asset::withTrashed()
                     ->where('sync_source', 'agent')
                     ->where(function ($query) use ($hostname) {
                         $query->where('hostname', $hostname)
                             ->orWhere('name', $hostname);
                     })
-                    ->where('serial_number', '!=', $serialNumber)
+                    ->when($existingAsset, function ($query) use ($existingAsset) {
+                        $query->where('id', '!=', $existingAsset->id);
+                    })
                     ->exists();
                 if ($hostnameConflict) {
                     return response()->json([
@@ -212,20 +230,20 @@ class AssetSyncController extends Controller
                 'last_synced_at' => now(),
             ];
 
-            $existingAsset = Asset::query()
-                ->where('serial_number', $serialNumber)
-                ->first();
             if ($existingAsset && $existingAsset->department_id) {
                 unset($payload['department_id']);
             }
             $payload['asset_code'] = $assetCode;
 
-            $asset = Asset::updateOrCreate(
-                ['serial_number' => $serialNumber],
-                $payload
-            );
+            if ($existingAsset) {
+                $existingAsset->fill($payload);
+                $existingAsset->save();
+                $asset = $existingAsset->fresh();
+            } else {
+                $asset = Asset::create($payload);
+            }
 
-            $mode = $asset->wasRecentlyCreated ? 'created' : 'updated';
+            $mode = $existingAsset ? ($restored ? 'restored' : 'updated') : 'created';
 
             AssetSyncLog::create([
                 'asset_id' => $asset->id,
