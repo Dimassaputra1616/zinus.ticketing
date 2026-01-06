@@ -183,6 +183,19 @@ class LoanController extends Controller
         return redirect()->route('loans.index')->with('ok', 'Status peminjaman diperbarui.');
     }
 
+    public function destroy(Request $request, BorrowLog $loan)
+    {
+        $user = $request->user();
+
+        if (! $user || ! $user->isAdmin()) {
+            abort(403);
+        }
+
+        $loan->delete();
+
+        return redirect()->route('loans.index')->with('ok', 'Log peminjaman dihapus.');
+    }
+
     public function storeDevice(Request $request)
     {
         $user = $request->user();

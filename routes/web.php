@@ -117,6 +117,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/users/{user}/role', [UserController::class, 'updateRole'])->name('users.updateRole');
     Route::post('/admin/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.resetPassword');
     Route::post('/loans/{loan}/status', [App\Http\Controllers\LoanController::class, 'updateStatus'])->name('loans.updateStatus');
+    Route::delete('/loans/{loan}', [App\Http\Controllers\LoanController::class, 'destroy'])->name('loans.destroy');
     Route::get('/admin/assets', [App\Http\Controllers\AssetController::class, 'index'])->name('assets.index');
     Route::get('/admin/assets/locations', [App\Http\Controllers\AssetController::class, 'locations'])->name('assets.locations');
     Route::get('/admin/assets/departments', [App\Http\Controllers\AssetController::class, 'departments'])->name('assets.departments');

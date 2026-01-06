@@ -101,8 +101,8 @@
                                     default => [],
                                 };
                             @endphp
-                            @if ($availableActions)
-                                <div class="flex flex-wrap items-center justify-end gap-2">
+                            <div class="flex flex-wrap items-center justify-end gap-2">
+                                @if ($availableActions)
                                     @foreach ($availableActions as $statusKey => $label)
                                         <form method="POST" action="{{ route('loans.updateStatus', $log) }}" data-confirm="{{ $statusKey === \App\Models\BorrowLog::STATUS_REJECTED ? 'Tolak pengajuan ini?' : ($statusKey === \App\Models\BorrowLog::STATUS_RETURNED ? 'Tandai sudah kembali?' : '') }}" class="loan-action-form">
                                             @csrf
@@ -122,10 +122,21 @@
                                             </x-ui.button>
                                         </form>
                                     @endforeach
-                                </div>
-                            @else
-                                <span class="text-xs text-slate-400">—</span>
-                            @endif
+                                @endif
+                                <form method="POST" action="{{ route('loans.destroy', $log) }}" data-confirm="Hapus log peminjaman ini?" class="loan-delete-form">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-ui.button type="submit" size="sm" variant="ghost" class="text-xs inline-flex items-center gap-1 text-rose-600 hover:text-rose-700">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18" />
+                                            <path d="M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6m2 0v14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V6h10Z" />
+                                            <path d="M10 11v6" />
+                                            <path d="M14 11v6" />
+                                        </svg>
+                                        <span>Hapus</span>
+                                    </x-ui.button>
+                                </form>
+                            </div>
                     </td>
                 </tr>
             @empty
@@ -259,9 +270,20 @@
                             </x-ui.button>
                         </form>
                     @endforeach
-                @else
-                    <span class="text-xs text-slate-400">—</span>
                 @endif
+                <form method="POST" action="{{ route('loans.destroy', $log) }}" data-confirm="Hapus log peminjaman ini?" class="loan-delete-form">
+                    @csrf
+                    @method('DELETE')
+                    <x-ui.button type="submit" size="sm" variant="ghost" class="text-xs inline-flex items-center gap-1 text-rose-600 hover:text-rose-700">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18" />
+                            <path d="M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6m2 0v14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V6h10Z" />
+                            <path d="M10 11v6" />
+                            <path d="M14 11v6" />
+                        </svg>
+                        <span>Hapus</span>
+                    </x-ui.button>
+                </form>
             </div>
         </article>
     @empty
