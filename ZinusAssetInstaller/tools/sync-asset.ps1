@@ -8,6 +8,32 @@ $logRoot = Join-Path $installRoot "logs"
 $configPath = Join-Path $installRoot "config.json"
 $logFile = Join-Path $logRoot ("sync-{0}.log" -f (Get-Date -Format "yyyyMMdd"))
 
+$commonPlaceholders = @(
+    '(?i)^to be filled by o\.e\.m\.?$',
+    '(?i)^default string$',
+    '(?i)^system manufacturer$',
+    '(?i)^system product name$',
+    '(?i)^not applicable$',
+    '(?i)^not specified$',
+    '(?i)^not available$',
+    '(?i)^unknown$',
+    '(?i)^none$',
+    '(?i)^n/?a$',
+    '(?i)^o\.e\.m\.?$',
+    '(?i)^oem$'
+)
+
+$serialPlaceholders = $commonPlaceholders + @(
+    '(?i)^system serial number$',
+    '(?i)^serial number$',
+    '(?i)^123456789$',
+    '^(?i)0+$',
+    '(?i)^default$',
+    '(?i)^not present$',
+    '(?i)^00000000-0000-0000-0000-000000000000$',
+    '(?i)^ffffffff-ffff-ffff-ffff-ffffffffffff$'
+)
+
 if (-not (Test-Path $logRoot)) {
     New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
 }
@@ -21,6 +47,30 @@ function Write-Log {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $line = "[$timestamp] $Level $Message"
     Add-Content -Path $logFile -Value $line
+}
+
+function Normalize-AssetValue {
+    param(
+        [string]$Value,
+        [string[]]$Placeholders
+    )
+
+    if ($null -eq $Value) {
+        return $null
+    }
+
+    $trimmed = $Value.Trim()
+    if ($trimmed -eq "") {
+        return $null
+    }
+
+    foreach ($pattern in $Placeholders) {
+        if ($trimmed -match $pattern) {
+            return $null
+        }
+    }
+
+    return $trimmed
 }
 
 function Get-PrimaryIpv4 {
@@ -59,13 +109,15 @@ function Get-DiskInfo {
 }
 
 function Get-SerialNumber {
+    param(
+        [string[]]$SerialPlaceholders
+    )
+
     try {
         $serial = Get-CimInstance Win32_BIOS -ErrorAction SilentlyContinue |
             Select-Object -First 1 -ExpandProperty SerialNumber
-        if ($null -ne $serial) {
-            $serial = $serial.Trim()
-        }
-        if ($serial -and $serial -notmatch '^(To be filled by O\.E\.M\.|Default string)$') {
+        $serial = Normalize-AssetValue -Value $serial -Placeholders $SerialPlaceholders
+        if ($serial) {
             return $serial
         }
     } catch {
@@ -75,9 +127,29 @@ function Get-SerialNumber {
     try {
         $serial = Get-CimInstance Win32_ComputerSystemProduct -ErrorAction SilentlyContinue |
             Select-Object -First 1 -ExpandProperty IdentifyingNumber
-        if ($null -ne $serial) {
-            $serial = $serial.Trim()
+        $serial = Normalize-AssetValue -Value $serial -Placeholders $SerialPlaceholders
+        if ($serial) {
+            return $serial
         }
+    } catch {
+        return $null
+    }
+
+    try {
+        $serial = Get-CimInstance Win32_BaseBoard -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty SerialNumber
+        $serial = Normalize-AssetValue -Value $serial -Placeholders $SerialPlaceholders
+        if ($serial) {
+            return $serial
+        }
+    } catch {
+        return $null
+    }
+
+    try {
+        $serial = Get-CimInstance Win32_ComputerSystemProduct -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty UUID
+        $serial = Normalize-AssetValue -Value $serial -Placeholders $SerialPlaceholders
         if ($serial) {
             return $serial
         }
@@ -173,16 +245,22 @@ if (-not $osName) {
 $memoryGb = [math]::Round($csInfo.TotalPhysicalMemory / 1GB, 2)
 $ipAddress = Get-PrimaryIpv4
 $installedSoftware = @()
-$serialNumber = Get-SerialNumber
-$brand = $csInfo.Manufacturer
-$model = $csInfo.Model
+$serialNumber = Get-SerialNumber -SerialPlaceholders $serialPlaceholders
+$brand = Normalize-AssetValue -Value $csInfo.Manufacturer -Placeholders $commonPlaceholders
+$model = Normalize-AssetValue -Value $csInfo.Model -Placeholders $commonPlaceholders
 $category = Get-CategoryFromChassis
 
-if ($brand) {
-    $brand = $brand.Trim()
+try {
+    $baseboard = Get-CimInstance Win32_BaseBoard -ErrorAction SilentlyContinue | Select-Object -First 1
+} catch {
+    $baseboard = $null
 }
-if ($model) {
-    $model = $model.Trim()
+
+if (-not $brand -and $baseboard) {
+    $brand = Normalize-AssetValue -Value $baseboard.Manufacturer -Placeholders $commonPlaceholders
+}
+if (-not $model -and $baseboard) {
+    $model = Normalize-AssetValue -Value $baseboard.Product -Placeholders $commonPlaceholders
 }
 
 if (-not $serialNumber) {
