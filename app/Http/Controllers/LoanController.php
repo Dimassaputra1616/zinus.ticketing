@@ -8,6 +8,7 @@ use App\Models\Department;
 use App\Models\Device;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
@@ -60,10 +61,23 @@ class LoanController extends Controller
             ->orderBy('name')
             ->get(['id', 'asset_code', 'name', 'category', 'category_id']);
 
+        $activeLoanAssetIds = BorrowLog::query()
+            ->whereNotNull('asset_id')
+            ->whereIn('status', [BorrowLog::STATUS_WAITING, BorrowLog::STATUS_APPROVED])
+            ->select('asset_id');
+
+        $activeLoanAssetCodes = BorrowLog::query()
+            ->whereNotNull('asset_code')
+            ->where('asset_code', '!=', '')
+            ->whereIn('status', [BorrowLog::STATUS_WAITING, BorrowLog::STATUS_APPROVED])
+            ->select('asset_code');
+
         $spareDevicesQuery = Asset::query()
             ->where('status', 'available')
             ->whereNull('user_id')
             ->whereNull('deleted_at')
+            ->whereNotIn('id', $activeLoanAssetIds)
+            ->whereNotIn('asset_code', $activeLoanAssetCodes)
             ->where(function ($query) {
                 $query->where('category', 'Laptop')
                     ->orWhereHas('categoryRel', fn ($categoryQuery) => $categoryQuery->where('name', 'Laptop'));
@@ -115,31 +129,52 @@ class LoanController extends Controller
             'reason' => 'nullable|string|max:500',
         ]);
 
-        $assetQuery = Asset::query()
-            ->whereKey($request->asset_id)
-            ->where('status', 'available')
-            ->whereNull('user_id')
-            ->whereNull('deleted_at')
-            ->where(function ($query) {
-                $query->where('category', 'Laptop')
-                    ->orWhereHas('categoryRel', fn ($categoryQuery) => $categoryQuery->where('name', 'Laptop'));
-            });
+        DB::transaction(function () use ($request) {
+            $asset = Asset::query()
+                ->whereKey($request->asset_id)
+                ->where('status', 'available')
+                ->whereNull('user_id')
+                ->whereNull('deleted_at')
+                ->where(function ($query) {
+                    $query->where('category', 'Laptop')
+                        ->orWhereHas('categoryRel', fn ($categoryQuery) => $categoryQuery->where('name', 'Laptop'));
+                })
+                ->lockForUpdate()
+                ->first();
 
-        if (! $assetQuery->exists()) {
-            throw ValidationException::withMessages([
-                'asset_id' => 'Device tidak tersedia untuk peminjaman.',
+            if (! $asset) {
+                throw ValidationException::withMessages([
+                    'asset_id' => 'Device tidak tersedia untuk peminjaman.',
+                ]);
+            }
+
+            $assetCode = $asset->asset_code;
+            $activeLoanExists = BorrowLog::query()
+                ->whereIn('status', [BorrowLog::STATUS_WAITING, BorrowLog::STATUS_APPROVED])
+                ->where(function ($query) use ($asset, $assetCode) {
+                    $query->where('asset_id', $asset->id);
+                    if ($assetCode !== null && $assetCode !== '') {
+                        $query->orWhere('asset_code', $assetCode);
+                    }
+                })
+                ->exists();
+            if ($activeLoanExists) {
+                throw ValidationException::withMessages([
+                    'asset_id' => 'Asset sudah diajukan atau sedang dipinjam.',
+                ]);
+            }
+
+            BorrowLog::create([
+                'user_id' => $request->user()->id,
+                'department_id' => $request->department_id,
+                'asset_id' => $asset->id,
+                'asset_code' => $assetCode,
+                'start_date' => Carbon::parse($request->start_date),
+                'end_date' => Carbon::parse($request->end_date),
+                'reason' => $request->reason,
+                'status' => BorrowLog::STATUS_WAITING,
             ]);
-        }
-
-        BorrowLog::create([
-            'user_id' => $request->user()->id,
-            'department_id' => $request->department_id,
-            'asset_id' => $request->asset_id,
-            'start_date' => Carbon::parse($request->start_date),
-            'end_date' => Carbon::parse($request->end_date),
-            'reason' => $request->reason,
-            'status' => BorrowLog::STATUS_WAITING,
-        ]);
+        });
 
         return redirect()->route('loans.index')->with('ok', 'Pengajuan peminjaman dikirim.');
     }
@@ -163,22 +198,61 @@ class LoanController extends Controller
         ]);
 
         $status = $validated['status'];
-        $loan->status = $status;
-        $loan->processed_by = $user->id;
-        $loan->processed_at = now();
 
-        if ($status === BorrowLog::STATUS_APPROVED) {
-            $assetCode = $validated['asset_code'] ?? null;
-            if ($assetCode !== null && $assetCode !== '') {
-                $loan->asset_code = $assetCode;
+        DB::transaction(function () use ($loan, $user, $status, $validated) {
+            if ($status === BorrowLog::STATUS_APPROVED) {
+                $assetCode = $loan->asset_code ?: ($loan->asset?->asset_code ?? null);
+                if ($loan->asset_id || $assetCode) {
+                    $conflict = BorrowLog::query()
+                        ->whereIn('status', [BorrowLog::STATUS_WAITING, BorrowLog::STATUS_APPROVED])
+                        ->where('id', '!=', $loan->id)
+                        ->where(function ($query) use ($loan, $assetCode) {
+                            if ($loan->asset_id) {
+                                $query->where('asset_id', $loan->asset_id);
+                            }
+                            if ($assetCode !== null && $assetCode !== '') {
+                                $query->orWhere('asset_code', $assetCode);
+                            }
+                        })
+                        ->exists();
+                    if ($conflict) {
+                        throw ValidationException::withMessages([
+                            'status' => 'Asset sudah dipinjam atau sedang diajukan.',
+                        ]);
+                    }
+                }
             }
-        }
 
-        if ($status === BorrowLog::STATUS_RETURNED) {
-            $loan->returned_at = now();
-        }
+            $loan->status = $status;
+            $loan->processed_by = $user->id;
+            $loan->processed_at = now();
 
-        $loan->save();
+            if ($status === BorrowLog::STATUS_APPROVED) {
+                $assetCode = $validated['asset_code'] ?? null;
+                if ($assetCode !== null && $assetCode !== '') {
+                    $loan->asset_code = $assetCode;
+                }
+                if (! $loan->asset_code && $loan->asset?->asset_code) {
+                    $loan->asset_code = $loan->asset->asset_code;
+                }
+                if ($loan->asset) {
+                    $loan->asset->status = Asset::STATUS_IN_USE;
+                    $loan->asset->user_id = $loan->user_id;
+                    $loan->asset->save();
+                }
+            }
+
+            if ($status === BorrowLog::STATUS_RETURNED) {
+                $loan->returned_at = now();
+                if ($loan->asset) {
+                    $loan->asset->status = Asset::STATUS_AVAILABLE;
+                    $loan->asset->user_id = null;
+                    $loan->asset->save();
+                }
+            }
+
+            $loan->save();
+        });
 
         return redirect()->route('loans.index')->with('ok', 'Status peminjaman diperbarui.');
     }
