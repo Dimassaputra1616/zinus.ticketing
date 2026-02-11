@@ -47,7 +47,7 @@ class ConversationApiController extends Controller
     /**
      * Send admin reply to conversation
      */
-    public function sendMessage(Request $request, int $id): JsonResponse
+    public function sendMessage(Request $request, $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'body' => 'required|string|max:1000',
@@ -60,7 +60,7 @@ class ConversationApiController extends Controller
             ], 422);
         }
 
-        $conversation = Conversation::findOrFail($id);
+        $conversation = Conversation::findOrFail((int) $id);
 
         // Create admin message (user_id = null for admin)
         $message = Message::create([
