@@ -42,7 +42,10 @@ class ChatWidget extends Component
 
     public function loadUserList()
     {
-        $query = \App\Models\User::where('is_admin', false);
+        $query = \App\Models\User::where(function($q) {
+            $q->where('is_admin', false)
+              ->where('role', '!=', 'admin');
+        });
         
         if ($this->searchUser) {
             $query->where(function($q) {
@@ -104,8 +107,11 @@ class ChatWidget extends Component
 
     public function loadAdmins()
     {
-        // Load all IT admins (users with is_admin = true)
-        $this->availableAdmins = \App\Models\User::where('is_admin', true)
+        // Load all IT admins (users with is_admin = true OR role = 'admin')
+        $this->availableAdmins = \App\Models\User::where(function($q) {
+                $q->where('is_admin', true)
+                  ->orWhere('role', 'admin');
+            })
             ->select('id', 'name', 'email')
             ->get()
             ->toArray();
@@ -164,11 +170,11 @@ class ChatWidget extends Component
     public function loadConversation()
     {
         // Skip loading conversation if admin is in list view
-        if (Auth::user()->is_admin && $this->viewMode === 'list') {
+        if (Auth::user()->isAdmin() && $this->viewMode === 'list') {
             return;
         }
 
-        if (Auth::user()->is_admin && $this->selectedUserId) {
+        if (Auth::user()->isAdmin() && $this->selectedUserId) {
             // Admin viewing specific user's conversation
             $conversation = Conversation::where('user_id', $this->selectedUserId)
                 ->where('is_open', true)
@@ -191,7 +197,7 @@ class ChatWidget extends Component
             $this->conversationId = $conversation->id;
             
             // For regular users, calculate total unread count before loading messages (which might mark as read)
-            if (!Auth::user()->is_admin) {
+            if (!Auth::user()->isAdmin()) {
                 $this->totalUnreadCount = Message::where('conversation_id', $this->conversationId)
                     ->where('user_id', '!=', Auth::id()) // Messages from admin/others
                     ->where('is_read', false)
@@ -235,7 +241,7 @@ class ChatWidget extends Component
 
         // Mark unread messages as read ONLY when user is viewing chat AND widget is open
         // Don't mark as read when admin is in list view (viewMode='list')
-        $shouldMarkAsRead = Auth::user()->is_admin
+        $shouldMarkAsRead = Auth::user()->isAdmin()
             ? $this->viewMode === 'chat' // Admin: only when viewing specific chat
             : true; // Regular user: always mark as read IF open
 
@@ -247,7 +253,7 @@ class ChatWidget extends Component
                 ->update(['is_read' => true]);
                 
             // Update counts immediately after reading
-            if (Auth::user()->is_admin) {
+            if (Auth::user()->isAdmin()) {
                 // Admin in chat view: we don't recalculate total list count here efficiently, 
                 // but since we are in chat view, total count should decrease by the number of messages read?
                 // Actually, if admin is in chat view, the list is hidden.
@@ -277,7 +283,7 @@ class ChatWidget extends Component
         }
 
         // Determine target user ID
-        $targetUserId = Auth::user()->is_admin && $this->selectedUserId 
+        $targetUserId = Auth::user()->isAdmin() && $this->selectedUserId 
             ? $this->selectedUserId 
             : Auth::id();
 
@@ -296,7 +302,7 @@ class ChatWidget extends Component
         }
 
         // Assign admin if this is regular user's first message and admin is selected
-        if (!Auth::user()->is_admin && $this->selectedAdminId && !$conversation->assigned_admin_id) {
+        if (!Auth::user()->isAdmin() && $this->selectedAdminId && !$conversation->assigned_admin_id) {
             $conversation->update(['assigned_admin_id' => $this->selectedAdminId]);
         }
 
@@ -308,7 +314,7 @@ class ChatWidget extends Component
             
         // For admin, check last message from admin (user_id is null)
         // For regular user, check last message from user
-        if (Auth::user()->is_admin) {
+        if (Auth::user()->isAdmin()) {
             $lastMessage = Message::where('conversation_id', $conversation->id)
                 ->whereNull('user_id')
                 ->latest()
@@ -329,7 +335,7 @@ class ChatWidget extends Component
         // Admin messages have user_id = null, regular user messages have user_id = auth id
         Message::create([
             'conversation_id' => $conversation->id,
-            'user_id' => Auth::user()->is_admin ? null : Auth::id(),
+            'user_id' => Auth::user()->isAdmin() ? null : Auth::id(),
             'body' => $this->body,
             'is_read' => false,
         ]);
