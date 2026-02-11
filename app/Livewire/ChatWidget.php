@@ -60,7 +60,8 @@ class ChatWidget extends Component
                 $q->where('is_open', true)
                   ->with(['messages' => function ($mq) {
                       $mq->latest()->limit(1);
-                  }]);
+                  }])
+                  ->with('assignedAdmin:id,name'); // Eager load admin info
             }])
             ->get()
             ->map(function ($user) {
@@ -73,10 +74,17 @@ class ChatWidget extends Component
                 // Count UNREAD MESSAGES (not conversations!)
                 $user->unread_count = 0;
                 if ($conversation) {
-                    $user->unread_count = \App\Models\Message::where('conversation_id', $conversation->id)
-                        ->where('is_read', false)
-                        ->whereNotNull('user_id') // Only USER messages
-                        ->count();
+                    // Check assignment
+                    $assignedAdminId = $conversation->assigned_admin_id;
+                    $currentAdminId = Auth::id();
+                    
+                    // Only count if unassigned OR assigned to current admin
+                    if ($assignedAdminId === null || $assignedAdminId == $currentAdminId) {
+                        $user->unread_count = \App\Models\Message::where('conversation_id', $conversation->id)
+                            ->where('is_read', false)
+                            ->whereNotNull('user_id') // Only USER messages
+                            ->count();
+                    }
                 }
                 
                 return $user;
