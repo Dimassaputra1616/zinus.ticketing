@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Conversation;
 use App\Models\Message;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Livewire\Component;
 
 class ChatWidget extends Component
@@ -347,6 +348,19 @@ class ChatWidget extends Component
             'body' => $this->body,
             'is_read' => false,
         ]);
+
+        // Send webhook to n8n for user messages
+        if (!Auth::user()->isAdmin()) {
+            try {
+                Http::timeout(5)->post('https://jeanna-electrical-unbibulously.ngrok-free.dev/webhook-test/chatcs', [
+                    'conversation_id' => $conversation->id,
+                    'message' => $this->body,
+                    'sender_type' => 'user'
+                ]);
+            } catch (\Exception $e) {
+                // Fail silently if webhook triggers error
+            }
+        }
 
         // Hit the rate limiter
         \Illuminate\Support\Facades\RateLimiter::hit($key, $decayMinutes * 60);
