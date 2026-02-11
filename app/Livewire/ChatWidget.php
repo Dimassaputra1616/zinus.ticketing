@@ -352,7 +352,7 @@ class ChatWidget extends Component
         // Send webhook to n8n for user messages
         if (!Auth::user()->isAdmin()) {
             try {
-                Http::timeout(5)->post('https://jeanna-electrical-unbibulously.ngrok-free.dev/webhook-test/chatcs', [
+                Http::timeout(5)->post('https://jeanna-electrical-unbibulously.ngrok-free.dev/webhook/chatcs', [
                     'conversation_id' => $conversation->id,
                     'message' => $this->body,
                     'sender_type' => 'user'
