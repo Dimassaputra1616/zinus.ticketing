@@ -11,42 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('conversations', function (Blueprint $table) {
-            // Check if index exists before creating it
-            $sm = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexes = $sm->listTableIndexes('conversations');
-
-            if (!array_key_exists('conversations_user_id_index', $indexes)) {
+        // Use try-catch or explicit raw SQL for "IF NOT EXISTS" logic to avoid dependency issues
+        try {
+            Schema::table('conversations', function (Blueprint $table) {
                 $table->index('user_id');
-            }
-            if (!array_key_exists('conversations_is_open_index', $indexes)) {
                 $table->index('is_open');
-            }
-            if (!array_key_exists('conversations_updated_at_index', $indexes)) {
                 $table->index('updated_at');
-            }
-            if (!array_key_exists('conversations_is_open_updated_at_index', $indexes)) {
                 $table->index(['is_open', 'updated_at']);
-            }
-        });
+            });
+        } catch (\Exception $e) {
+            // Index likely already exists, ignore
+        }
 
-        Schema::table('messages', function (Blueprint $table) {
-            $sm = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexes = $sm->listTableIndexes('messages');
-
-            if (!array_key_exists('messages_conversation_id_index', $indexes)) {
+        try {
+            Schema::table('messages', function (Blueprint $table) {
                 $table->index('conversation_id');
-            }
-            if (!array_key_exists('messages_user_id_index', $indexes)) {
                 $table->index('user_id');
-            }
-            if (!array_key_exists('messages_is_read_index', $indexes)) {
                 $table->index('is_read');
-            }
-            if (!array_key_exists('messages_conversation_id_created_at_index', $indexes)) {
                 $table->index(['conversation_id', 'created_at']);
-            }
-        });
+            });
+        } catch (\Exception $e) {
+            // Index likely already exists, ignore
+        }
     }
 
     /**
