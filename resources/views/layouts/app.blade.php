@@ -65,7 +65,7 @@
             }
             body::before { display: none; }
             body.page-preload { opacity: 0; transform: translateY(12px); }
-            body.page-loaded { opacity: 1; transform: translateY(0); }
+            body.page-loaded { opacity: 1; transform: none; }
 
             .reveal-on-scroll { opacity: 0; transform: translateY(10px); transition: opacity .24s ease-in-out, transform .24s ease-in-out; }
             .page-loaded .reveal-on-scroll { opacity: 1; transform: translateY(0); }
@@ -445,6 +445,16 @@
                     'badgeType' => null,
                 ],
                 [
+                    'label' => 'Live Chat',
+                    'route' => 'admin.conversations.index',
+                    'icon' => '
+                        <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    ',
+                    'visible' => $isAdmin,
+                    'badgeCount' => $isAdmin ? \App\Models\Conversation::where('is_open', true)->withUnreadCount()->get()->sum('unread_count') : 0,
+                    'badgeType' => 'conversations',
+                ],
+                [
                     'label' => 'Kelola User',
                     'route' => 'users.index',
                     'icon' => '
@@ -464,7 +474,7 @@
             <div class="flex flex-col w-full h-full">
                 <div class="px-6 pt-10 pb-6 space-y-5">
                         <div class="flex flex-col items-center text-center space-y-3">
-                            <img src="{{ asset('images/logo-email.png') }}" alt="Zinus Dream" class="h-32 w-auto max-h-32 select-none opacity-100 p-1">
+                            <img src="/images/logo-email.png" alt="Zinus Dream" class="h-32 w-auto max-h-32 object-contain select-none">
                             <div class="space-y-1.5">
                                 <p class="text-[12px] font-semibold uppercase tracking-[0.24em] text-emerald-50">Zinus Dream</p>
                                 <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#cfe9dd]">IT Support Center</p>
@@ -519,7 +529,7 @@
                                 <span
                                     class="ml-auto inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-rose-600"
                                     data-notification-badge="{{ $badgeType }}"
-                                    @if ($badgeCount === 0) hidden @endif
+                                    @if ($badgeCount === 0) hidden style="display: none;" @endif
                                 >
                                     <span>New</span>
                                     <span class="tracking-normal" data-notification-count="{{ $badgeType }}">{{ $badgeCount > 9 ? '9+' : $badgeCount }}</span>
@@ -780,6 +790,9 @@
             </div>
         </footer>
         </main>
+        
+        <livewire:chat-widget />
+
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('[data-file-preview]').forEach(wrapper => {
@@ -1063,5 +1076,6 @@
                 });
             });
         </script>
+        @livewireScripts
     </body>
 </html>

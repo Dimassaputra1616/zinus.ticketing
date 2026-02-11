@@ -24,9 +24,15 @@ class AdminNotificationSummaryController extends Controller
             ->where('type', UserRegisteredNotification::class)
             ->count();
 
+        $conversationCount = \App\Models\Conversation::where('is_open', true)
+            ->withUnreadCount()
+            ->get()
+            ->sum('unread_count');
+
         return response()->json([
             'tickets' => $ticketCount,
             'users' => $userCount,
+            'conversations' => $conversationCount,
         ]);
     }
 }

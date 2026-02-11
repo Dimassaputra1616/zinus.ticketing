@@ -129,6 +129,14 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/assets', [App\Http\Controllers\AssetController::class, 'store'])->name('assets.store');
     Route::put('/admin/assets/{asset}', [App\Http\Controllers\AssetController::class, 'update'])->name('assets.update');
     Route::delete('/admin/assets/{asset}', [App\Http\Controllers\AssetController::class, 'destroy'])->name('assets.destroy');
+    
+    // Chat Conversations
+    Route::get('/admin/conversations', [App\Http\Controllers\Admin\ConversationController::class, 'index'])->name('admin.conversations.index');
+    Route::get('/admin/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'show'])->name('admin.conversations.show');
+    Route::post('/admin/conversations/{conversation}/reply', [App\Http\Controllers\Admin\ConversationController::class, 'reply'])->name('admin.conversations.reply');
+    Route::post('/admin/conversations/{conversation}/close', [App\Http\Controllers\Admin\ConversationController::class, 'close'])->name('admin.conversations.close');
+    Route::post('/admin/conversations/{conversation}/reopen', [App\Http\Controllers\Admin\ConversationController::class, 'reopen'])->name('admin.conversations.reopen');
+    
     Route::get('/admin/notifications/summary', AdminNotificationSummaryController::class)->name('admin.notifications.summary');
 });
 

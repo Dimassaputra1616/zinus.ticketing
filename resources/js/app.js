@@ -1,6 +1,7 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
+// Alpine is included in Livewire 3, so we don't need to import it separately
+// import Alpine from 'alpinejs';
 import initLiveUpdates from './live-updates';
 import { safeUUID } from './utils/uuid';
 
@@ -129,6 +130,7 @@ function initNotificationPolling() {
 
             updateBadge('tickets', Number(data.tickets ?? 0));
             updateBadge('users', Number(data.users ?? 0));
+            updateBadge('conversations', Number(data.conversations ?? 0));
         } catch (error) {
             console.error('Gagal memuat ringkasan notifikasi:', error);
         }
@@ -228,9 +230,9 @@ function initStickyHeader() {
     window.addEventListener('scroll', toggleShadow, { passive: true });
 }
 
-window.Alpine = Alpine;
-
-Alpine.start();
+// Livewire 3 already starts Alpine automatically, so we don't need to do it here
+// window.Alpine = Alpine;
+// Alpine.start();
 
 document.addEventListener('DOMContentLoaded', () => {
     initLiveUpdates();
