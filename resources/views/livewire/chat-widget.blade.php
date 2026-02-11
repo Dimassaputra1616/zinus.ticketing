@@ -50,9 +50,16 @@
             <!-- ADMIN - USER LIST VIEW -->
             <div class="h-full flex flex-col">
                 <!-- Header -->
-                <div class="bg-emerald-600 text-white px-4 py-3 rounded-t-lg flex items-center justify-between">
-                    <h3 class="font-semibold">Select User to Chat</h3>
-                    <button @click="open = false" class="text-white hover:text-gray-200 transition">
+                <div class="bg-white border-b border-gray-100 px-5 py-4 rounded-t-lg flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-[0.2em] bg-slate-100 text-[#23455D]/60">
+                                ADMIN
+                            </span>
+                        </div>
+                        <h3 class="font-semibold text-gray-900">Select User to Chat</h3>
+                    </div>
+                    <button @click="open = false" class="text-gray-400 hover:text-emerald-600 transition">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -120,9 +127,15 @@
                     <!-- USER - ADMIN SELECTION CARD -->
                     <div class="flex flex-col h-full">
                         <!-- Header -->
-                        <div class="bg-emerald-600 text-white px-4 py-3 rounded-t-lg">
-                            <h2 class="font-semibold text-sm">Pilih Admin IT</h2>
-                            <p class="text-xs opacity-90 mt-1">Silakan pilih admin untuk membantu Anda</p>
+                        <!-- Header -->
+                        <div class="bg-white border-b border-gray-100 px-5 py-4 rounded-t-lg">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-[0.2em] bg-slate-100 text-[#23455D]/60">
+                                    IT SUPPORT
+                                </span>
+                            </div>
+                            <h2 class="font-semibold text-sm text-gray-900">Pilih Admin IT</h2>
+                            <p class="text-xs text-gray-500 mt-1">Silakan pilih admin untuk membantu Anda</p>
                         </div>
 
                         <!-- Admin List -->
@@ -158,33 +171,40 @@
                 @else
                     <!-- NORMAL CHAT INTERFACE -->
                 <!-- Header -->
-                <div class="bg-emerald-600 text-white px-4 py-3 rounded-t-lg flex items-center justify-between">
+                <div class="bg-white border-b border-gray-100 px-5 py-4 rounded-t-lg flex items-center justify-between">
                     @if(auth()->user()->isAdmin() && $selectedUserId)
                         <!-- Admin - Show back button and selected user info -->
                         <div class="flex items-center gap-2 flex-1">
                             <button 
                                 wire:click="backToUserList" 
-                                class="text-white hover:text-gray-200 transition-colors"
+                                class="text-gray-400 hover:text-emerald-600 transition-colors"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                 </svg>
                             </button>
                             <div class="flex-1">
-                                <div class="font-semibold text-sm">{{ $selectedUser->name ?? 'User' }}</div>
-                                <div class="text-xs opacity-90">{{ $selectedUser->email ?? '' }}</div>
+                                <div class="font-semibold text-sm text-gray-900">{{ $selectedUser->name ?? 'User' }}</div>
+                                <div class="text-xs text-gray-500">{{ $selectedUser->email ?? '' }}</div>
                             </div>
                         </div>
                     @else
                         <!-- Regular user - Show standard header with back button -->
                         <div class="flex items-center justify-between flex-1">
-                            <h2 class="font-semibold text-sm">Live Chat Support</h2>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-[0.2em] bg-slate-100 text-[#23455D]/60">
+                                        IT SUPPORT
+                                    </span>
+                                </div>
+                                <h2 class="font-semibold text-sm text-gray-900">Live Chat Support</h2>
+                            </div>
                             
                             @if($selectedAdminId)
                                 <!-- Back button to change admin -->
                                 <button 
                                     wire:click="changeAdmin" 
-                                    class="text-white hover:text-gray-200 transition-colors flex items-center gap-1 text-xs"
+                                    class="text-gray-400 hover:text-emerald-600 transition-colors flex items-center gap-1 text-xs"
                                     title="Ganti Admin"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -195,7 +215,7 @@
                             @endif
                         </div>
                     @endif
-                    <button @click="open = false" class="text-white hover:text-gray-200 transition ml-2">
+                    <button @click="open = false" class="text-gray-400 hover:text-emerald-600 transition ml-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
