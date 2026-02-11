@@ -46,7 +46,7 @@
             });
         "
     >
-        @if(auth()->user()->is_admin && $viewMode === 'list')
+        @if(auth()->user()->isAdmin() && $viewMode === 'list')
             <!-- ADMIN - USER LIST VIEW -->
             <div class="h-full flex flex-col">
                 <!-- Header -->
@@ -116,7 +116,7 @@
         @else
             <!-- CHAT VIEW (Admin with selected user OR Regular user) -->
             <div class="h-full flex flex-col">
-                @if(!auth()->user()->is_admin && $showAdminSelection)
+                @if(!auth()->user()->isAdmin() && $showAdminSelection)
                     <!-- USER - ADMIN SELECTION CARD -->
                     <div class="flex flex-col h-full">
                         <!-- Header -->
@@ -159,7 +159,7 @@
                     <!-- NORMAL CHAT INTERFACE -->
                 <!-- Header -->
                 <div class="bg-emerald-600 text-white px-4 py-3 rounded-t-lg flex items-center justify-between">
-                    @if(auth()->user()->is_admin && $selectedUserId)
+                    @if(auth()->user()->isAdmin() && $selectedUserId)
                         <!-- Admin - Show back button and selected user info -->
                         <div class="flex items-center gap-2 flex-1">
                             <button 
@@ -214,7 +214,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
                             <p class="text-sm">No messages yet</p>
-                            <p class="text-xs">Start a conversation{{ auth()->user()->is_admin ? '' : ' with support' }}</p>
+                            <p class="text-xs">Start a conversation{{ auth()->user()->isAdmin() ? '' : ' with support' }}</p>
                         </div>
                     @else
                         @foreach($messages as $message)
