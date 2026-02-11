@@ -668,7 +668,7 @@
                     </div>
                 </div>
 
-                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*'))
+                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*'))
                     @php
                         $topbarTitle = match (true) {
                             request()->routeIs('tickets.show') => 'Detail Tiket',
@@ -677,6 +677,8 @@
                             request()->routeIs('users.*') => 'Kelola pengguna dan hak akses tim',
                             request()->routeIs('loans.*') => 'Log Peminjaman',
                             request()->routeIs('assets.*') => 'Kelola Asset & Inventori',
+                            request()->routeIs('admin.conversations.index') => 'Live Chat Support',
+                            request()->routeIs('admin.conversations.show') => 'Detail Percakapan',
                             default => 'Dashboard Ticketing',
                         };
                         $topbarDescription = match (true) {
@@ -686,6 +688,7 @@
                             request()->routeIs('users.*') => 'Atur akun, peran, dan status user agar dukungan IT tetap aman dan terstruktur.',
                             request()->routeIs('loans.*') => 'Pantau dan kelola peminjaman perangkat, proses persetujuan, dan pengembalian dengan lebih rapi.',
                             request()->routeIs('assets.*') => 'Kelola inventori perangkat, status ketersediaan, dan lokasi penggunaan dari satu halaman.',
+                            request()->routeIs('admin.conversations.*') => 'Kelola dan balas percakapan dengan pengguna secara real-time.',
                             default => 'Kelola tiket dan dukungan IT Zinus Dream Indonesia dari satu panel terpadu.',
                         };
                     @endphp
