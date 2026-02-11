@@ -29,7 +29,7 @@ class ChatWidget extends Component
 
     public function mount()
     {
-        if (Auth::user()->is_admin) {
+        if (Auth::user()->isAdmin()) {
             // Admin sees user list
             $this->viewMode = 'list';
             $this->loadUserList();
