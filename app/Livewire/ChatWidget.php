@@ -242,7 +242,9 @@ class ChatWidget extends Component
                     'body' => $message->body,
                     'user_id' => $message->user_id,
                     'user_name' => $message->user->name ?? $adminName,
-                    'is_mine' => $message->user_id === Auth::id(),
+                    'is_mine' => \Illuminate\Support\Facades\Auth::user()->isAdmin() 
+                        ? is_null($message->user_id) 
+                        : $message->user_id === \Illuminate\Support\Facades\Auth::id(),
                     'created_at' => $message->created_at->format('H:i'),
                 ];
             })
