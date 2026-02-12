@@ -3,12 +3,11 @@
 namespace App\Listeners;
 
 use App\Events\MessageCreated;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class SendChatToN8n implements ShouldQueue
+class SendChatToN8n
 {
     /**
      * Create the event listener.
