@@ -276,93 +276,107 @@ class ChatWidget extends Component
 
     public function sendMessage()
     {
-        $this->validate([
-            'body' => 'required|string|max:1000',
-        ]);
+        // Atomic lock to prevent double submission race conditions
+        $lockKey = 'chat_send_message_' . Auth::id();
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 5); // 5 seconds lock
 
-        // Rate limiting: 5 messages per minute
-        $key = 'chat-message:' . Auth::id();
-        $maxAttempts = 5;
-        $decayMinutes = 1;
-
-        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, $maxAttempts)) {
-            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
-            $this->addError('body', "Terlalu banyak pesan. Silakan tunggu {$seconds} detik.");
+        if (!$lock->get()) {
+            // If locked, it means another request is processing. Ignore this one.
             return;
         }
 
-        // Determine target user ID
-        $targetUserId = Auth::user()->isAdmin() && $this->selectedUserId 
-            ? $this->selectedUserId 
-            : Auth::id();
-
-        // Check if conversation exists
-        $conversation = Conversation::where('user_id', $targetUserId)
-            ->where('is_open', true)
-            ->first();
-
-        // If no conversation exists, create one
-        if (!$conversation) {
-            $conversation = Conversation::create([
-                'user_id' => $targetUserId,
-                'is_open' => true,
+        try {
+            $this->validate([
+                'body' => 'required|string|max:1000',
             ]);
-            $this->conversationId = $conversation->id;
-        }
-
-        // Assign admin if this is regular user's first message and admin is selected
-        if (!Auth::user()->isAdmin() && $this->selectedAdminId && !$conversation->assigned_admin_id) {
-            $conversation->update(['assigned_admin_id' => $this->selectedAdminId]);
-        }
-
-
-        // Check for duplicate message (same as last message)
-        $lastMessageQuery = Message::where('conversation_id', $conversation->id)
-            ->latest()
-            ->first();
-            
-        // For admin, check last message from admin (user_id is null)
-        // For regular user, check last message from user
-        if (Auth::user()->isAdmin()) {
-            $lastMessage = Message::where('conversation_id', $conversation->id)
-                ->whereNull('user_id')
+    
+            // Rate limiting: 5 messages per minute
+            $key = 'chat-message:' . Auth::id();
+            $maxAttempts = 5;
+            $decayMinutes = 1;
+    
+            if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, $maxAttempts)) {
+                $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
+                $this->addError('body', "Terlalu banyak pesan. Silakan tunggu {$seconds} detik.");
+                return;
+            }
+    
+            // Determine target user ID
+            $targetUserId = Auth::user()->isAdmin() && $this->selectedUserId 
+                ? $this->selectedUserId 
+                : Auth::id();
+    
+            // Check if conversation exists
+            $conversation = Conversation::where('user_id', $targetUserId)
+                ->where('is_open', true)
+                ->first();
+    
+            // If no conversation exists, create one
+            if (!$conversation) {
+                $conversation = Conversation::create([
+                    'user_id' => $targetUserId,
+                    'is_open' => true,
+                ]);
+                $this->conversationId = $conversation->id;
+            }
+    
+            // Assign admin if this is regular user's first message and admin is selected
+            if (!Auth::user()->isAdmin() && $this->selectedAdminId && !$conversation->assigned_admin_id) {
+                $conversation->update(['assigned_admin_id' => $this->selectedAdminId]);
+            }
+    
+    
+            // Check for duplicate message (same as last message)
+            $lastMessageQuery = Message::where('conversation_id', $conversation->id)
                 ->latest()
                 ->first();
-        } else {
-            $lastMessage = Message::where('conversation_id', $conversation->id)
-                ->where('user_id', Auth::id())
-                ->latest()
-                ->first();
+                
+            // For admin, check last message from admin (user_id is null)
+            // For regular user, check last message from user
+            if (Auth::user()->isAdmin()) {
+                $lastMessage = Message::where('conversation_id', $conversation->id)
+                    ->whereNull('user_id')
+                    ->latest()
+                    ->first();
+            } else {
+                $lastMessage = Message::where('conversation_id', $conversation->id)
+                    ->where('user_id', Auth::id())
+                    ->latest()
+                    ->first();
+            }
+    
+            if ($lastMessage && $lastMessage->body === $this->body) {
+                $this->addError('body', 'Pesan duplikat. Silakan kirim pesan yang berbeda.');
+                return;
+            }
+    
+            // Save the message
+            // Admin messages have user_id = null, regular user messages have user_id = auth id
+            $message = Message::create([
+                'conversation_id' => $conversation->id,
+                'user_id' => Auth::user()->isAdmin() ? null : Auth::id(),
+                'body' => $this->body,
+                'is_read' => false,
+            ]);
+    
+            // Dispatch event for n8n integration (only for user messages)
+            if (!Auth::user()->isAdmin()) {
+                \App\Events\MessageCreated::dispatch($message, 'user');
+            }
+    
+            // Hit the rate limiter
+            \Illuminate\Support\Facades\RateLimiter::hit($key, $decayMinutes * 60);
+    
+            // Reset input and reload messages
+            $this->body = '';
+            $this->loadMessages();
+    
+            // Dispatch browser event to scroll to bottom
+            $this->dispatch('message-sent');
+
+        } finally {
+            $lock->release();
         }
-
-        if ($lastMessage && $lastMessage->body === $this->body) {
-            $this->addError('body', 'Pesan duplikat. Silakan kirim pesan yang berbeda.');
-            return;
-        }
-
-        // Save the message
-        // Admin messages have user_id = null, regular user messages have user_id = auth id
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'user_id' => Auth::user()->isAdmin() ? null : Auth::id(),
-            'body' => $this->body,
-            'is_read' => false,
-        ]);
-
-        // Dispatch event for n8n integration (only for user messages)
-        if (!Auth::user()->isAdmin()) {
-            \App\Events\MessageCreated::dispatch($message, 'user');
-        }
-
-        // Hit the rate limiter
-        \Illuminate\Support\Facades\RateLimiter::hit($key, $decayMinutes * 60);
-
-        // Reset input and reload messages
-        $this->body = '';
-        $this->loadMessages();
-
-        // Dispatch browser event to scroll to bottom
-        $this->dispatch('message-sent');
     }
 
     public function render()
