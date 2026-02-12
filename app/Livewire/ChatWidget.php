@@ -342,24 +342,16 @@ class ChatWidget extends Component
 
         // Save the message
         // Admin messages have user_id = null, regular user messages have user_id = auth id
-        Message::create([
+        $message = Message::create([
             'conversation_id' => $conversation->id,
             'user_id' => Auth::user()->isAdmin() ? null : Auth::id(),
             'body' => $this->body,
             'is_read' => false,
         ]);
 
-        // Send webhook to n8n for user messages
+        // Dispatch event for n8n integration (only for user messages)
         if (!Auth::user()->isAdmin()) {
-            try {
-                Http::timeout(5)->post('https://jeanna-electrical-unbibulously.ngrok-free.dev/webhook/chatcs', [
-                    'conversation_id' => $conversation->id,
-                    'message' => $this->body,
-                    'sender_type' => 'user'
-                ]);
-            } catch (\Exception $e) {
-                // Fail silently if webhook triggers error
-            }
+            \App\Events\MessageCreated::dispatch($message, 'user');
         }
 
         // Hit the rate limiter

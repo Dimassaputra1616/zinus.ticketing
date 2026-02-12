@@ -23,5 +23,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Asset::class, AssetPolicy::class);
+        
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\MessageCreated::class,
+            \App\Listeners\SendChatToN8n::class,
+        );
     }
 }

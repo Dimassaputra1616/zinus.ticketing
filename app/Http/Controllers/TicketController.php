@@ -553,7 +553,6 @@ class TicketController extends Controller
     {
         $mailBlocklist = array_map('strtolower', [
             'admin@znus.com',
-            'admin@zinus.com',
         ]);
 
         $extraAdminEmails = collect(preg_split('/[;,]+/', (string) env('MAIL_EXTRA_ADMINS', '')))

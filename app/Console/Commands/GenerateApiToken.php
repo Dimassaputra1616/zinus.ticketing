@@ -7,12 +7,13 @@ use Illuminate\Console\Command;
 
 class GenerateApiToken extends Command
 {
-    protected $signature = 'api:generate-token {email}';
+    protected $signature = 'api:generate-token {email} {token_name?}';
     protected $description = 'Generate API token for a user';
 
     public function handle(): int
     {
         $email = $this->argument('email');
+        $tokenName = $this->argument('token_name') ?? $this->ask('Token name (e.g., "n8n-integration")', 'api-token');
         
         $user = User::where('email', $email)->first();
 
@@ -26,8 +27,6 @@ class GenerateApiToken extends Command
             return 1;
         }
 
-        $tokenName = $this->ask('Token name (e.g., "n8n-integration")', 'api-token');
-        
         $token = $user->createToken($tokenName)->plainTextToken;
 
         $this->info('API Token generated successfully:');

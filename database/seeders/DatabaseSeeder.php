@@ -10,12 +10,12 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'name' => 'admin',
-            'email' => 'admin@zinus.com',
-            'password' => Hash::make('0838jangan'),
-            'role' => 'admin',
-            'is_admin' => 1,
-        ]);
+        // User::create([
+        //     'name' => 'admin',
+        //     'email' => 'admin@zinus.com',
+        //     'password' => Hash::make('0838jangan'),
+        //     'role' => 'admin',
+        //     'is_admin' => 1,
+        // ]);
     }
 }

@@ -14,7 +14,7 @@ return new class extends Migration
         });
 
         DB::table('users')
-            ->whereIn('email', ['dimassputra1616@gmail.com', 'admin@zinus.com'])
+            ->whereIn('email', ['dimassputra1616@gmail.com'])
             ->update(['is_super_admin' => true]);
     }
 
