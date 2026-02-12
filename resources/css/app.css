@@ -6,6 +6,12 @@
     [x-cloak] {
         display: none !important;
     }
+
+    /* Hide native password reveal on Edge/IE */
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+        display: none;
+    }
 }
 
 @layer utilities {
