@@ -62,6 +62,23 @@ class ConversationApiController extends Controller
 
         $conversation = Conversation::findOrFail((int) $id);
 
+        // Prevent duplicate messages from n8n (within 10 seconds)
+        $lastMessage = Message::where('conversation_id', $conversation->id)
+            ->whereNull('user_id') // From admin/system
+            ->latest()
+            ->first();
+
+        if ($lastMessage && 
+            $lastMessage->body === $request->body && 
+            $lastMessage->created_at->diffInSeconds(now()) < 10
+        ) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Duplicate message ignored',
+                'data' => new MessageResource($lastMessage->load('user')),
+            ], 200);
+        }
+
         // Create admin message (user_id = null for admin)
         $message = Message::create([
             'conversation_id' => $conversation->id,
