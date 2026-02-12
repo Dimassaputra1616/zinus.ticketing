@@ -226,9 +226,25 @@
                 <!-- Added pt-16 for header space and pb-20 for floating input space -->
                 <div
                     x-ref="chatContainer"
-                    class="flex-1 overflow-y-auto w-full pt-16 pb-24 px-4 space-y-4 bg-gray-50/50"
+                    class="flex-1 overflow-y-auto w-full pt-16 pb-24 px-4 space-y-4 bg-gray-50/50 custom-scrollbar"
                     style="scroll-behavior: smooth;"
                 >
+                    <style>
+                        .custom-scrollbar::-webkit-scrollbar {
+                            width: 5px;
+                        }
+                        .custom-scrollbar::-webkit-scrollbar-track {
+                            background: transparent;
+                        }
+                        .custom-scrollbar::-webkit-scrollbar-thumb {
+                            background: rgba(16, 185, 129, 0.2);
+                            border-radius: 10px;
+                        }
+                        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                            background: rgba(16, 185, 129, 0.5);
+                        }
+                    </style>
+
                     @if(count($messages) === 0)
                         <div class="flex flex-col items-center justify-center h-full text-gray-400 pb-10">
                             <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
@@ -240,31 +256,72 @@
                             <p class="text-xs mt-1 text-gray-400">Mulai percakapan{{ auth()->user()->isAdmin() ? '' : ' dengan support' }} sekarang</p>
                         </div>
                     @else
-                        @foreach($messages as $message)
-                            <div class="flex w-full {{ $message['is_mine'] ? 'justify-end' : 'justify-start' }} animate-fade-in-up">
-                                <div class="max-w-[80%] min-w-[30%]">
-                                    <!-- Message Bubble -->
-                                    <div class="relative group
-                                        {{ $message['is_mine'] 
-                                            ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-2xl rounded-tr-none shadow-md shadow-emerald-500/20 border border-emerald-500/10' 
-                                            : 'bg-white text-gray-800 rounded-2xl rounded-tl-none shadow-sm border border-gray-100' 
-                                        }}
-                                        px-4 py-3 transition-all duration-200 hover:shadow-lg
-                                    ">
-                                        <p class="text-[10px] font-bold mb-1.5 uppercase tracking-wider {{ $message['is_mine'] ? 'text-emerald-100 text-right' : 'text-emerald-600 text-left' }}">
-                                            {{ $message['user_name'] }}
-                                        </p>
-                                        <p class="text-sm break-words leading-relaxed {{ $message['is_mine'] ? 'text-white' : 'text-gray-700' }}">
-                                            {{ $message['body'] }}
-                                        </p>
-                                    </div>
-                                    
-                                    <!-- Timestamp -->
-                                    <p class="text-[10px] text-gray-400 mt-1 {{ $message['is_mine'] ? 'text-right' : 'text-left' }} opacity-70 group-hover:opacity-100 transition-opacity px-1">
-                                        {{ $message['created_at'] }}
-                                    </p>
-                                </div>
+                        @foreach($messages as $date => $dateMessages)
+                            <!-- Date Separator -->
+                            <div class="flex justify-center my-4 sticky top-0 z-10">
+                                <span class="bg-gray-200/80 backdrop-blur-sm text-gray-500 text-[10px] px-3 py-1 rounded-full font-medium shadow-sm border border-white">
+                                    {{ $date }}
+                                </span>
                             </div>
+
+                            @foreach($dateMessages as $message)
+                                <div class="flex w-full {{ $message['is_mine'] ? 'justify-end' : 'justify-start' }} animate-fade-in-up">
+                                    <div class="max-w-[80%] min-w-[30%]">
+                                        <!-- Message Bubble -->
+                                        <div class="relative group
+                                            {{ $message['is_mine'] 
+                                                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-2xl rounded-tr-none shadow-md shadow-emerald-500/20 border border-emerald-500/10' 
+                                                : 'bg-white text-gray-800 rounded-2xl rounded-tl-none shadow-sm border border-gray-100' 
+                                            }}
+                                            px-4 py-3 transition-all duration-200 hover:shadow-lg
+                                        ">
+                                            <p class="text-[10px] font-bold mb-1.5 uppercase tracking-wider {{ $message['is_mine'] ? 'text-emerald-100 text-right' : 'text-emerald-600 text-left' }}">
+                                                {{ $message['user_name'] }}
+                                            </p>
+                                            <p class="text-sm break-words leading-relaxed {{ $message['is_mine'] ? 'text-white' : 'text-gray-700' }}">
+                                                {{ $message['body'] }}
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- Timestamp & Status -->
+                                        <div class="flex items-center gap-1 mt-1 {{ $message['is_mine'] ? 'justify-end' : 'justify-start' }} px-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                                            <p class="text-[10px] text-gray-400">
+                                                {{ $message['created_at'] }}
+                                            </p>
+                                            @if($message['is_mine'])
+                                                <!-- Status Ticks for Sent/Read -->
+                                                <span class="text-[10px] {{ $message['is_read'] ? 'text-blue-500' : 'text-gray-400' }}">
+                                                    @if($message['is_read'])
+                                                        <!-- Double Tick (Read) -->
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                            <path d="M10.293 6.707a1 1 0 010-1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l2.293-2.293z" />
+                                                            <!-- Simulating double tick with SVG is tricky, using simple double check icon from Heroicons is better if available, or composed path -->
+                                                            <path d="M13.293 3.293a1 1 0 011.414 0l2 2a1 1 0 010 1.414l-9 9a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L7 13.586l8.293-8.293z" />
+                                                            <!-- Clean SVG for double tick -->
+                                                         </svg>
+                                                         <!-- Clear SVG replacement -->
+                                                         <span class="flex -space-x-1">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                         </span>
+                                                    @else
+                                                        <!-- Single Tick (Sent) -->
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    @endif
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         @endforeach
                     @endif
                 </div>

@@ -235,6 +235,7 @@ class ChatWidget extends Component
         $this->messages = Message::where('conversation_id', $this->conversationId)
             ->with('user:id,name')
             ->orderBy('created_at', 'asc')
+
             ->get()
             ->map(function ($message) use ($adminName) {
                 return [
@@ -246,8 +247,11 @@ class ChatWidget extends Component
                         ? is_null($message->user_id) 
                         : $message->user_id === \Illuminate\Support\Facades\Auth::id(),
                     'created_at' => $message->created_at->format('H:i'),
+                    'date_group' => $message->created_at->isToday() ? 'Hari Ini' : ($message->created_at->isYesterday() ? 'Kemarin' : $message->created_at->format('d M Y')),
+                    'is_read' => $message->is_read, // Add is_read for status ticks
                 ];
             })
+            ->groupBy('date_group')
             ->toArray();
 
         // Mark unread messages as read ONLY when user is viewing chat AND widget is open
