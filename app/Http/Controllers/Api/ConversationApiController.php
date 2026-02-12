@@ -62,35 +62,54 @@ class ConversationApiController extends Controller
 
         $conversation = Conversation::findOrFail((int) $id);
 
-        // Prevent duplicate messages from n8n (within 10 seconds)
-        $lastMessage = Message::where('conversation_id', $conversation->id)
-            ->whereNull('user_id') // From admin/system
-            ->latest()
-            ->first();
+        // Use atomic lock to prevent race conditions (double execution from n8n)
+        // Lock key based on conversation ID, wait max 3 seconds
+        $lock = \Illuminate\Support\Facades\Cache::lock('conversation_message_' . $conversation->id, 3);
 
-        if ($lastMessage && 
-            $lastMessage->body === $request->body && 
-            $lastMessage->created_at->diffInSeconds(now()) < 10
-        ) {
+        if (!$lock->get()) {
+            // Could not get lock, meaning another request is processing for this conversation
+            // Assuming it's a duplicate/concurrent request
             return response()->json([
                 'success' => true,
-                'message' => 'Duplicate message ignored',
-                'data' => new MessageResource($lastMessage->load('user')),
+                'message' => 'Concurrent request ignored',
+                'data' => null
             ], 200);
         }
 
-        // Create admin message (user_id = null for admin)
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'user_id' => null, // Admin message
-            'body' => $request->body,
-            'is_read' => false,
-        ]);
+        try {
+            // Prevent duplicate messages from n8n (within 10 seconds)
+            $lastMessage = Message::where('conversation_id', $conversation->id)
+                ->whereNull('user_id') // From admin/system
+                ->latest()
+                ->first();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Message sent successfully',
-            'data' => new MessageResource($message->load('user')),
-        ], 201);
+            if ($lastMessage && 
+                $lastMessage->body === $request->body && 
+                $lastMessage->created_at->diffInSeconds(now()) < 10
+            ) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Duplicate message ignored',
+                    'data' => new MessageResource($lastMessage->load('user')),
+                ], 200);
+            }
+
+            // Create admin message (user_id = null for admin)
+            $message = Message::create([
+                'conversation_id' => $conversation->id,
+                'user_id' => null, // Admin message
+                'body' => $request->body,
+                'is_read' => false,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Message sent successfully',
+                'data' => new MessageResource($message->load('user')),
+            ], 201);
+            
+        } finally {
+            $lock->release();
+        }
     }
 }
