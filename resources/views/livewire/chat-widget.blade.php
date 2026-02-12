@@ -293,23 +293,14 @@
                                                 <span class="text-[10px] {{ $message['is_read'] ? 'text-blue-500' : 'text-gray-400' }}">
                                                     @if($message['is_read'])
                                                         <!-- Double Tick (Read) -->
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" viewBox="0 0 20 20" fill="currentColor">
-                                                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                            <path d="M10.293 6.707a1 1 0 010-1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l2.293-2.293z" />
-                                                            <!-- Simulating double tick with SVG is tricky, using simple double check icon from Heroicons is better if available, or composed path -->
-                                                            <path d="M13.293 3.293a1 1 0 011.414 0l2 2a1 1 0 010 1.414l-9 9a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L7 13.586l8.293-8.293z" />
-                                                            <!-- Clean SVG for double tick -->
-                                                         </svg>
-                                                         <!-- Clear SVG replacement -->
-                                                         <span class="flex -space-x-1">
+                                                        <span class="flex -space-x-1.5">
                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                                                             </svg>
                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                                                             </svg>
-                                                         </span>
+                                                        </span>
                                                     @else
                                                         <!-- Single Tick (Sent) -->
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
