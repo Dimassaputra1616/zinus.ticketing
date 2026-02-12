@@ -275,44 +275,38 @@
                                             }}
                                             px-4 py-3 transition-all duration-200 hover:shadow-lg
                                         ">
-                                            <p class="text-[10px] font-bold mb-1.5 uppercase tracking-wider {{ $message['is_mine'] ? 'text-emerald-100 text-right' : 'text-emerald-600 text-left' }}">
+                                        <!-- Message Content -->
+                                        <div class="relative z-10">
+                                            <p class="text-[10px] font-bold mb-1 uppercase tracking-wider {{ $message['is_mine'] ? 'text-emerald-100 text-right' : 'text-emerald-600 text-left' }}">
                                                 {{ $message['user_name'] }}
                                             </p>
                                             <p class="text-sm break-words leading-relaxed {{ $message['is_mine'] ? 'text-white' : 'text-gray-700' }}">
                                                 {{ $message['body'] }}
-                                            </p>
-                                        </div>
-                                        
-                                        <!-- Timestamp & Status -->
-                                        <div class="flex items-center gap-1 mt-1 {{ $message['is_mine'] ? 'justify-end' : 'justify-start' }} px-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                                            <p class="text-[10px] text-gray-400">
-                                                {{ $message['created_at'] }}
-                                            </p>
-                                            @if($message['is_mine'])
-                                                <!-- Status Ticks for Sent/Read -->
-                                                <span class="text-[10px] {{ $message['is_read'] ? 'text-blue-500' : 'text-gray-400' }}">
-                                                    @if($message['is_read'])
-                                                        <!-- Double Tick (Read) -->
-                                                        <span class="flex -space-x-1.5">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                                                            </svg>
+                                                
+                                                <!-- WhatsApp Style Timestamp & Status (Float Right/Bottom) -->
+                                                <span class="float-right flex items-center gap-1 ml-3 mt-2 h-3 text-[10px] {{ $message['is_mine'] ? 'text-emerald-50' : 'text-gray-400' }}">
+                                                    <span>{{ $message['created_at'] }}</span>
+                                                    @if($message['is_mine'])
+                                                        <span class="{{ $message['is_read'] ? 'text-blue-200' : 'text-emerald-200' }}"> <!-- Blue-200 for read on emerald bg, Emerald-200 for sent -->
+                                                            @if($message['is_read'])
+                                                                <!-- Double Tick -->
+                                                                <span class="flex -space-x-1">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                </span>
+                                                            @else
+                                                                <!-- Single Tick -->
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                            @endif
                                                         </span>
-                                                    @else
-                                                        <!-- Single Tick (Sent) -->
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                                                        </svg>
                                                     @endif
                                                 </span>
-                                            @endif
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
-                            @endforeach
+                            </div>
+                        @endforeach
                         @endforeach
                     @endif
                 </div>
