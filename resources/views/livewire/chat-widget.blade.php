@@ -229,7 +229,7 @@
                                         }}
                                         px-4 py-2 shadow-sm
                                     ">
-                                        <p class="text-xs font-semibold mb-1 opacity-75 {{ $message['is_mine'] ? 'text-right' : 'text-left' }}">{{ $message['user_name'] }}</p>
+                                        <p class="text-xs font-bold mb-1 {{ $message['is_mine'] ? 'text-emerald-100 text-right' : 'text-emerald-700 text-left' }}">{{ $message['user_name'] }}</p>
                                         <p class="text-sm break-words">{{ $message['body'] }}</p>
                                     </div>
                                     
