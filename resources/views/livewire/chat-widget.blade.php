@@ -229,9 +229,7 @@
                                         }}
                                         px-4 py-2 shadow-sm
                                     ">
-                                        @if(!$message['is_mine'])
-                                            <p class="text-xs font-semibold mb-1 opacity-75">{{ $message['user_name'] }}</p>
-                                        @endif
+                                        <p class="text-xs font-semibold mb-1 opacity-75 {{ $message['is_mine'] ? 'text-right' : 'text-left' }}">{{ $message['user_name'] }}</p>
                                         <p class="text-sm break-words">{{ $message['body'] }}</p>
                                     </div>
                                     
