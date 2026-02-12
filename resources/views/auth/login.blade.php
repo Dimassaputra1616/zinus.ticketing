@@ -26,6 +26,7 @@
             <div class="relative" x-data="{ show: false }">
                 <input
                     id="password"
+                    type="password"
                     :type="show ? 'text' : 'password'"
                     name="password"
                     required
@@ -44,7 +45,7 @@
                         <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" />
                         <circle cx="12" cy="12" r="3" />
                     </svg>
-                    <svg x-show="show" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <svg x-show="show" x-cloak class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m3 3 18 18" />
                         <path d="M10.58 10.58a2 2 0 0 0 2.84 2.84" />
                         <path d="M9.88 4.24A10.82 10.82 0 0 1 12 4c7 0 11 8 11 8a16.8 16.8 0 0 1-3.64 4.8" />
