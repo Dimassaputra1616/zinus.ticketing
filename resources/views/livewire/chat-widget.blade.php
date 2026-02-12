@@ -115,126 +115,152 @@
             </div>
         @else
             <!-- CHAT VIEW (Admin with selected user OR Regular user) -->
-            <div class="h-full flex flex-col">
+            <div class="h-full flex flex-col relative bg-gray-50 rounded-lg overflow-hidden">
                 @if(!auth()->user()->isAdmin() && $showAdminSelection)
                     <!-- USER - ADMIN SELECTION CARD -->
-                    <div class="flex flex-col h-full">
+                    <div class="flex flex-col h-full bg-white">
                         <!-- Header -->
-                        <!-- Header -->
-                        <div class="bg-emerald-600 text-white px-4 py-3 rounded-t-lg">
-                            <h2 class="font-semibold text-sm">Pilih Admin IT</h2>
-                            <p class="text-xs opacity-90 mt-1">Silakan pilih admin untuk membantu Anda</p>
+                        <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-5 py-4 shadow-md z-10">
+                            <h2 class="font-bold text-base tracking-wide">Pilih Admin IT</h2>
+                            <p class="text-xs text-emerald-100 mt-1">Siapa yang ingin Anda hubungi?</p>
                         </div>
 
                         <!-- Admin List -->
-                        <div class="flex-1 overflow-y-auto p-4 space-y-2">
+                        <div class="flex-1 overflow-y-auto p-4 space-y-3">
                             @forelse($availableAdmins as $admin)
                                 <button 
                                     wire:click="selectAdmin({{ $admin['id'] }})"
-                                    class="w-full bg-white border-2 border-gray-200 hover:border-emerald-500 hover:bg-emerald-50 rounded-lg p-3 text-left transition-all duration-200 group"
+                                    class="w-full bg-white border border-gray-200 hover:border-emerald-500 hover:shadow-md rounded-xl p-4 text-left transition-all duration-300 group relative overflow-hidden"
                                 >
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex-shrink-0 w-10 h-10 bg-emerald-100 group-hover:bg-emerald-200 rounded-full flex items-center justify-center text-emerald-700 font-semibold">
+                                    <div class="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    <div class="relative flex items-center gap-4">
+                                        <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-full flex items-center justify-center text-emerald-700 font-bold text-lg shadow-sm border-2 border-white ring-2 ring-emerald-50">
                                             {{ strtoupper(substr($admin['name'], 0, 1)) }}
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <div class="font-medium text-gray-900 text-sm truncate">{{ $admin['name'] }}</div>
+                                            <div class="font-bold text-gray-900 text-sm truncate group-hover:text-emerald-700 transition-colors">{{ $admin['name'] }}</div>
                                             <div class="text-xs text-gray-500 truncate">{{ $admin['email'] }}</div>
                                         </div>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 group-hover:text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                        </svg>
+                                        <div class="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 group-hover:text-emerald-600 group-hover:border-emerald-200 transition-all shadow-sm">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
                                     </div>
                                 </button>
                             @empty
-                                <div class="text-center py-8 text-gray-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                    </svg>
-                                    <p class="text-sm">Tidak ada admin tersedia</p>
+                                <div class="text-center py-10 text-gray-400">
+                                    <div class="bg-gray-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                    </div>
+                                    <p class="text-sm font-medium text-gray-500">Belum ada admin tersedia</p>
+                                    <p class="text-xs mt-1">Silakan coba lagi nanti</p>
                                 </div>
                             @endforelse
                         </div>
                     </div>
                 @else
                     <!-- NORMAL CHAT INTERFACE -->
-                <!-- Header -->
-                <div class="bg-emerald-600 text-white px-4 py-3 rounded-t-lg flex items-center justify-between">
-                    @if(auth()->user()->isAdmin() && $selectedUserId)
-                        <!-- Admin - Show back button and selected user info -->
-                        <div class="flex items-center gap-2 flex-1">
-                            <button 
-                                wire:click="backToUserList" 
-                                class="text-white hover:text-gray-200 transition-colors"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                            <div class="flex-1">
-                                <div class="font-semibold text-sm">{{ $selectedUser->name ?? 'User' }}</div>
-                                <div class="text-xs opacity-90">{{ $selectedUser->email ?? '' }}</div>
-                            </div>
-                        </div>
-                    @else
-                        <!-- Regular user - Show standard header with back button -->
-                        <div class="flex items-center justify-between flex-1">
-                            <h2 class="font-semibold text-sm">Live Chat Support</h2>
-                            
-                            @if($selectedAdminId)
-                                <!-- Back button to change admin -->
+                
+                <!-- Modern Sticky Header with Glass Effect -->
+                <div class="absolute top-0 left-0 right-0 z-20 bg-emerald-600/90 backdrop-blur-sm text-white px-4 py-3 shadow-md flex items-center justify-between transition-all duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-500 opacity-90"></div>
+                    
+                    <div class="relative flex items-center justify-between w-full">
+                        @if(auth()->user()->isAdmin() && $selectedUserId)
+                            <!-- Admin - Show back button and selected user info -->
+                            <div class="flex items-center gap-3 flex-1 overflow-hidden">
                                 <button 
-                                    wire:click="changeAdmin" 
-                                    class="text-white hover:text-gray-200 transition-colors flex items-center gap-1 text-xs"
-                                    title="Ganti Admin"
+                                    wire:click="backToUserList" 
+                                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors focus:outline-none"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                     </svg>
-                                    Ganti Admin
                                 </button>
-                            @endif
-                        </div>
-                    @endif
-                    <button @click="open = false" class="text-white hover:text-gray-200 transition ml-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+                                <div class="flex items-center gap-2 overflow-hidden">
+                                    <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold ring-2 ring-white/30">
+                                        {{ strtoupper(substr($selectedUser->name ?? 'U', 0, 1)) }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-bold text-sm truncate leading-tight">{{ $selectedUser->name ?? 'User' }}</div>
+                                        <div class="text-[10px] text-emerald-100 truncate opacity-90">{{ $selectedUser->email ?? '' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <!-- Regular user - Show standard header with branding and back button -->
+                            <div class="flex items-center justify-between flex-1">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]"></div>
+                                    <h2 class="font-bold text-sm tracking-wide">Live Support</h2>
+                                </div>
+                                
+                                @if($selectedAdminId)
+                                    <!-- Back button to change admin -->
+                                    <button 
+                                        wire:click="changeAdmin" 
+                                        class="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center gap-1.5 text-[10px] border border-white/10"
+                                        title="Ganti Admin"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                        </svg>
+                                        Ganti
+                                    </button>
+                                @endif
+                            </div>
+                        @endif
+                        
+                        <button @click="open = false" class="ml-2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors text-white/90 hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Messages Container -->
+                <!-- Added pt-16 for header space and pb-20 for floating input space -->
                 <div
                     x-ref="chatContainer"
-                    class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"
+                    class="flex-1 overflow-y-auto w-full pt-16 pb-24 px-4 space-y-4 bg-gray-50/50"
                     style="scroll-behavior: smooth;"
                 >
                     @if(count($messages) === 0)
-                        <div class="flex flex-col items-center justify-center h-full text-gray-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            <p class="text-sm">No messages yet</p>
-                            <p class="text-xs">Start a conversation{{ auth()->user()->isAdmin() ? '' : ' with support' }}</p>
+                        <div class="flex flex-col items-center justify-center h-full text-gray-400 pb-10">
+                            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                            </div>
+                            <p class="text-sm font-medium text-gray-600">Belum ada pesan</p>
+                            <p class="text-xs mt-1 text-gray-400">Mulai percakapan{{ auth()->user()->isAdmin() ? '' : ' dengan support' }} sekarang</p>
                         </div>
                     @else
                         @foreach($messages as $message)
-                            <div class="flex {{ $message['is_mine'] ? 'justify-end' : 'justify-start' }}">
-                                <div class="max-w-[75%]">
+                            <div class="flex w-full {{ $message['is_mine'] ? 'justify-end' : 'justify-start' }} animate-fade-in-up">
+                                <div class="max-w-[80%] min-w-[30%]">
                                     <!-- Message Bubble -->
-                                    <div class="
+                                    <div class="relative group
                                         {{ $message['is_mine'] 
-                                            ? 'bg-emerald-500 text-white rounded-l-lg rounded-tr-lg' 
-                                            : 'bg-gray-300 text-gray-800 rounded-r-lg rounded-tl-lg' 
+                                            ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-2xl rounded-tr-none shadow-md shadow-emerald-500/20 border border-emerald-500/10' 
+                                            : 'bg-white text-gray-800 rounded-2xl rounded-tl-none shadow-sm border border-gray-100' 
                                         }}
-                                        px-4 py-2 shadow-sm
+                                        px-4 py-3 transition-all duration-200 hover:shadow-lg
                                     ">
-                                        <p class="text-xs font-bold mb-1 {{ $message['is_mine'] ? 'text-emerald-100 text-right' : 'text-emerald-700 text-left' }}">{{ $message['user_name'] }}</p>
-                                        <p class="text-sm break-words">{{ $message['body'] }}</p>
+                                        <p class="text-[10px] font-bold mb-1.5 uppercase tracking-wider {{ $message['is_mine'] ? 'text-emerald-100 text-right' : 'text-emerald-600 text-left' }}">
+                                            {{ $message['user_name'] }}
+                                        </p>
+                                        <p class="text-sm break-words leading-relaxed {{ $message['is_mine'] ? 'text-white' : 'text-gray-700' }}">
+                                            {{ $message['body'] }}
+                                        </p>
                                     </div>
                                     
                                     <!-- Timestamp -->
-                                    <p class="text-xs text-gray-400 mt-1 {{ $message['is_mine'] ? 'text-right' : 'text-left' }}">
+                                    <p class="text-[10px] text-gray-400 mt-1 {{ $message['is_mine'] ? 'text-right' : 'text-left' }} opacity-70 group-hover:opacity-100 transition-opacity px-1">
                                         {{ $message['created_at'] }}
                                     </p>
                                 </div>
@@ -243,32 +269,38 @@
                     @endif
                 </div>
 
-                <!-- Input Area -->
-                <div class="border-t border-gray-200 p-3 bg-white rounded-b-lg">
-                    <form wire:submit.prevent="sendMessage" class="flex gap-2">
-                        <input
-                            type="text"
-                            wire:model="body"
-                            placeholder="Type your message..."
-                            class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                            autocomplete="off"
-                        >
-                        <button
-                            type="submit"
-                            wire:loading.attr="disabled"
-                            wire:target="sendMessage"
-                            class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-4 py-2 transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                        </button>
-                    </form>
-                    
-                    @error('body')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                <!-- Floating Input Area -->
+                <div class="absolute bottom-4 left-4 right-4 z-20">
+                    <div class="bg-white rounded-full shadow-lg shadow-gray-200/50 border border-gray-100 p-1.5 pl-4 flex items-center gap-2 ring-1 ring-gray-50 focus-within:ring-2 focus-within:ring-emerald-500/30 focus-within:border-emerald-500 transition-all duration-300">
+                        <form wire:submit.prevent="sendMessage" class="flex-1 flex gap-2">
+                            <input
+                                type="text"
+                                wire:model="body"
+                                placeholder="Ketik pesan..."
+                                class="flex-1 bg-transparent border-none text-sm text-gray-700 placeholder-gray-400 focus:ring-0 focus:outline-none py-2"
+                                autocomplete="off"
+                            >
+                            <button
+                                type="submit"
+                                wire:loading.attr="disabled"
+                                wire:target="sendMessage"
+                                class="w-9 h-9 flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:scale-105 active:scale-95"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform rotate-90 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
                 </div>
+                
+                @error('body')
+                    <div class="absolute bottom-16 left-0 right-0 px-6 text-center animate-bounce">
+                        <span class="bg-red-500/90 backdrop-blur-sm text-white text-[10px] px-3 py-1 rounded-full shadow-md">
+                            {{ $message }}
+                        </span>
+                    </div>
+                @enderror
                 @endif
             </div>
         @endif
