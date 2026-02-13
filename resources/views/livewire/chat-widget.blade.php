@@ -185,8 +185,8 @@
                                         {{ strtoupper(substr($selectedUser->name ?? 'U', 0, 1)) }}
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <div class="font-bold text-sm truncate leading-tight">{{ $selectedUser->name ?? 'User' }}</div>
-                                        <div class="text-[10px] text-emerald-100 truncate opacity-90">{{ $selectedUser->email ?? '' }}</div>
+                                        <div class="font-bold text-sm truncate leading-tight">{{ $selectedUser->email ?? 'No Email' }}</div>
+                                        <div class="text-[10px] text-emerald-100 truncate opacity-90">{{ $selectedUser->name ?? 'User' }}</div>
                                     </div>
                                 </div>
                             </div>
