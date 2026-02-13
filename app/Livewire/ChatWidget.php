@@ -167,7 +167,7 @@ class ChatWidget extends Component
         $this->loadUserList();
     }
     
-    public function getSelectedUserProperty()
+    public function getCurrentChatUserProperty()
     {
         if (!$this->selectedUserId) {
             return null;

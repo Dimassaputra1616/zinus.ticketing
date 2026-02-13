@@ -182,11 +182,11 @@
                                 </button>
                                 <div class="flex items-center gap-2 overflow-hidden">
                                     <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold ring-2 ring-white/30">
-                                        {{ strtoupper(substr($selectedUser->name ?? 'U', 0, 1)) }}
+                                        {{ strtoupper(substr($this->currentChatUser->name ?? 'U', 0, 1)) }}
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <div class="font-bold text-sm truncate leading-tight">{{ $selectedUser->email ?? 'No Email' }}</div>
-                                        <div class="text-[10px] text-emerald-100 truncate opacity-90">{{ $selectedUser->name ?? 'User' }}</div>
+                                        <div class="font-bold text-sm truncate leading-tight">{{ $this->currentChatUser->email ?? 'No Email Found' }}</div>
+                                        <div class="text-[10px] text-emerald-100 truncate opacity-90">{{ $this->currentChatUser->name ?? 'Unknown User' }}</div>
                                     </div>
                                 </div>
                             </div>
