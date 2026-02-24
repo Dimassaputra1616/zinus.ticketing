@@ -56,13 +56,13 @@ const initContainerRefresh = (container) => {
                     Accept: 'application/json',
                 },
                 credentials: 'same-origin',
-            });
+            }).catch(e => { return { ok: false }; }); // Catch network errors safely
 
-            if (!response.ok) {
+            if (!response || !response.ok) {
                 return;
             }
 
-            const payload = await response.json();
+            const payload = await response.json().catch(e => null);
             if (!payload || !payload.checksum || payload.checksum === checksum) {
                 return;
             }
@@ -72,59 +72,66 @@ const initContainerRefresh = (container) => {
             checksum = payload.checksum;
             container.dataset.liveChecksum = checksum;
         } catch (error) {
-            console.error('Gagal memuat pembaruan otomatis:', error);
+            // Silently ignore polling errors
         }
     };
 
-    fetchUpdates();
-    return window.setInterval(fetchUpdates, interval);
+    // Use void to prevent unhandled promise rejection warnings in interval
+    const runFetch = () => void fetchUpdates();
+
+    runFetch();
+    return window.setInterval(runFetch, interval);
 };
 
 export default function initLiveUpdates() {
     const containers = document.querySelectorAll('[data-live-refresh]');
 
     async function fetchAndSwap(container, targetUrl) {
-        const url = new URL(targetUrl, window.location.origin);
-        url.searchParams.set('refresh', '1');
+        try {
+            const url = new URL(targetUrl, window.location.origin);
+            url.searchParams.set('refresh', '1');
 
-        const response = await fetch(url.toString(), {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                Accept: 'application/json',
-            },
-            credentials: 'same-origin',
-        });
+            const response = await fetch(url.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    Accept: 'application/json',
+                },
+                credentials: 'same-origin',
+            }).catch(e => { return { ok: false }; });
 
-        if (!response.ok) {
-            return false;
-        }
-
-        const payload = await response.json();
-        if (!payload || !payload.checksum) {
-            return false;
-        }
-
-        const fragments = payload.fragments || {};
-        if (!Object.keys(fragments).length) {
-            return false;
-        }
-
-        const cleanUrl = new URL(url.toString());
-        cleanUrl.searchParams.delete('refresh');
-        container.dataset.liveUrl = cleanUrl.toString();
-        container.dataset.liveQuery = cleanUrl.searchParams.toString();
-        container.dataset.liveChecksum = payload.checksum;
-        window.history.replaceState({}, '', cleanUrl.toString());
-
-        Object.entries(fragments).forEach(([slot, html]) => {
-            const target = container.querySelector(`[data-live-slot="${slot}"]`);
-            if (target) {
-                target.innerHTML = html;
-                if (window.Alpine?.initTree) window.Alpine.initTree(target);
+            if (!response || !response.ok) {
+                return false;
             }
-        });
 
-        return true;
+            const payload = await response.json().catch(e => null);
+            if (!payload || !payload.checksum) {
+                return false;
+            }
+
+            const fragments = payload.fragments || {};
+            if (!Object.keys(fragments).length) {
+                return false;
+            }
+
+            const cleanUrl = new URL(url.toString());
+            cleanUrl.searchParams.delete('refresh');
+            container.dataset.liveUrl = cleanUrl.toString();
+            container.dataset.liveQuery = cleanUrl.searchParams.toString();
+            container.dataset.liveChecksum = payload.checksum;
+            window.history.replaceState({}, '', cleanUrl.toString());
+
+            Object.entries(fragments).forEach(([slot, html]) => {
+                const target = container.querySelector(`[data-live-slot="${slot}"]`);
+                if (target) {
+                    target.innerHTML = html;
+                    if (window.Alpine?.initTree) window.Alpine.initTree(target);
+                }
+            });
+
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     containers.forEach((container) => {
@@ -152,7 +159,6 @@ export default function initLiveUpdates() {
                     window.location.href = anchor.href;
                 }
             } catch (error) {
-                console.error('Gagal memuat filter tiket:', error);
                 window.location.href = anchor.href;
             }
         });
@@ -176,7 +182,6 @@ export default function initLiveUpdates() {
                     form.submit();
                 }
             } catch (error) {
-                console.error('Gagal memuat filter tiket (form):', error);
                 form.submit();
             }
         });

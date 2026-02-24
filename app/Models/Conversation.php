@@ -13,10 +13,12 @@ class Conversation extends Model
         'user_id',
         'assigned_admin_id',
         'is_open',
+        'is_bot_active',
     ];
 
     protected $casts = [
         'is_open' => 'boolean',
+        'is_bot_active' => 'boolean',
     ];
 
     /**
@@ -119,5 +121,21 @@ class Conversation extends Model
     public function reopen()
     {
         $this->update(['is_open' => true]);
+    }
+
+    /**
+     * Disable the bot for this conversation.
+     */
+    public function disableBot()
+    {
+        $this->update(['is_bot_active' => false]);
+    }
+
+    /**
+     * Enable the bot for this conversation.
+     */
+    public function enableBot()
+    {
+        $this->update(['is_bot_active' => true]);
     }
 }

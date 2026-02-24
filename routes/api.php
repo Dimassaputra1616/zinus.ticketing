@@ -21,4 +21,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::post('/conversations/{id}/messages', [ConversationApiController::class, 'sendMessage'])
         ->middleware('throttle:60,1')
         ->name('api.v1.conversations.send-message');
+
+    Route::post('/conversations/{id}/handoff', [ConversationApiController::class, 'handoff'])
+        ->name('api.v1.conversations.handoff');
 });

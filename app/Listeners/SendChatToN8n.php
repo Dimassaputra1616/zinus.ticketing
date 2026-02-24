@@ -24,9 +24,15 @@ class SendChatToN8n
     {
         $webhookUrl = env('N8N_WEBHOOK_URL');
 
-        // Only send if webhook is configured and sender is user
+        // Only send if webhook is configured, sender is user, AND bot is active for this conversation
         if (empty($webhookUrl) || $event->senderType !== 'user') {
             return;
+        }
+
+        // Check if bot is active for this conversation
+        $conversation = \App\Models\Conversation::find($event->message->conversation_id);
+        if ($conversation && !$conversation->is_bot_active) {
+             return;
         }
 
         try {

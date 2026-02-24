@@ -112,4 +112,20 @@ class ConversationApiController extends Controller
             $lock->release();
         }
     }
+
+    /**
+     * Handoff conversation to human agent (disable bot)
+     */
+    public function handoff(Request $request, $id): JsonResponse
+    {
+        $conversation = Conversation::findOrFail((int) $id);
+        
+        $conversation->disableBot();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Conversation handed off to agent. Bot is now disabled.',
+            'data' => new ConversationResource($conversation),
+        ]);
+    }
 }

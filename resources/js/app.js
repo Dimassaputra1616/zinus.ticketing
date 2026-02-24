@@ -116,13 +116,13 @@ function initNotificationPolling() {
                     Accept: 'application/json',
                 },
                 credentials: 'same-origin',
-            });
+            }).catch(e => { return { ok: false }; });
 
-            if (!response.ok) {
+            if (!response || !response.ok) {
                 return;
             }
 
-            const data = await response.json();
+            const data = await response.json().catch(e => null);
 
             if (!data) {
                 return;
@@ -132,7 +132,7 @@ function initNotificationPolling() {
             updateBadge('users', Number(data.users ?? 0));
             updateBadge('conversations', Number(data.conversations ?? 0));
         } catch (error) {
-            console.error('Gagal memuat ringkasan notifikasi:', error);
+            // Silently ignore polling errors
         }
     };
 
@@ -140,7 +140,10 @@ function initNotificationPolling() {
         if (timerId) {
             window.clearInterval(timerId);
         }
-        timerId = window.setInterval(fetchCounts, 3000);
+
+        // Use void to prevent unhandled promise rejection warnings in interval
+        const runFetch = () => void fetchCounts();
+        timerId = window.setInterval(runFetch, 3000);
     };
 
     fetchCounts();
