@@ -367,6 +367,10 @@ class ChatWidget extends Component
     
             // Dispatch event for n8n integration (only for user messages)
             if (!Auth::user()->isAdmin()) {
+                // Force reactivate bot whenever user types a message to ensure N8N receives it
+                if (!$conversation->is_bot_active) {
+                    $conversation->update(['is_bot_active' => true]);
+                }
                 \App\Events\MessageCreated::dispatch($message, 'user');
             }
     
