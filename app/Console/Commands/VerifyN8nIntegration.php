@@ -38,11 +38,11 @@ class VerifyN8nIntegration extends Command
         // Force sync queue driver to avoid needing jobs table/workers
         config(['queue.default' => 'sync']);
         
-        $webhookUrl = env('N8N_WEBHOOK_URL');
+        $webhookUrl = config('services.n8n.webhook_url');
         if (empty($webhookUrl)) {
             $this->warn('[WARNING] N8N_WEBHOOK_URL belum diset di .env!');
             // Set dummy URL to prevent failure in Http::post
-            config(['env.N8N_WEBHOOK_URL' => 'http://dummy-n8n-webhook.local']);
+            config(['services.n8n.webhook_url' => 'http://dummy-n8n-webhook.local']);
         } else {
             $this->info("[CONFIG] Webhook URL: {$webhookUrl}");
         }
