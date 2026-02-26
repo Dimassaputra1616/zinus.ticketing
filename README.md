@@ -1,61 +1,200 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Zinus Ticketing
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi internal IT Support berbasis Laravel untuk mengelola:
+- ticketing helpdesk
+- peminjaman device/aset
+- inventori aset IT
+- live chat user <-> admin (integrasi n8n)
 
-## About Laravel
+## 1. Ringkasan
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Project ini menggabungkan 4 proses operasional IT dalam satu sistem:
+- Incident/request tracking lewat modul Ticketing
+- Borrowing workflow lewat modul Loan
+- Asset inventory dan audit log lewat modul Asset
+- Real-time-ish komunikasi user-admin lewat Livewire Chat
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Target utama:
+- mempercepat respon IT
+- meminimalkan duplikasi input
+- menjaga histori perubahan untuk audit
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 2. Fitur Utama
 
-## Learning Laravel
+### Ticketing
+- User membuat tiket (judul, deskripsi, kategori, departemen, lampiran)
+- Admin melihat semua tiket dengan filter status, departemen, tanggal, pencarian
+- Update status: `open`, `assigned`, `in_progress`, `waiting_user`, `resolved`, `closed`
+- Ticket log menyimpan histori perubahan status dan actor snapshot
+- Notifikasi database ke admin saat tiket baru dibuat
+- Email notifikasi untuk tiket baru dan perubahan status
+- Idempotency key + payload hash untuk mencegah tiket duplikat
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Loan (Peminjaman)
+- User mengajukan peminjaman asset (utama: kategori Laptop)
+- Admin approve/reject/return
+- Sinkronisasi status asset saat approve/return
+- Proteksi conflict agar 1 aset tidak bisa dipinjam paralel
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Asset Management
+- CRUD aset (admin only)
+- Filter factory, departemen, kategori, status, search
+- Status aset: `available`, `in_use`, `maintenance`, `broken`
+- Soft delete + audit log (`asset_logs`)
+- Endpoint breakdown data untuk dashboard (lokasi, departemen, user assets)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Live Chat + n8n
+- Widget chat Livewire tersedia di layout app
+- Admin bisa handle multi-user conversation
+- Assignment admin per conversation (`assigned_admin_id`)
+- Handoff mode (`is_bot_active = false`) untuk stop bot
+- Event user message dikirim ke webhook n8n
+- API admin reply dilindungi Sanctum token
+- Atomic lock + duplicate guard untuk cegah double message
 
-## Laravel Sponsors
+## 3. Tech Stack
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Backend: PHP 8.2, Laravel 12
+- Frontend: Blade, Livewire 4, Alpine.js, Tailwind CSS, Vite
+- Auth/API: Laravel Sanctum
+- Data: MySQL/PostgreSQL/SQLite (default test sqlite)
+- Notifikasi: database + mail
 
-### Premium Partners
+## 4. Arsitektur Singkat
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```
+[Web User/Admin]
+      |
+      v
+[Laravel App]
+  - Web routes (Blade + Livewire)
+  - API routes (Asset Sync + Conversation API)
+      |
+      +--> [MySQL/SQLite]
+      |      - users, tickets, assets, borrow_logs,
+      |        conversations, messages, notifications
+      |
+      +--> [Mail Provider]
+      |
+      +--> [n8n Webhook]
+```
 
-## Contributing
+## 5. Role dan Akses
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- `user`
+  - buat tiket
+  - lihat tiket milik sendiri
+  - ajukan pinjam aset
+  - chat dengan admin
+- `admin`
+  - kelola semua tiket
+  - kelola user (sebagian fitur super admin)
+  - kelola aset dan loan status
+  - balas chat
+  - akses API conversation via token Sanctum
+- `super_admin`
+  - ubah role user
+  - reset password user
+  - hapus user
 
-## Code of Conduct
+## 6. Struktur Modul (ringkas)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- `app/Http/Controllers/TicketController.php`
+- `app/Http/Controllers/LoanController.php`
+- `app/Http/Controllers/AssetController.php`
+- `app/Livewire/ChatWidget.php`
+- `app/Http/Controllers/Api/AssetSyncController.php`
+- `app/Http/Controllers/Api/ConversationApiController.php`
+- `app/Services/AssetService.php`
 
-## Security Vulnerabilities
+## 7. Setup Lokal
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Prasyarat
+- PHP 8.2+
+- Composer
+- Node.js + npm
+- Database (MySQL direkomendasikan untuk environment dev/prod)
 
-## License
+### Instalasi
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan storage:link
+npm install
+npm run build
+```
+
+Untuk mode development:
+
+```bash
+composer run dev
+```
+
+Atau jalankan terpisah:
+
+```bash
+php artisan serve
+php artisan queue:listen --tries=1
+npm run dev
+```
+
+### Environment penting
+Tambahkan variabel berikut di `.env` (belum semua ada di `.env.example`):
+
+```env
+N8N_WEBHOOK_URL=
+
+ASSET_SYNC_TOKEN=
+ASSET_SYNC_TOKENS=
+ASSET_SYNC_AGENT_SHA256=
+ASSET_SYNC_DEPARTMENT=
+ASSET_SYNC_FACTORY=
+
+MAIL_EXTRA_ADMINS=
+```
+
+Catatan:
+- `ASSET_SYNC_TOKENS` mendukung JSON scoped token.
+- `MAIL_EXTRA_ADMINS` bisa dipisahkan koma/semicolon.
+
+## 8. Command Operasional
+
+```bash
+php artisan make:admin
+php artisan api:generate-token {email} {token_name?}
+php artisan n8n:verify
+```
+
+## 9. API Ringkas
+
+### Asset Sync
+- `POST /api/asset-sync`
+- Auth: Bearer token (`asset.sync` middleware)
+- Fungsi: create/update asset dari agent endpoint
+
+### Conversation API (v1)
+- `GET /api/v1/conversations`
+- `GET /api/v1/conversations/{id}`
+- `POST /api/v1/conversations/{id}/messages`
+- `POST /api/v1/conversations/{id}/handoff`
+- Auth: Sanctum token (`auth:sanctum`)
+
+## 10. Testing
+
+Jalankan:
+
+```bash
+php artisan test
+```
+
+Saat dokumentasi ini dibuat, sebagian test auth/profile gagal karena mismatch skema (`users.email_verified_at`) dan error view pada halaman confirm-password. Test lain seperti `AssetSyncTest` dan beberapa auth flow sudah berjalan.
+
+## 11. Dokumen Presentasi
+
+Gunakan file berikut untuk materi presentasi:
+
+- `docs/PRESENTASI.md`
+
