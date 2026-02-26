@@ -282,6 +282,8 @@ class ChatWidget extends Component
 
     public function sendMessage()
     {
+        $isAdminSender = Auth::user()->isAdmin();
+
         // Atomic lock to prevent double submission race conditions
         $lockKey = 'chat_send_message_' . Auth::id();
         $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 5); // 5 seconds lock
@@ -308,7 +310,7 @@ class ChatWidget extends Component
             }
     
             // Determine target user ID
-            $targetUserId = Auth::user()->isAdmin() && $this->selectedUserId 
+            $targetUserId = $isAdminSender && $this->selectedUserId 
                 ? $this->selectedUserId 
                 : Auth::id();
     
@@ -327,19 +329,13 @@ class ChatWidget extends Component
             }
     
             // Assign admin if this is regular user's first message and admin is selected
-            if (!Auth::user()->isAdmin() && $this->selectedAdminId && !$conversation->assigned_admin_id) {
+            if (!$isAdminSender && $this->selectedAdminId && !$conversation->assigned_admin_id) {
                 $conversation->update(['assigned_admin_id' => $this->selectedAdminId]);
             }
-    
-    
-            // Check for duplicate message (same as last message)
-            $lastMessageQuery = Message::where('conversation_id', $conversation->id)
-                ->latest()
-                ->first();
                 
             // For admin, check last message from admin (user_id is null)
             // For regular user, check last message from user
-            if (Auth::user()->isAdmin()) {
+            if ($isAdminSender) {
                 $lastMessage = Message::where('conversation_id', $conversation->id)
                     ->whereNull('user_id')
                     ->latest()
@@ -360,17 +356,18 @@ class ChatWidget extends Component
             // Admin messages have user_id = null, regular user messages have user_id = auth id
             $message = Message::create([
                 'conversation_id' => $conversation->id,
-                'user_id' => Auth::user()->isAdmin() ? null : Auth::id(),
+                'user_id' => $isAdminSender ? null : Auth::id(),
                 'body' => $this->body,
                 'is_read' => false,
             ]);
-    
-            // Dispatch event for n8n integration (only for user messages)
-            if (!Auth::user()->isAdmin()) {
-                // Force reactivate bot whenever user types a message to ensure N8N receives it
-                if ($conversation && !$conversation->is_bot_active) {
-                    $conversation->update(['is_bot_active' => true]);
-                }
+
+            // When a real admin replies, switch conversation to human-handoff mode.
+            if ($isAdminSender) {
+                $conversation->update([
+                    'assigned_admin_id' => Auth::id(),
+                    'is_bot_active' => false,
+                ]);
+            } else {
                 \App\Events\MessageCreated::dispatch($message, 'user');
             }
     

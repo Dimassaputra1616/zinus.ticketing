@@ -18,6 +18,9 @@ class ConversationResource extends JsonResource
             'id' => $this->id,
             'user' => new UserResource($this->whenLoaded('user')),
             'is_open' => $this->is_open,
+            'is_bot_active' => (bool) $this->is_bot_active,
+            'handler_mode' => $this->is_bot_active ? 'bot' : 'admin',
+            'assigned_admin_id' => $this->assigned_admin_id,
             'unread_count' => $this->when(
                 isset($this->unread_count),
                 $this->unread_count

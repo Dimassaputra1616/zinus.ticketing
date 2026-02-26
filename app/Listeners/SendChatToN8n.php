@@ -34,8 +34,9 @@ class SendChatToN8n
             return;
         }
 
-        // Check if bot is active for this conversation
-        $conversation = \App\Models\Conversation::find($event->message->conversation_id);
+        // Check if bot is active for this conversation and include admin handoff context
+        $conversation = \App\Models\Conversation::with('assignedAdmin:id,name,email')
+            ->find($event->message->conversation_id);
         if (!$conversation) {
             Log::warning('[N8N] Conversation not found', ['conversation_id' => $event->message->conversation_id]);
             return;
@@ -49,11 +50,19 @@ class SendChatToN8n
         try {
             Log::info('[N8N] Sending POST to webhook...', ['url' => $webhookUrl]);
 
+            $assignedAdmin = $conversation->assignedAdmin;
+            $handlerType = $conversation->is_bot_active ? 'bot' : 'admin';
+
             $response = Http::timeout(5)->post($webhookUrl, [
                 'conversation_id' => $event->message->conversation_id,
                 'message_id' => $event->message->id,
                 'message' => $event->message->body,
                 'sender_type' => $event->senderType,
+                'handler_type' => $handlerType,
+                'bot_active' => (bool) $conversation->is_bot_active,
+                'assigned_admin_id' => $assignedAdmin?->id,
+                'assigned_admin_name' => $assignedAdmin?->name,
+                'assigned_admin_email' => $assignedAdmin?->email,
                 'user_id' => $event->message->user_id,
                 'user_name' => $event->message->user->name ?? 'Unknown User',
                 'user_email' => $event->message->user->email ?? null,

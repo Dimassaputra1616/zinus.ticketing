@@ -72,8 +72,11 @@ class ConversationController extends Controller
             'is_read' => false, // User hasn't read admin reply yet
         ]);
 
-        // Touch the conversation to update updated_at
-        $conversation->touch();
+        // Admin is now handling this chat: assign admin and disable bot handoff.
+        $conversation->update([
+            'assigned_admin_id' => Auth::id(),
+            'is_bot_active' => false,
+        ]);
 
         return redirect()
             ->route('admin.conversations.show', $conversation)
