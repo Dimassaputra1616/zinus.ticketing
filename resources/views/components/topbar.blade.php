@@ -74,13 +74,17 @@
                     <button
                         type="button"
                         @click="langOpen = !langOpen"
-                        class="flex p-2 items-center justify-center rounded-full text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition focus:outline-none"
+                        class="flex items-center justify-center gap-1.5 rounded-full border border-[#c5e5d0] bg-white px-3 py-1.5 shadow-[0_10px_20px_rgba(35,69,93,0.05)] transition hover:border-[#53B77A] focus:outline-none"
                         title="Change Language"
                     >
-                        <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="h-[18px] w-[18px] text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10" />
                             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                             <path d="M2 12h20" />
+                        </svg>
+                        <span class="text-[11px] font-bold text-[#0D1F2B]">{{ strtoupper(app()->getLocale()) }}</span>
+                        <svg class="h-3.5 w-3.5 text-slate-500 transition" :class="{ 'rotate-180': langOpen }" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.25a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z" clip-rule="evenodd" />
                         </svg>
                     </button>
                     <div
