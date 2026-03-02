@@ -13,6 +13,13 @@ use App\Mail\TicketStatusUpdatedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/lang/{locale}', function ($locale) {
+    if (in_array($locale, ['en', 'id', 'ko'])) {
+        session()->put('locale', $locale);
+    }
+    return redirect()->back();
+})->name('lang.switch');
+
 // ✅ ROUTE LANDING
 Route::get('/', function () {
     if (auth()->check()) {

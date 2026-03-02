@@ -385,7 +385,7 @@
 
             $navItems = [
                 [
-                    'label' => 'Dashboard',
+                    'label' => __('messages.dashboard'),
                     'route' => 'dashboard',
                     'icon' => '
                         <path d="M3 10.5 12 4l9 6.5" />
@@ -397,7 +397,7 @@
                     'badgeType' => null,
                 ],
                 [
-                    'label' => 'Tiket Saya',
+                    'label' => __('messages.my_tickets'),
                     'route' => 'tickets.mine',
                     'icon' => '
                         <path d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z" />
@@ -410,7 +410,7 @@
                     'badgeType' => null,
                 ],
                 [
-                    'label' => 'Daftar Tiket',
+                    'label' => __('messages.ticket_list'),
                     'route' => 'tickets.index',
                     'icon' => '
                         <path d="M8 6h13" />
@@ -425,7 +425,7 @@
                     'badgeType' => 'tickets',
                 ],
                 [
-                    'label' => 'Log Peminjaman',
+                    'label' => __('messages.loan_log'),
                     'route' => 'loans.index',
                     'icon' => '
                         <path d="M7 7h10M7 12h4m1 8 3-3h4a2 2 0 0 0 2-2V5c0-1.1-.9-2-2-2H6a2 2 0 0 0-2 2v15l3-3h5" />
@@ -435,7 +435,7 @@
                     'badgeType' => null,
                 ],
                 [
-                    'label' => 'Kelola Asset',
+                    'label' => __('messages.manage_asset'),
                     'route' => 'assets.index',
                     'icon' => '
                         <path d="M3 4h18v8H3z" />
@@ -447,7 +447,7 @@
                     'badgeType' => null,
                 ],
                 [
-                    'label' => 'Live Chat',
+                    'label' => __('messages.live_chat'),
                     'route' => 'admin.conversations.index',
                     'icon' => '
                         <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -457,7 +457,7 @@
                     'badgeType' => 'conversations',
                 ],
                 [
-                    'label' => 'Kelola User',
+                    'label' => __('messages.manage_user'),
                     'route' => 'users.index',
                     'icon' => '
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -548,7 +548,7 @@
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
                             </svg>
-                            Logout
+                            {{ __('messages.logout') }}
                         </button>
                     </form>
                 </div>
@@ -673,25 +673,25 @@
                 @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*'))
                     @php
                         $topbarTitle = match (true) {
-                            request()->routeIs('tickets.show') => 'Detail Tiket',
-                            request()->routeIs('tickets.mine') => 'Tiket Saya',
-                            request()->routeIs('tickets.index') => 'Daftar Tiket',
-                            request()->routeIs('users.*') => 'Kelola pengguna dan hak akses tim',
-                            request()->routeIs('loans.*') => 'Log Peminjaman',
-                            request()->routeIs('assets.*') => 'Kelola Asset & Inventori',
-                            request()->routeIs('admin.conversations.index') => 'Live Chat Support',
+                            request()->routeIs('tickets.show') => __('messages.title_ticket_detail'),
+                            request()->routeIs('tickets.mine') => __('messages.title_my_tickets'),
+                            request()->routeIs('tickets.index') => __('messages.title_ticket_list'),
+                            request()->routeIs('users.*') => __('messages.title_manage_users'),
+                            request()->routeIs('loans.*') => __('messages.title_loan_log'),
+                            request()->routeIs('assets.*') => __('messages.title_manage_assets'),
+                            request()->routeIs('admin.conversations.index') => __('messages.title_live_chat'),
                             request()->routeIs('admin.conversations.show') => 'Detail Percakapan',
-                            default => 'Dashboard Ticketing',
+                            default => __('messages.dashboard'),
                         };
                         $topbarDescription = match (true) {
-                            request()->routeIs('tickets.show') => 'Kelola tiket dan dukungan IT Zinus Dream Indonesia dari satu panel terpadu.',
-                            request()->routeIs('tickets.mine') => 'Pantau progres tiket yang kamu buat dan terus ikuti update-nya.',
-                            request()->routeIs('tickets.index') => 'Pantau dan kelola semua tiket yang masuk ke tim IT.',
-                            request()->routeIs('users.*') => 'Atur akun, peran, dan status user agar dukungan IT tetap aman dan terstruktur.',
-                            request()->routeIs('loans.*') => 'Pantau dan kelola peminjaman perangkat, proses persetujuan, dan pengembalian dengan lebih rapi.',
-                            request()->routeIs('assets.*') => 'Kelola inventori perangkat, status ketersediaan, dan lokasi penggunaan dari satu halaman.',
-                            request()->routeIs('admin.conversations.*') => 'Kelola dan balas percakapan dengan pengguna secara real-time.',
-                            default => 'Kelola tiket dan dukungan IT Zinus Dream Indonesia dari satu panel terpadu.',
+                            request()->routeIs('tickets.show') => __('messages.desc_ticket_detail'),
+                            request()->routeIs('tickets.mine') => __('messages.desc_my_tickets'),
+                            request()->routeIs('tickets.index') => __('messages.desc_ticket_list'),
+                            request()->routeIs('users.*') => __('messages.desc_manage_users'),
+                            request()->routeIs('loans.*') => __('messages.desc_loan_log'),
+                            request()->routeIs('assets.*') => __('messages.desc_manage_assets'),
+                            request()->routeIs('admin.conversations.*') => __('messages.desc_live_chat'),
+                            default => __('messages.desc_ticket_management'),
                         };
                     @endphp
                     <x-topbar
@@ -720,9 +720,41 @@
                             </div>
 
                             @if ($user)
-                                <div x-data="{ open: false }" class="relative">
-                                    <button
-                                        type="button"
+                                <div class="flex items-center gap-2.5">
+                                    <!-- Language Switcher -->
+                                    <div x-data="{ langOpen: false }" class="relative">
+                                        <button
+                                            type="button"
+                                            @click="langOpen = !langOpen"
+                                            class="flex items-center justify-center gap-1 rounded-full border border-[#c5e5d0] bg-white px-3 py-1.5 shadow-sm transition hover:border-[#53B77A] focus:outline-none"
+                                        >
+                                            <span class="text-sm font-semibold text-[#0D1F2B]">{{ strtoupper(app()->getLocale()) }}</span>
+                                            <svg class="h-4 w-4 text-slate-500 transition" :class="{ 'rotate-180': langOpen }" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.25a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            x-show="langOpen"
+                                            @click.away="langOpen = false"
+                                            class="absolute right-0 mt-2 w-32 rounded-xl border border-slate-200 bg-white shadow-lg py-1 z-50"
+                                            x-transition.origin.top.right
+                                            style="display: none;"
+                                        >
+                                            <a href="{{ route('lang.switch', 'id') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'id' ? 'font-bold text-[#12824C]' : '' }}">
+                                                ID - Indonesia
+                                            </a>
+                                            <a href="{{ route('lang.switch', 'en') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'en' ? 'font-bold text-[#12824C]' : '' }}">
+                                                EN - English
+                                            </a>
+                                            <a href="{{ route('lang.switch', 'ko') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'ko' ? 'font-bold text-[#12824C]' : '' }}">
+                                                KO - Korean
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div x-data="{ open: false }" class="relative">
+                                        <button
+                                            type="button"
                                         @click="open = !open"
                                         class="flex items-center gap-2 rounded-full border border-[#c5e5d0] bg-white px-3 py-1.5 text-left shadow-sm transition hover:border-[#53B77A] focus:outline-none"
                                     >
@@ -761,7 +793,7 @@
                                                     <path d="M3 12h14" />
                                                     <path d="M7 5V4a2 2 0 012-2h6a2 2 0 012 2v12a2 2 0 01-2 2h-6a2 2 0 01-2-2v-1" />
                                                 </svg>
-                                                Logout
+                                                {{ __('messages.logout') }}
                                             </button>
                                         </form>
                                     </div>

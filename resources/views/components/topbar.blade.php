@@ -69,6 +69,37 @@
 
         @if ($user)
             <div class="{{ $hideUserOnMobile ? 'hidden lg:flex' : 'flex' }} items-center gap-2.5 lg:mt-0">
+                <!-- Language Switcher -->
+                <div x-data="{ langOpen: false }" class="relative">
+                    <button
+                        type="button"
+                        @click="langOpen = !langOpen"
+                        class="flex items-center justify-center gap-1 rounded-full border border-[#c5e5d0] bg-white px-3 py-1.5 shadow-[0_10px_20px_rgba(35,69,93,0.05)] transition hover:border-[#53B77A] focus:outline-none"
+                    >
+                        <span class="text-xs font-semibold text-[#0D1F2B]">{{ strtoupper(app()->getLocale()) }}</span>
+                        <svg class="h-3.5 w-3.5 text-slate-500 transition" :class="{ 'rotate-180': langOpen }" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.25a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div
+                        x-show="langOpen"
+                        @click.away="langOpen = false"
+                        class="absolute right-0 mt-2 w-32 rounded-xl border border-slate-200 bg-white shadow-lg py-1 z-50"
+                        x-transition.origin.top.right
+                        style="display: none;"
+                    >
+                        <a href="{{ route('lang.switch', 'id') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'id' ? 'font-bold text-[#12824C]' : '' }}">
+                            ID - Indonesia
+                        </a>
+                        <a href="{{ route('lang.switch', 'en') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'en' ? 'font-bold text-[#12824C]' : '' }}">
+                            EN - English
+                        </a>
+                        <a href="{{ route('lang.switch', 'ko') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'ko' ? 'font-bold text-[#12824C]' : '' }}">
+                            KO - Korean
+                        </a>
+                    </div>
+                </div>
+
                 <div x-data="{ open: false }" class="relative">
                     <button
                         type="button"
@@ -110,7 +141,7 @@
                                     <path d="M3 12h14" />
                                     <path d="M7 5V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-1" />
                                 </svg>
-                                Logout
+                                {{ __('messages.logout') }}
                             </button>
                         </form>
                     </div>

@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
 
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
+
         // ✅ daftar alias middleware admin di sini
         $middleware->alias([
             'admin' => AdminMiddleware::class,
