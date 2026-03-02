@@ -431,4 +431,16 @@ return [
     'unknown_user' => 'Unknown user',
     'view_detail' => 'View Detail',
     'view_ticket_detail' => 'View ticket detail',
+
+    // Status labels
+    'status_open' => 'Open',
+    'status_assigned' => 'Assigned',
+    'status_in_progress' => 'In Progress',
+    'status_waiting_user' => 'Waiting User',
+    'status_resolved' => 'Resolved',
+    'status_closed' => 'Closed',
+    'loan_status_waiting' => 'Waiting',
+    'loan_status_approved' => 'Approved',
+    'loan_status_returned' => 'Returned',
+    'loan_status_rejected' => 'Rejected',
 ];

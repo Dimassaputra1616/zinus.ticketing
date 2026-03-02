@@ -42,12 +42,12 @@ class TicketController extends Controller
         $user = $request->user();
 
         $statuses = [
-            'open' => 'Open',
-            'assigned' => 'Assigned',
-            'in_progress' => 'In Progress',
-            'waiting_user' => 'Waiting User',
-            'resolved' => 'Resolved',
-            'closed' => 'Closed',
+            'open' => __('messages.status_open'),
+            'assigned' => __('messages.status_assigned'),
+            'in_progress' => __('messages.status_in_progress'),
+            'waiting_user' => __('messages.status_waiting_user'),
+            'resolved' => __('messages.status_resolved'),
+            'closed' => __('messages.status_closed'),
         ];
 
         $statusFilter = $request->query('status');
@@ -382,12 +382,12 @@ class TicketController extends Controller
         $ticket->loadMissing(['category', 'department', 'user', 'attachments']);
 
         $statuses = [
-            'open' => 'Open',
-            'assigned' => 'Assigned',
-            'in_progress' => 'In Progress',
-            'waiting_user' => 'Waiting User',
-            'resolved' => 'Resolved',
-            'closed' => 'Closed',
+            'open' => __('messages.status_open'),
+            'assigned' => __('messages.status_assigned'),
+            'in_progress' => __('messages.status_in_progress'),
+            'waiting_user' => __('messages.status_waiting_user'),
+            'resolved' => __('messages.status_resolved'),
+            'closed' => __('messages.status_closed'),
         ];
 
         $statusLogs = $ticket->ticketLogs()
@@ -477,10 +477,10 @@ class TicketController extends Controller
         $user = $request->user();
 
         $statuses = [
-            'open' => 'Open',
-            'in_progress' => 'In Progress',
-            'resolved' => 'Resolved',
-            'closed' => 'Closed',
+            'open' => __('messages.status_open'),
+            'in_progress' => __('messages.status_in_progress'),
+            'resolved' => __('messages.status_resolved'),
+            'closed' => __('messages.status_closed'),
         ];
 
         $statusFilter = $request->query('status');

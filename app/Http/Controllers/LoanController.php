@@ -20,10 +20,10 @@ class LoanController extends Controller
         $isAdmin = $user?->isAdmin();
 
         $statuses = [
-            BorrowLog::STATUS_WAITING => 'Waiting',
-            BorrowLog::STATUS_APPROVED => 'Approved',
-            BorrowLog::STATUS_RETURNED => 'Returned',
-            BorrowLog::STATUS_REJECTED => 'Rejected',
+            BorrowLog::STATUS_WAITING => __('messages.loan_status_waiting'),
+            BorrowLog::STATUS_APPROVED => __('messages.loan_status_approved'),
+            BorrowLog::STATUS_RETURNED => __('messages.loan_status_returned'),
+            BorrowLog::STATUS_REJECTED => __('messages.loan_status_rejected'),
         ];
 
         $search = trim((string) $request->query('search', ''));

@@ -427,4 +427,16 @@ return [
     'unknown_user' => 'User tidak diketahui',
     'view_detail' => 'Lihat Detail',
     'view_ticket_detail' => 'Lihat detail tiket',
+
+    // Status labels
+    'status_open' => 'Terbuka',
+    'status_assigned' => 'Ditugaskan',
+    'status_in_progress' => 'Sedang Diproses',
+    'status_waiting_user' => 'Menunggu User',
+    'status_resolved' => 'Selesai',
+    'status_closed' => 'Ditutup',
+    'loan_status_waiting' => 'Menunggu',
+    'loan_status_approved' => 'Disetujui',
+    'loan_status_returned' => 'Dikembalikan',
+    'loan_status_rejected' => 'Ditolak',
 ];

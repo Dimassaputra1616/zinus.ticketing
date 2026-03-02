@@ -427,4 +427,16 @@ return [
     'unknown_user' => '알 수 없는 사용자',
     'view_detail' => '상세 보기',
     'view_ticket_detail' => '티켓 상세 보기',
+
+    // Status labels
+    'status_open' => '열림',
+    'status_assigned' => '배정됨',
+    'status_in_progress' => '진행 중',
+    'status_waiting_user' => '사용자 대기',
+    'status_resolved' => '해결됨',
+    'status_closed' => '닫힘',
+    'loan_status_waiting' => '대기 중',
+    'loan_status_approved' => '승인됨',
+    'loan_status_returned' => '반납됨',
+    'loan_status_rejected' => '거부됨',
 ];
