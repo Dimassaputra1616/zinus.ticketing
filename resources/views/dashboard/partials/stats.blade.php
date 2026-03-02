@@ -1,37 +1,37 @@
 @php
     $cards = [
         [
-            'label' => 'Total Tiket',
+            'label' => __('messages.stat_total'),
             'value' => $totalTickets,
-            'description' => 'Semua tiket yang kamu pantau',
-            'badge' => 'Ringkasan',
+            'description' => __('messages.stat_total_desc'),
+            'badge' => __('messages.stat_total_badge'),
             'badge_classes' => 'bg-gradient-to-r from-[#F6F9F8] to-white text-[#23455D] border border-[#C8E2D8]',
             'icon_color' => '#23455D',
             'number_color' => '#0C1F2C',
         ],
         [
-            'label' => 'Open',
+            'label' => __('messages.stat_open'),
             'value' => $openTickets,
-            'description' => 'Menunggu tindak lanjut',
-            'badge' => 'Butuh respon',
+            'description' => __('messages.stat_open_desc'),
+            'badge' => __('messages.stat_open_badge'),
             'badge_classes' => 'bg-gradient-to-r from-[#FFF4CC] to-[#FFE3D0] text-[#B45309] border border-[#FFD966]',
             'icon_color' => '#FFD966',
             'number_color' => '#B45309',
         ],
         [
-            'label' => 'In Progress',
+            'label' => __('messages.stat_progress'),
             'value' => $inProgressTickets,
-            'description' => 'Sedang dikerjakan tim IT',
-            'badge' => 'On track',
+            'description' => __('messages.stat_progress_desc'),
+            'badge' => __('messages.stat_progress_badge'),
             'badge_classes' => 'bg-gradient-to-r from-[#E3EEFB] to-[#F5F8FF] text-[#23455D] border border-[#BBD2EA]',
             'icon_color' => '#23455D',
             'number_color' => '#23455D',
         ],
         [
-            'label' => 'Selesai',
+            'label' => __('messages.stat_resolved'),
             'value' => $resolvedTickets,
-            'description' => 'Tiket selesai & ditutup',
-            'badge' => 'Tuntas',
+            'description' => __('messages.stat_resolved_desc'),
+            'badge' => __('messages.stat_resolved_badge'),
             'badge_classes' => 'bg-gradient-to-r from-[#E1F5EB] to-[#F2FBF6] text-[#12824C] border border-[#B7E3CB]',
             'icon_color' => '#12824C',
             'number_color' => '#12824C',
@@ -55,10 +55,10 @@
         @foreach ($cards as $card)
             @php
                 $statusParam = match ($card['label']) {
-                    'Total Tiket' => null,
-                    'Open' => 'open',
-                    'In Progress' => 'in_progress',
-                    'Selesai' => 'resolved',
+                    __('messages.stat_total') => null,
+                    __('messages.stat_open') => 'open',
+                    __('messages.stat_progress') => 'in_progress',
+                    __('messages.stat_resolved') => 'resolved',
                     default => \Illuminate\Support\Str::slug($card['label'], '_'),
                 };
             @endphp
@@ -75,22 +75,22 @@
                         <span class="h-7 w-7 rounded-full bg-white/80 shadow-inner shadow-white flex items-center justify-center" aria-hidden="true">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="{{ $card['icon_color'] }}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                 @switch($card['label'])
-                                    @case('Total Tiket')
+                                    @case(__('messages.stat_total'))
                                         <rect x="3" y="3" width="7" height="7" rx="1" />
                                         <rect x="14" y="3" width="7" height="7" rx="1" />
                                         <rect x="14" y="14" width="7" height="7" rx="1" />
                                         <rect x="3" y="14" width="7" height="7" rx="1" />
                                         @break
-                                    @case('Open')
+                                    @case(__('messages.stat_open'))
                                         <circle cx="12" cy="12" r="9" />
                                         <path d="M12 8v4" />
                                         <path d="M12 16h.01" />
                                         @break
-                                    @case('In Progress')
+                                    @case(__('messages.stat_progress'))
                                         <circle cx="12" cy="12" r="9" />
                                         <path d="M12 7v5l3 3" />
                                         @break
-                                    @case('Selesai')
+                                    @case(__('messages.stat_resolved'))
                                         <path d="m9 12 2 2 4-4" />
                                         <circle cx="12" cy="12" r="9" />
                                         @break

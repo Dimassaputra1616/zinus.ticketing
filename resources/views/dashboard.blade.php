@@ -36,9 +36,9 @@
         @endphp
 
         <x-ui.section-hero
-            pill="Dashboard"
-            title="Dashboard Ticketing"
-            description="Kelola dan pantau tiket IT dengan lebih terstruktur."
+            pill="{{ __('messages.dashboard') }}"
+            title="{{ __('messages.dashboard_title') }}"
+            description="{{ __('messages.dashboard_desc') }}"
         >
             <x-slot:pillIcon>
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6" /><path d="M6 20v-4" /><path d="M18 20v-8" /><path d="M3 13h18" /></svg>
@@ -51,8 +51,8 @@
         <section class="space-y-3 mt-0">
             <div class="space-y-3 w-full">
                 <x-ui.stats-panel
-                    title="Statistik Tiket"
-                    subtitle="Ringkasan status tiket yang sedang kamu pantau."
+                    title="{{ __('messages.stats_title') }}"
+                    subtitle="{{ __('messages.stats_subtitle') }}"
                 >
                     <div data-live-slot="dashboard-stats">
                         @include('dashboard.partials.stats', [
@@ -71,15 +71,15 @@
                                 <div class="space-y-2">
                                     <p class="heading-font text-xs font-semibold uppercase tracking-[0.45em] text-[#23455D]/70 flex items-center gap-2">
                                         <svg class="h-5 w-5 text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
-                                        Buat Tiket Baru
+                                        {{ __('messages.create_ticket_badge') }}
                                     </p>
-                                    <p class="text-2xl font-semibold text-[#0C1F2C] leading-tight">Laporkan masalah baru agar tim IT dapat membantu lebih cepat.</p>
+                                    <p class="text-2xl font-semibold text-[#0C1F2C] leading-tight">{{ __('messages.create_ticket_title') }}</p>
                                 </div>
                                 <span class="badge-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#12824C] border border-[#C5E5D0] bg-gradient-to-r from-[#E9F7F0] to-[#F6FFFB] shadow-inner shadow-white/60 transition hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(18,130,76,0.18)]">
                                     <svg class="h-4 w-4 text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
                                         <path d="M13 2 3 14h9l-1 8 10-12h-9z" />
                                     </svg>
-                                    Respon cepat
+                                    {{ __('messages.create_ticket_btn_fast') }}
                                 </span>
                             </div>
                             <div class="border-b border-slate-200 mt-6 mb-4"></div>
@@ -100,13 +100,13 @@
                                 @csrf
                                 <input type="hidden" name="idempotency_key" value="" data-idempotency-key>
                                 <div class="md:col-span-2 space-y-2">
-                                    <label class="text-[11px] font-medium text-gray-500">Judul Tiket</label>
+                                    <label class="text-[11px] font-medium text-gray-500">{{ __('messages.create_ticket_label_title') }}</label>
                                     <input
                                         name="title"
                                         value="{{ old('title') }}"
                                         required
                                         minlength="8"
-                                        placeholder="Contoh: Email Outlook tidak bisa dibuka"
+                                        placeholder="{{ __('messages.create_ticket_placeholder_title') }}"
                                         class="w-full rounded-[12px] border border-slate-200 bg-white px-5 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 shadow-sm"
                                         data-validate-field="title"
                                     >
@@ -116,7 +116,7 @@
                                 </div>
 
                                 <div class="space-y-2">
-                                    <label class="text-[11px] font-medium text-gray-500">Kategori</label>
+                                    <label class="text-[11px] font-medium text-gray-500">{{ __('messages.create_ticket_label_category') }}</label>
                                     <div class="relative">
                                         <select
                                             name="category_id"
@@ -124,7 +124,7 @@
                                             class="w-full rounded-[12px] border border-slate-200 bg-white bg-none px-5 py-3 pr-10 text-sm text-slate-900 placeholder:text-slate-400 transition appearance-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 shadow-sm {{ $categoryError ? 'border-rose-400 focus:border-rose-400 focus:ring-rose-100' : '' }}"
                                             data-validate-field="category_id"
                                         >
-                                            <option value="" disabled @selected(! old('category_id'))>Pilih kategori tiket</option>
+                                            <option value="" disabled @selected(! old('category_id'))>{{ __('messages.create_ticket_placeholder_category') }}</option>
                                             @foreach ($categories as $category)
                                                 <option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>
                                                     {{ $category->name }}
@@ -143,14 +143,14 @@
                                 </div>
 
                                 <div class="space-y-2">
-                                    <label class="text-[11px] font-medium text-gray-500">Departemen</label>
+                                    <label class="text-[11px] font-medium text-gray-500">{{ __('messages.create_ticket_label_department') }}</label>
                                     <select
                                         name="department_id"
                                         required
                                         class="w-full rounded-[12px] border border-slate-200 bg-white px-5 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 shadow-sm {{ $departmentError ? 'border-rose-400 focus:border-rose-400 focus:ring-rose-100' : '' }}"
                                         data-validate-field="department_id"
                                     >
-                                        <option value="" disabled @selected(! old('department_id'))>Pilih departemen terkait</option>
+                                        <option value="" disabled @selected(! old('department_id'))>{{ __('messages.create_ticket_placeholder_department') }}</option>
                                         @foreach ($departments as $department)
                                             <option value="{{ $department->id }}" @selected(old('department_id') == $department->id)>
                                                 {{ $department->name }}
@@ -163,13 +163,13 @@
                                 </div>
 
                                 <div class="md:col-span-2 space-y-2">
-                                    <label class="text-[11px] font-medium text-gray-500">Deskripsi</label>
+                                    <label class="text-[11px] font-medium text-gray-500">{{ __('messages.create_ticket_label_desc') }}</label>
                                     <textarea
                                         name="description"
                                         class="w-full rounded-[12px] border border-slate-200 bg-white px-5 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 h-32 shadow-sm"
                                         required
                                         minlength="20"
-                                        placeholder="Ceritakan detail masalah atau kebutuhan yang kamu alami..."
+                                        placeholder="{{ __('messages.create_ticket_placeholder_desc') }}"
                                         data-validate-field="description"
                                     >{{ old('description') }}</textarea>
                                     <p class="text-xs text-rose-500 {{ $descriptionError ? '' : 'hidden' }}" data-field-error="description">
@@ -182,7 +182,7 @@
                                         <svg class="h-4 w-4 text-[#118A58]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="m21.44 11.05-8.49 8.49a5 5 0 0 1-7.07-7.07l8.49-8.49a3 3 0 0 1 4.24 4.24l-8.49 8.49a1 1 0 0 1-1.41-1.41l7.78-7.78" />
                                         </svg>
-                                        Lampiran (Opsional)
+                                        {{ __('messages.create_ticket_label_attachment') }}
                                     </label>
                                     <div class="rounded-[12px] border border-slate-200 bg-white px-5 py-5 text-sm text-slate-700 flex flex-col gap-3 shadow-sm" data-file-preview-wrapper data-dropzone>
                                         <input
@@ -192,7 +192,7 @@
                                             class="block w-full rounded-[12px] border border-slate-200 bg-white px-5 py-3 text-sm text-slate-800 placeholder:text-slate-400 transition file:mr-3 file:rounded-full file:border-0 file:bg-emerald-600 file:px-4 file:py-2 file:text-[0.65rem] file:font-semibold file:uppercase file:tracking-[0.28em] file:text-white hover:file:bg-emerald-500 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                                             data-file-preview-input
                                         >
-                                        <p class="text-xs text-slate-500">Maks. 5 file, 5MB per file. Format: PDF, gambar, dokumen Office, ZIP.</p>
+                                        <p class="text-xs text-slate-500">{{ __('messages.create_ticket_attachment_desc') }}</p>
                                         <div class="flex flex-wrap gap-2" data-file-preview-list hidden></div>
                                     </div>
                                     @php $attachmentErrors = $errors->get('attachments.*'); @endphp
@@ -212,7 +212,7 @@
                                         data-submit-btn
                                     >
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
-                                        <span data-submit-label>Kirim Tiket</span>
+                                        <span data-submit-label>{{ __('messages.create_ticket_btn_submit') }}</span>
                                         <span class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" data-submit-spinner></span>
                                     </button>
                                 </div>
