@@ -328,4 +328,48 @@ return [
     'status_open'                 => '열림',
     'status_on_track'             => '진행 중',
     'status_done'                 => '완료됨',
+
+    // Dashboard
+    'dashboard_title' => '티켓팅 대시보드',
+    'dashboard_desc' => 'IT 티켓을 보다 체계적으로 관리하고 모니터링하세요.',
+    'stats_title' => '티켓 통계',
+    'stats_subtitle' => '모니터링 중인 티켓의 상태 요약입니다.',
+    
+    // Stats Cards
+    'stat_total' => '총 티켓',
+    'stat_total_desc' => '모니터링 중인 모든 티켓',
+    'stat_total_badge' => '요약',
+
+    'stat_open' => '열림',
+    'stat_open_desc' => '후속 조치 대기 중',
+    'stat_open_badge' => '응답 필요',
+
+    'stat_progress' => '진행 중',
+    'stat_progress_desc' => 'IT 팀에서 처리 중',
+    'stat_progress_badge' => '진행 중',
+
+    'stat_resolved' => '해결됨',
+    'stat_resolved_desc' => '티켓 해결 및 닫힘',
+    'stat_resolved_badge' => '완료',
+
+    // Create Ticket Section
+    'create_ticket_badge' => '새 티켓 만들기',
+    'create_ticket_title' => 'IT 팀이 더 빨리 도울 수 있도록 새로운 문제를 보고하세요.',
+    'create_ticket_btn_fast' => '빠른 응답',
+    'create_ticket_label_title' => '티켓 제목',
+    'create_ticket_placeholder_title' => '대: Outlook 이메일을 열 수 없습니다.',
+    'create_ticket_label_category' => '카테고리',
+    'create_ticket_placeholder_category' => '티켓 카테고리 선택',
+    'create_ticket_label_department' => '부서',
+    'create_ticket_placeholder_department' => '관련 부서 선택',
+    'create_ticket_label_desc' => '설명',
+    'create_ticket_placeholder_desc' => '당신이 겪고 있는 문제나 요구사항의 세부사항을 알려주세요...',
+    'create_ticket_label_attachment' => '첨부 파일 (선택 사항)',
+    'create_ticket_attachment_desc' => '최대 5개 파일, 파일당 5MB. 형식: PDF, 이미지, Office 문서, ZIP.',
+    'create_ticket_btn_submit' => '티켓 제출',
+
+    // History Section
+    'history_title' => '티켓 내역',
+    'history_subtitle_admin' => '최근 접수된 티켓',
+    'history_subtitle_user' => '최근 생성한 티켓',
 ];
