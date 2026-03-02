@@ -409,4 +409,22 @@ return [
     'submit_request' => 'Kirim Permintaan',
     'tickets' => 'tiket',
     'uncategorized' => 'Tanpa Kategori',
+
+    // Ticket views
+    'advanced_filter_active' => 'Filter lanjutan aktif',
+    'filter_status' => 'Filter Status',
+    'from' => 'Dari',
+    'my_ticket_history' => 'Riwayat Tiket Kamu',
+    'my_ticket_history_desc' => 'Semua tiket yang kamu buat akan muncul di sini.',
+    'no_ticket_for_filter' => 'Tidak ada tiket untuk filter ini.',
+    'no_tickets_to_show' => 'Belum ada tiket untuk ditampilkan',
+    'no_tickets_to_show_desc' => 'Buat tiket baru atau ubah filter untuk melihat riwayatmu.',
+    'optional_refinement' => 'Penyempurnaan opsional',
+    'search_ticket_placeholder' => 'Cari tiket...',
+    'ticket_label' => 'Tiket',
+    'ticket_list_desc' => 'Daftar tiket yang perlu ditangani tim IT hari ini.',
+    'try_reset_filter' => 'Coba reset filter atau gunakan kata kunci yang lebih umum.',
+    'unknown_user' => 'User tidak diketahui',
+    'view_detail' => 'Lihat Detail',
+    'view_ticket_detail' => 'Lihat detail tiket',
 ];

@@ -5,8 +5,8 @@
 @endphp
 
 <x-ui.stats-panel
-    title="Statistik Tiket"
-    subtitle="Ringkasan performa terbaru · klik kartu untuk filter cepat"
+    title="{{ __('messages.stats_title') }}"
+    subtitle="{{ __('messages.stats_subtitle') }}"
     class="mt-1 w-full max-w-none"
 >
     @include('dashboard.partials.stats', [

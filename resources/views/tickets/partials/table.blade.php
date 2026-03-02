@@ -16,9 +16,9 @@
             <div class="space-y-2">
                 <p class="heading-font text-[11px] font-semibold uppercase tracking-[0.42em] text-[#23455D]/70 flex items-center gap-2">
                     <svg class="h-4 w-4 text-[#12824C]/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6" /><path d="M6 20v-4" /><path d="M18 20v-8" /><path d="M3 13h18" /></svg>
-                    Daftar Tiket
+                    {{ __('messages.ticket_list') }}
                 </p>
-                <p class="text-base font-semibold text-[#0C1F2C] leading-tight">Daftar tiket yang perlu ditangani tim IT hari ini.</p>
+                <p class="text-base font-semibold text-[#0C1F2C] leading-tight">{{ __('messages.ticket_list_desc') }}</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <div
@@ -55,12 +55,12 @@
             $advancedActive = collect($baseFilters)->filter(fn ($value) => filled($value))->isNotEmpty();
             $statusLabel = $statusFilter && isset($statuses[$statusFilter])
                 ? $statuses[$statusFilter]
-                : ($statusFilter ? str_replace('_', ' ', $statusFilter) : 'Semua status');
+                : ($statusFilter ? str_replace('_', ' ', $statusFilter) : __('messages.all_status'));
         @endphp
 
         <div class="rounded-2xl border border-slate-200/80 bg-white/60 px-4 py-3">
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.32em] text-slate-400">Filter Status</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.32em] text-slate-400">{{ __('messages.filter_status') }}</p>
                 <span class="text-[11px] text-slate-400">Table filter</span>
             </div>
             <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em]">
@@ -69,7 +69,7 @@
                     data-live-link
                     class="rounded-full border px-4 py-2 shadow-sm transition duration-200 hover:-translate-y-0.5 {{ empty($statusFilter) ? 'bg-emerald-600 text-white border-transparent shadow-emerald-500/30 hover:bg-emerald-600 hover:text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:bg-emerald-100/70 hover:text-emerald-900 hover:ring-1 hover:ring-emerald-200' }}"
                 >
-                    Semua
+                    {{ __('messages.filter_all') }}
                 </a>
                 @foreach ($primaryStatuses as $key => $label)
                     <a
@@ -83,7 +83,7 @@
                 @endforeach
             </div>
             <p class="mt-2 text-[11px] text-slate-400">
-                Menampilkan: {{ $statusLabel }}{{ $advancedActive ? ' · Filter lanjutan aktif' : '' }}
+                Menampilkan: {{ $statusLabel }}{{ $advancedActive ? ' · ' . __('messages.advanced_filter_active') : '' }}
             </p>
         </div>
 
@@ -108,8 +108,8 @@
                         :aria-expanded="open"
                     >
                         <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">Advanced Filters</p>
-                            <p class="text-[11px] text-slate-400">Optional refinement</p>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">{{ __('messages.advanced_filters') }}</p>
+                            <p class="text-[11px] text-slate-400">{{ __('messages.optional_refinement') }}</p>
                         </div>
                         <svg class="h-4 w-4 text-slate-400 transition" :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.06z" clip-rule="evenodd" />
@@ -248,14 +248,14 @@
                     <div class="flex flex-col gap-3">
                         <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 transition duration-200">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <label for="department" class="text-slate-500">Departemen</label>
+                            <label for="department" class="text-slate-500">{{ __('messages.department') }}</label>
                             <select
                                 id="department"
                                 name="department"
                                 class="h-[42px] w-full sm:min-w-[180px] rounded-[12px] border border-slate-200 bg-white px-[12px] py-[8px] text-[11px] font-medium text-slate-700 shadow-sm transition duration-150 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                                 onchange="this.form.submit()"
                             >
-                                <option value="">Semua Dept</option>
+                                <option value="">{{ __('messages.all_departments') }}</option>
                                 @foreach ($departments as $department)
                                     <option value="{{ $department->id }}" @selected($departmentFilter == $department->id)>
                                         {{ $department->name }}
@@ -264,7 +264,7 @@
                             </select>
                         </div>
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <label for="start_date" class="text-slate-500">Mulai</label>
+                            <label for="start_date" class="text-slate-500">{{ __('messages.start_date') }}</label>
                             <input
                                 type="date"
                                 id="start_date"
@@ -274,7 +274,7 @@
                             >
                         </div>
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <label for="end_date" class="text-slate-500">Selesai</label>
+                            <label for="end_date" class="text-slate-500">{{ __('messages.end_date') }}</label>
                             <input
                                 type="date"
                                 id="end_date"
@@ -287,17 +287,17 @@
                             type="submit"
                             class="inline-flex h-[42px] items-center rounded-[14px] bg-[#12824C] px-4 text-[11px] font-semibold text-white shadow-[0_3px_12px_rgba(18,130,76,0.2)] transition duration-150 hover:-translate-y-[1px] hover:shadow-[0_8px_14px_rgba(18,130,76,0.26)]"
                         >
-                            Terapkan
+                            {{ __('messages.apply_filters') }}
                         </button>
                         <div class="flex-1 min-w-[220px] w-full sm:min-w-[260px] sm:ml-auto normal-case tracking-normal">
-                            <label for="search" class="sr-only">Cari tiket</label>
+                            <label for="search" class="sr-only">{{ __('messages.search') }}</label>
                             <div class="relative search-shell flex w-full items-center gap-2 rounded-[18px] border border-slate-200 bg-white px-[12px] py-[6px] h-[44px] shadow-sm focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100" @click.away="suggestionsOpen = false">
                                 <input
                                     type="search"
                                     id="search"
                                     name="search"
                                     x-model="searchTerm"
-                                    placeholder="Cari tiket..."
+                                    placeholder="{{ __('messages.search_ticket_placeholder') }}"
                                     class="min-w-0 flex-1 border-none bg-transparent px-[10px] py-[6px] text-[12px] font-medium text-slate-700 placeholder:text-slate-400 outline-none focus:ring-0 appearance-none"
                                     @input="queueFetch(); queueSearch()"
                                     @focus="suggestionsOpen = true; fetchSuggestions()"
@@ -323,7 +323,7 @@
                                     x-transition
                                 >
                                     <template x-if="suggestionsLoading">
-                                        <div class="px-4 py-3 text-sm text-slate-500">Memuat...</div>
+                                        <div class="px-4 py-3 text-sm text-slate-500">{{ __('messages.loading') }}</div>
                                     </template>
                                     <template x-if="!suggestionsLoading && suggestions.length">
                                         <ul class="divide-y divide-slate-100">
@@ -337,7 +337,7 @@
                                                         <div class="flex-1 min-w-0">
                                                             <p class="text-xs font-semibold text-ink-400 uppercase tracking-[0.28em]" x-text="`#${item.id}`"></p>
                                                             <p class="font-semibold text-slate-800 truncate" x-text="item.title"></p>
-                                                            <p class="text-[11px] text-slate-500 truncate" x-text="item.user ? `Pelapor: ${item.user}` : 'User tidak diketahui'"></p>
+                                                            <p class="text-[11px] text-slate-500 truncate" x-text="item.user ? `{{ __('messages.reporter') }}: ${item.user}` : '{{ __('messages.unknown_user') }}'"></p>
                                                         </div>
                                                         <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700" x-text="item.status"></span>
                                                     </a>
@@ -346,7 +346,7 @@
                                         </ul>
                                     </template>
                                     <template x-if="!suggestionsLoading && !suggestions.length && searchTerm">
-                                        <div class="px-4 py-3 text-sm text-slate-500">Tidak ada tiket yang cocok.</div>
+                                        <div class="px-4 py-3 text-sm text-slate-500">{{ __('messages.no_search_results') }}</div>
                                     </template>
                                 </div>
 
@@ -355,7 +355,7 @@
                                     class="absolute left-0 right-0 top-[calc(100%+6px)] z-20 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-lg shadow-slate-300/30"
                                     x-transition
                                 >
-                                    Tidak ada hasil untuk pencarian ini.
+                                    {{ __('messages.no_search_results') }}
                                 </div>
                             </div>
                         </div>
@@ -372,7 +372,7 @@
                     <div class="flex flex-col gap-3">
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
-                                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-ink-400">Tiket</p>
+                                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-ink-400">{{ __('messages.ticket_label') }}</p>
                                 <a
                                     href="{{ route('tickets.show', $ticket) }}"
                                     class="text-base font-semibold text-ink-900 transition hover:text-brand-700"
@@ -389,22 +389,22 @@
 
                         <dl class="grid gap-3 text-xs text-ink-600 sm:grid-cols-2">
                             <div class="space-y-1">
-                                <dt class="font-semibold text-ink-500">Pelapor</dt>
+                                <dt class="font-semibold text-ink-500">{{ __('messages.reporter') }}</dt>
                                 <dd>
-                                    <div>{{ optional($ticket->user)->name ?? 'User eksternal' }}</div>
-                                    <div class="text-[0.7rem] text-ink-400">{{ optional($ticket->user)->email ?? 'Tidak terdaftar' }}</div>
+                                    <div>{{ optional($ticket->user)->name ?? __('messages.external_user') }}</div>
+                                    <div class="text-[0.7rem] text-ink-400">{{ optional($ticket->user)->email ?? __('messages.unregistered') }}</div>
                                 </dd>
                             </div>
                             <div class="space-y-1">
-                                <dt class="font-semibold text-ink-500">Kategori</dt>
-                                <dd>{{ optional($ticket->category)->name ?? 'Tidak ada' }}</dd>
+                                <dt class="font-semibold text-ink-500">{{ __('messages.category') }}</dt>
+                                <dd>{{ optional($ticket->category)->name ?? __('messages.no_category') }}</dd>
                             </div>
                             <div class="space-y-1">
-                                <dt class="font-semibold text-ink-500">Departemen</dt>
-                                <dd>{{ optional($ticket->department)->name ?? 'Tidak ada' }}</dd>
+                                <dt class="font-semibold text-ink-500">{{ __('messages.department') }}</dt>
+                                <dd>{{ optional($ticket->department)->name ?? __('messages.no_department') }}</dd>
                             </div>
                             <div class="space-y-1">
-                                <dt class="font-semibold text-ink-500">Dibuat</dt>
+                                <dt class="font-semibold text-ink-500">{{ __('messages.created_at') }}</dt>
                                 <dd>
                                     <div>{{ $ticket->created_at->timezone(config('app.timezone'))->format('d M Y') }}</div>
                                     <div class="text-[0.7rem] text-ink-400">{{ $ticket->created_at->timezone(config('app.timezone'))->format('H:i') }} WIB</div>
@@ -439,7 +439,7 @@
                                         <path fill-rule="evenodd" d="M9.78 15.78a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 1 1 1.06 1.06L6.31 9.25H15a.75.75 0 0 1 0 1.5H6.31l3.47 3.47a.75.75 0 0 1 0 1.06Z" clip-rule="evenodd" />
                                     </svg>
                                 </span>
-                                <span>Lihat Detail</span>
+                                <span>{{ __('messages.view_detail') }}</span>
                             </a>
 
                             <form
@@ -461,7 +461,7 @@
                                     <input type="hidden" name="end_date" value="{{ $endDate }}">
                                 @endif
                                 <div class="flex flex-col gap-1">
-                                    <span class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Ubah Status</span>
+                                    <span class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{{ __('messages.change_ticket_status') }}</span>
                                     <select
                                         name="status"
                                         data-current="{{ $ticket->status }}"
@@ -499,8 +499,8 @@
                             <circle cx="90" cy="40" r="8" fill="#FFD966" stroke="#F7C948" stroke-width="2" />
                         </svg>
                     </div>
-                    <p class="text-sm font-semibold text-ink-800">Tidak ada tiket untuk filter ini.</p>
-                    <p class="text-xs text-ink-500">Coba reset filter atau gunakan kata kunci yang lebih umum.</p>
+                    <p class="text-sm font-semibold text-ink-800">{{ __('messages.no_ticket_for_filter') }}</p>
+                    <p class="text-xs text-ink-500">{{ __('messages.try_reset_filter') }}</p>
                     <a
                         href="{{ route('tickets.index') }}"
                         class="mt-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:-translate-y-0.5 hover:bg-emerald-100"
@@ -517,14 +517,14 @@
                                 <thead class="bg-slate-50/90 backdrop-blur text-[10px] uppercase tracking-[0.16em] text-slate-800 font-semibold sticky top-0 z-10">
                                     <tr>
                                         <th scope="col" class="px-2 py-2.5 text-left font-semibold w-[72px] min-w-[72px]">ID</th>
-                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold w-[220px] min-w-[220px] max-w-[220px] truncate">Judul</th>
-                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold w-[180px] min-w-[180px] truncate">Dari</th>
-                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold truncate">Kategori</th>
-                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold truncate hidden md:table-cell">Dept</th>
-                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold truncate hidden md:table-cell">Lampiran</th>
-                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold w-[120px] min-w-[120px] truncate">Status</th>
-                                        <th scope="col" class="px-2 py-2.5 text-right font-semibold w-[160px] min-w-[160px] whitespace-nowrap">Dibuat</th>
-                                        <th scope="col" class="px-2 py-2.5 text-right font-semibold w-[280px] min-w-[280px] whitespace-nowrap align-top">Aksi</th>
+                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold w-[220px] min-w-[220px] max-w-[220px] truncate">{{ __('messages.ticket_title') }}</th>
+                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold w-[180px] min-w-[180px] truncate">{{ __('messages.from') }}</th>
+                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold truncate">{{ __('messages.category') }}</th>
+                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold truncate hidden md:table-cell">{{ __('messages.department') }}</th>
+                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold truncate hidden md:table-cell">{{ __('messages.attachment') }}</th>
+                                        <th scope="col" class="px-2 py-2.5 text-left font-semibold w-[120px] min-w-[120px] truncate">{{ __('messages.status') }}</th>
+                                        <th scope="col" class="px-2 py-2.5 text-right font-semibold w-[160px] min-w-[160px] whitespace-nowrap">{{ __('messages.created_at') }}</th>
+                                        <th scope="col" class="px-2 py-2.5 text-right font-semibold w-[280px] min-w-[280px] whitespace-nowrap align-top">{{ __('messages.actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-200 bg-white text-sm text-slate-800">
@@ -563,17 +563,17 @@
                                                 </p>
                                             </td>
                                             <td class="px-2 py-2 text-sm text-slate-600 text-left align-top truncate w-[180px] min-w-[180px] max-w-[180px]">
-                                                <div class="truncate">{{ optional($ticket->user)->name ?? 'User eksternal' }}</div>
-                                                <div class="truncate text-xs text-slate-400">{{ optional($ticket->user)->email ?? 'Tidak terdaftar' }}</div>
+                                                <div class="truncate">{{ optional($ticket->user)->name ?? __('messages.external_user') }}</div>
+                                                <div class="truncate text-xs text-slate-400">{{ optional($ticket->user)->email ?? __('messages.unregistered') }}</div>
                                             </td>
-                                            <td class="px-2 py-2 text-sm text-slate-600 text-left align-top truncate" title="{{ optional($ticket->category)->name ?? 'Tidak ada' }}">
+                                            <td class="px-2 py-2 text-sm text-slate-600 text-left align-top truncate" title="{{ optional($ticket->category)->name ?? __('messages.no_category') }}">
                                                 <span class="inline-flex max-w-full items-center justify-center rounded-full bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700 truncate">
-                                                    {{ optional($ticket->category)->name ?? 'Tidak ada' }}
+                                                    {{ optional($ticket->category)->name ?? __('messages.no_category') }}
                                                 </span>
                                             </td>
-                                            <td class="px-2 py-2 text-sm text-slate-600 text-left align-top truncate hidden md:table-cell" title="{{ optional($ticket->department)->name ?? 'Tidak ada' }}">
+                                            <td class="px-2 py-2 text-sm text-slate-600 text-left align-top truncate hidden md:table-cell" title="{{ optional($ticket->department)->name ?? __('messages.no_department') }}">
                                                 <span class="inline-flex max-w-full items-center justify-center rounded-full bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700 truncate">
-                                                    {{ optional($ticket->department)->name ?? 'Tidak ada' }}
+                                                    {{ optional($ticket->department)->name ?? __('messages.no_department') }}
                                                 </span>
                                             </td>
                                             <td class="px-2 py-2 text-sm text-slate-600 text-left align-top truncate hidden md:table-cell">
@@ -684,8 +684,8 @@
                                                             <circle cx="90" cy="40" r="8" fill="#FFD966" stroke="#F7C948" stroke-width="2" />
                                                         </svg>
                                                     </div>
-                                                    <div class="text-sm font-semibold text-slate-800">Tidak ada tiket untuk filter ini.</div>
-                                                    <p class="text-xs text-[#6b7280]">Reset filter atau gunakan kata kunci yang lebih umum.</p>
+                                                    <div class="text-sm font-semibold text-slate-800">{{ __('messages.no_ticket_for_filter') }}</div>
+                                                    <p class="text-xs text-[#6b7280]">{{ __('messages.try_reset_filter') }}</p>
                                                     <a
                                                         href="{{ route('tickets.index') }}"
                                                         class="mt-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:-translate-y-0.5 hover:bg-emerald-100"

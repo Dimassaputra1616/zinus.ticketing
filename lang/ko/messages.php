@@ -409,4 +409,22 @@ return [
     'submit_request' => '요청 제출',
     'tickets' => '티켓',
     'uncategorized' => '미분류',
+
+    // Ticket views
+    'advanced_filter_active' => '고급 필터 활성화됨',
+    'filter_status' => '상태 필터',
+    'from' => '보낸 사람',
+    'my_ticket_history' => '내 티켓 기록',
+    'my_ticket_history_desc' => '작성한 모든 티켓이 여기에 표시됩니다.',
+    'no_ticket_for_filter' => '이 필터에 해당하는 티켓이 없습니다.',
+    'no_tickets_to_show' => '표시할 티켓이 없습니다',
+    'no_tickets_to_show_desc' => '새 티켓을 만들거나 필터를 변경하여 기록을 확인하세요.',
+    'optional_refinement' => '선택적 세부 필터',
+    'search_ticket_placeholder' => '티켓 검색...',
+    'ticket_label' => '티켓',
+    'ticket_list_desc' => '오늘 IT 팀이 처리해야 할 티켓 목록입니다.',
+    'try_reset_filter' => '필터를 재설정하거나 더 일반적인 키워드를 사용해 보세요.',
+    'unknown_user' => '알 수 없는 사용자',
+    'view_detail' => '상세 보기',
+    'view_ticket_detail' => '티켓 상세 보기',
 ];

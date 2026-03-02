@@ -413,4 +413,22 @@ return [
     'sort_title' => 'Title (A-Z)',
     'tickets' => 'tickets',
     'uncategorized' => 'Uncategorized',
+
+    // Ticket views
+    'advanced_filter_active' => 'Advanced filter active',
+    'filter_status' => 'Status Filter',
+    'from' => 'From',
+    'my_ticket_history' => 'Your Ticket History',
+    'my_ticket_history_desc' => 'All tickets you created will appear here.',
+    'no_ticket_for_filter' => 'No tickets for this filter.',
+    'no_tickets_to_show' => 'No tickets to show yet',
+    'no_tickets_to_show_desc' => 'Create a new ticket or change filter to view your history.',
+    'optional_refinement' => 'Optional refinement',
+    'search_ticket_placeholder' => 'Search tickets...',
+    'ticket_label' => 'Ticket',
+    'ticket_list_desc' => 'List of tickets the IT team needs to handle today.',
+    'try_reset_filter' => 'Try resetting the filter or use more general keywords.',
+    'unknown_user' => 'Unknown user',
+    'view_detail' => 'View Detail',
+    'view_ticket_detail' => 'View ticket detail',
 ];

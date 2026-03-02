@@ -5,9 +5,9 @@
 <div class="space-y-6 pb-6">
     <div class="flex flex-col gap-4 border-b border-ink-100 pb-4 md:flex-row md:items-center md:justify-between">
         <div class="space-y-1">
-            <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-700">Tiket kamu</p>
-            <h3 class="text-lg font-semibold text-gray-700">Riwayat Tiket Kamu</h3>
-            <p class="text-sm text-gray-500">Semua tiket yang kamu buat akan muncul di sini.</p>
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-700">{{ __('messages.my_tickets') }}</p>
+            <h3 class="text-lg font-semibold text-gray-700">{{ __('messages.my_ticket_history') }}</h3>
+            <p class="text-sm text-gray-500">{{ __('messages.my_ticket_history_desc') }}</p>
         </div>
 
         <div class="flex flex-col gap-3 md:items-end">
@@ -17,7 +17,7 @@
                     href="{{ route('tickets.mine') }}"
                     class="rounded-full border px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-sm {{ $isAll ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' : 'border-ink-100 bg-ink-50 text-ink-600' }}"
                 >
-                    Semua
+                    {{ __('messages.filter_all') }}
                 </a>
                 @foreach ($statuses as $key => $label)
                     @php $active = $statusFilter === $key; @endphp
@@ -38,7 +38,7 @@
                 class="btn-animate w-full justify-center md:w-auto md:ml-4"
                 icon='<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 3a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H4a1 1 0 0 1 0-2h5V4a1 1 0 0 1 1-1Z" /></svg>'
             >
-                Buat Tiket Baru
+                {{ __('messages.create_new_ticket') }}
             </x-ui.button>
         </div>
     </div>
@@ -49,7 +49,7 @@
                 <div class="flex flex-col gap-3">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                            <p class="text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-ink-400">Tiket</p>
+                            <p class="text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-ink-400">{{ __('messages.ticket_label') }}</p>
                             <a
                                 href="{{ route('tickets.show', $ticket) }}"
                                 class="text-base font-semibold text-ink-900 transition hover:text-brand-700 break-words"
@@ -68,7 +68,7 @@
                         href="{{ route('tickets.show', $ticket) }}"
                         class="inline-flex w-full items-center justify-between rounded-xl border border-ink-100 bg-gradient-to-r from-white to-ink-50 px-4 py-2 text-sm font-semibold text-ink-700 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 hover:from-brand-50/60 hover:text-brand-800"
                     >
-                        <span>Lihat detail tiket</span>
+                        <span>{{ __('messages.view_ticket_detail') }}</span>
                         <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
                             <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M9.78 15.78a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 1 1 1.06 1.06L6.31 9.25H15a.75.75 0 0 1 0 1.5H6.31l3.47 3.47a.75.75 0 0 1 0 1.06Z" clip-rule="evenodd" />
@@ -78,22 +78,22 @@
 
                     <dl class="grid gap-3 text-xs text-ink-600 sm:grid-cols-2">
                         <div class="space-y-1">
-                            <dt class="font-semibold text-ink-500">Kategori</dt>
-                            <dd>{{ optional($ticket->category)->name ?? 'Tidak ada' }}</dd>
+                            <dt class="font-semibold text-ink-500">{{ __('messages.category') }}</dt>
+                            <dd>{{ optional($ticket->category)->name ?? __('messages.no_category') }}</dd>
                         </div>
                         <div class="space-y-1">
-                            <dt class="font-semibold text-ink-500">Departemen</dt>
-                            <dd>{{ optional($ticket->department)->name ?? 'Tidak ada' }}</dd>
+                            <dt class="font-semibold text-ink-500">{{ __('messages.department') }}</dt>
+                            <dd>{{ optional($ticket->department)->name ?? __('messages.no_department') }}</dd>
                         </div>
                         <div class="space-y-1">
-                            <dt class="font-semibold text-ink-500">Dibuat</dt>
+                            <dt class="font-semibold text-ink-500">{{ __('messages.created_at') }}</dt>
                             <dd>
                                 <div>{{ $ticket->created_at->format('d M Y') }}</div>
                                 <div class="text-[0.7rem] text-ink-400">{{ $ticket->created_at->format('H:i') }} WIB</div>
                             </dd>
                         </div>
                         <div class="space-y-1">
-                            <dt class="font-semibold text-ink-500">Lampiran</dt>
+                            <dt class="font-semibold text-ink-500">{{ __('messages.attachment') }}</dt>
                             <dd>
                                 @if ($ticket->attachments_count > 0)
                                     <div class="flex flex-wrap gap-2">
@@ -125,8 +125,8 @@
                     </svg>
                 </div>
                 <div class="space-y-1">
-                    <p class="text-base font-semibold text-ink-800">Belum ada tiket untuk ditampilkan</p>
-                    <p class="text-sm text-ink-500">Buat tiket baru atau ubah filter untuk melihat riwayatmu.</p>
+                    <p class="text-base font-semibold text-ink-800">{{ __('messages.no_tickets_to_show') }}</p>
+                    <p class="text-sm text-ink-500">{{ __('messages.no_tickets_to_show_desc') }}</p>
                 </div>
             </div>
         @endforelse
@@ -134,11 +134,11 @@
 
     <div class="hidden md:block space-y-3">
         <div class="grid grid-cols-[35%_15%_15%_15%_20%] items-center gap-3 px-1 text-[11px] uppercase tracking-[0.2em] text-ink-500">
-            <span class="text-left">Tiket</span>
-            <span class="text-center">Kategori</span>
-            <span class="text-center -ml-1">Departemen</span>
-            <span class="text-center px-3">Status</span>
-            <span class="text-center pr-5">Dibuat</span>
+            <span class="text-left">{{ __('messages.ticket_label') }}</span>
+            <span class="text-center">{{ __('messages.category') }}</span>
+            <span class="text-center -ml-1">{{ __('messages.department') }}</span>
+            <span class="text-center px-3">{{ __('messages.status') }}</span>
+            <span class="text-center pr-5">{{ __('messages.created_at') }}</span>
         </div>
 
         <div class="divide-y divide-gray-100/80 space-y-2">
@@ -157,12 +157,12 @@
                     </div>
                     <div class="flex justify-center">
                         <span class="inline-flex items-center rounded-full bg-ink-50 px-3 py-1 text-xs font-medium text-ink-600 group-hover:bg-brand-50 group-hover:text-brand-700">
-                            {{ optional($ticket->category)->name ?? 'Tidak ada' }}
+                            {{ optional($ticket->category)->name ?? __('messages.no_category') }}
                         </span>
                     </div>
                     <div class="flex justify-center -ml-1">
                         <span class="inline-flex items-center rounded-full bg-ink-50 px-3 py-1 text-xs font-medium text-ink-600 group-hover:bg-brand-50 group-hover:text-brand-700">
-                            {{ optional($ticket->department)->name ?? 'Tidak ada' }}
+                            {{ optional($ticket->department)->name ?? __('messages.no_department') }}
                         </span>
                     </div>
                     <div class="flex items-center justify-center gap-2 px-3 text-center">
@@ -180,8 +180,8 @@
                             <path d="M10 3a7 7 0 1 0 7 7a7 7 0 0 0-7-7m0 1.5a.75.75 0 0 1 .75.75v4a.75.75 0 0 1-.22.53l-2.5 2.5a.75.75 0 0 1-1.06-1.06L9.25 9.94V5.25A.75.75 0 0 1 10 4.5" />
                         </svg>
                     </span>
-                    <div class="text-sm font-semibold text-ink-700">Belum ada tiket yang kamu buat, klik tombol buat tiket baru.</div>
-                    <p class="text-xs text-ink-500">Ubah filter atau buat tiket baru untuk memantau progresmu.</p>
+                    <div class="text-sm font-semibold text-ink-700">{{ __('messages.no_tickets_to_show') }}</div>
+                    <p class="text-xs text-ink-500">{{ __('messages.no_tickets_to_show_desc') }}</p>
                 </div>
             @endforelse
         </div>
