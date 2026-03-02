@@ -70,4 +70,20 @@ return [
     'history_title' => '티켓 내역',
     'history_subtitle_admin' => '최근 접수된 티켓',
     'history_subtitle_user' => '최근 생성한 티켓',
+
+    // Ticket List Component
+    'filter_all' => '모두 보기',
+    'sort_newest' => '최신순',
+    'sort_oldest' => '오래된순',
+    'sort_title' => '제목 (A-Z)',
+    'tickets' => '티켓',
+    'view_all' => '모두 보기',
+    'no_tickets_title' => '최근 티켓 없음',
+    'no_tickets_desc' => '새 티켓이 접수되면 요약 정보가 여기에 자동으로 표시됩니다.',
+    'uncategorized' => '카테고리 없음',
+    'no_department' => '부서 없음',
+    'external_user' => '외부 사용자',
+    'attachments' => '첨부 파일',
+    'detail' => '상세 보기',
+    'copy_id' => 'ID 복사',
 ];

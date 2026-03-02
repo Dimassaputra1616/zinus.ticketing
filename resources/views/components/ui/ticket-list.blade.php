@@ -19,19 +19,19 @@
         <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600">
             <label class="sr-only">Filter status</label>
             <select data-ticket-filter class="rounded-full border border-[#CFEADF] bg-white px-2.5 py-1 text-[11px] font-medium text-[#23455D] focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100">
-                <option value="all">Semua</option>
+                <option value="all">{{ __('messages.filter_all') }}</option>
                 <option value="open">Open</option>
                 <option value="in_progress">In Progress</option>
-                <option value="done">Selesai</option>
+                <option value="done">{{ __('messages.stat_resolved') }}</option>
             </select>
             <label class="sr-only">Urutkan</label>
             <select data-ticket-sort class="rounded-full border border-[#CFEADF] bg-white px-2.5 py-1 text-[11px] font-medium text-[#23455D] focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100">
-                <option value="newest">Terbaru</option>
-                <option value="oldest">Terlama</option>
-                <option value="title">Judul (A-Z)</option>
+                <option value="newest">{{ __('messages.sort_newest') }}</option>
+                <option value="oldest">{{ __('messages.sort_oldest') }}</option>
+                <option value="title">{{ __('messages.sort_title') }}</option>
             </select>
             @if (! is_null($total))
-                <span class="inline-flex items-center rounded-full border border-[#CFEADF] bg-white/80 px-2 py-0.5 text-[10px] text-[#23455D] font-medium">{{ $total }} tiket</span>
+                <span class="inline-flex items-center rounded-full border border-[#CFEADF] bg-white/80 px-2 py-0.5 text-[10px] text-[#23455D] font-medium">{{ $total }} {{ __('messages.tickets') }}</span>
             @endif
             <span class="inline-flex items-center gap-1 rounded-full border border-[#C8E2D8] bg-[#EDF3F2] px-2 py-0.5 text-[10px] text-[#12824C] font-medium">
                 Live 8s
@@ -39,7 +39,7 @@
             </span>
             @if ($viewAllUrl)
                 <a href="{{ $viewAllUrl }}" class="text-[11px] font-semibold text-[#118A58] inline-flex items-center gap-1 rounded-full border border-[#CFEADF] bg-white px-2.5 py-1 shadow-sm hover:bg-[#e5f8ef] transition">
-                    Lihat Semua
+                    {{ __('messages.view_all') }}
                     <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M7 5l5 5-5 5" />
                     </svg>
@@ -67,8 +67,8 @@
                     </svg>
                 </div>
                 <div class="space-y-1">
-                    <p class="text-sm font-semibold text-gray-800">Belum ada tiket terbaru</p>
-                    <p class="text-sm text-gray-600">Begitu tiket baru masuk, ringkasannya otomatis muncul di sini.</p>
+                    <p class="text-sm font-semibold text-gray-800">{{ __('messages.no_tickets_title') }}</p>
+                    <p class="text-sm text-gray-600">{{ __('messages.no_tickets_desc') }}</p>
                 </div>
             </div>
         @else
@@ -127,7 +127,7 @@
                                 </span>
                             </a>
                             <p class="text-[9px] font-semibold uppercase tracking-[0.2em] text-gray-400 truncate">
-                                {{ optional($ticket->category)->name ?? 'Tanpa kategori' }} • {{ optional($ticket->department)->name ?? 'Tanpa departemen' }}
+                                {{ optional($ticket->category)->name ?? __('messages.uncategorized') }} • {{ optional($ticket->department)->name ?? __('messages.no_department') }}
                             </p>
                         </div>
                     </div>
@@ -147,7 +147,7 @@
                                 <circle cx="12" cy="8" r="4" />
                                 <path d="M6 20a6 6 0 0 1 12 0" />
                             </svg>
-                            <span class="truncate">{{ optional($ticket->user)->name ?? 'User eksternal' }}</span>
+                            <span class="truncate">{{ optional($ticket->user)->name ?? __('messages.external_user') }}</span>
                         </span>
                         <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.06em] {{ $statusStyle['chip'] }}">
                             <svg class="h-3 w-3" viewBox="0 0 20 20" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor">
@@ -167,17 +167,17 @@
                     <div class="flex flex-wrap items-center gap-2 justify-between text-[10px] pt-1">
                         @if ($ticket->attachments_count > 0)
                             <span class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 font-semibold text-gray-600">
-                                {{ $ticket->attachments_count }} lampiran
+                                {{ $ticket->attachments_count }} {{ __('messages.attachments') }}
                             </span>
                         @endif
                         <div class="flex flex-wrap items-center gap-1.5 ml-auto">
                             <a href="{{ route('tickets.show', $ticket) }}" class="inline-flex items-center gap-1 rounded-full border border-[#CFEADF] px-2 py-0.5 font-semibold text-[#118A58] hover:bg-[#e5f8ef] transition">
                                 <svg class="h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M5 10l4-4M5 10l4 4" /></svg>
-                                Detail
+                                {{ __('messages.detail') }}
                             </a>
                             <button type="button" class="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-0.5 font-semibold text-slate-600 hover:border-[#CFEADF] hover:bg-[#F6F9F8] transition" data-copy-id="{{ $ticket->id }}">
                                 <svg class="h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="2" /><path d="M5 13H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1" /></svg>
-                                Salin ID
+                                {{ __('messages.copy_id') }}
                             </button>
                         </div>
                     </div>

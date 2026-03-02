@@ -70,4 +70,20 @@ return [
     'history_title' => 'Riwayat Tiket',
     'history_subtitle_admin' => 'tiket terakhir yang masuk',
     'history_subtitle_user' => 'tiket terakhir yang kamu buat',
+
+    // Ticket List Component
+    'filter_all' => 'Semua',
+    'sort_newest' => 'Terbaru',
+    'sort_oldest' => 'Terlama',
+    'sort_title' => 'Judul (A-Z)',
+    'tickets' => 'tiket',
+    'view_all' => 'Lihat Semua',
+    'no_tickets_title' => 'Belum ada tiket terbaru',
+    'no_tickets_desc' => 'Begitu tiket baru masuk, ringkasannya otomatis muncul di sini.',
+    'uncategorized' => 'Tanpa kategori',
+    'no_department' => 'Tanpa departemen',
+    'external_user' => 'User eksternal',
+    'attachments' => 'lampiran',
+    'detail' => 'Detail',
+    'copy_id' => 'Salin ID',
 ];

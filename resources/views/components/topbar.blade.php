@@ -74,28 +74,39 @@
                     <button
                         type="button"
                         @click="langOpen = !langOpen"
-                        class="flex items-center justify-center gap-1 rounded-full border border-[#c5e5d0] bg-white px-3 py-1.5 shadow-[0_10px_20px_rgba(35,69,93,0.05)] transition hover:border-[#53B77A] focus:outline-none"
+                        class="flex p-2 items-center justify-center rounded-full text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition focus:outline-none"
+                        title="Change Language"
                     >
-                        <span class="text-xs font-semibold text-[#0D1F2B]">{{ strtoupper(app()->getLocale()) }}</span>
-                        <svg class="h-3.5 w-3.5 text-slate-500 transition" :class="{ 'rotate-180': langOpen }" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.25a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z" clip-rule="evenodd" />
+                        <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            <path d="M2 12h20" />
                         </svg>
                     </button>
                     <div
                         x-show="langOpen"
                         @click.away="langOpen = false"
-                        class="absolute right-0 mt-2 w-32 rounded-xl border border-slate-200 bg-white shadow-lg py-1 z-50"
-                        x-transition.origin.top.right
+                        class="absolute right-0 mt-2 w-40 rounded-xl border border-slate-200 bg-white shadow-lg py-1.5 z-50 transform origin-top-right transition-all duration-200"
+                        x-transition:enter="ease-out duration-200"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="ease-in duration-150"
+                        x-transition:leave-start="opacity-100 scale-100"
+                        x-transition:leave-end="opacity-0 scale-95"
                         style="display: none;"
                     >
-                        <a href="{{ route('lang.switch', 'id') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'id' ? 'font-bold text-[#12824C]' : '' }}">
-                            ID - Indonesia
-                        </a>
-                        <a href="{{ route('lang.switch', 'en') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'en' ? 'font-bold text-[#12824C]' : '' }}">
+                        <p class="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Language</p>
+                        <a href="{{ route('lang.switch', 'en') }}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'en' ? 'text-[#12824C] font-semibold bg-emerald-50/50' : '' }}">
                             EN - English
+                            @if(app()->getLocale() == 'en')<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>@endif
                         </a>
-                        <a href="{{ route('lang.switch', 'ko') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'ko' ? 'font-bold text-[#12824C]' : '' }}">
+                        <a href="{{ route('lang.switch', 'id') }}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'id' ? 'text-[#12824C] font-semibold bg-emerald-50/50' : '' }}">
+                            ID - Indonesia
+                            @if(app()->getLocale() == 'id')<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>@endif
+                        </a>
+                        <a href="{{ route('lang.switch', 'ko') }}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'ko' ? 'text-[#12824C] font-semibold bg-emerald-50/50' : '' }}">
                             KO - Korean
+                            @if(app()->getLocale() == 'ko')<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>@endif
                         </a>
                     </div>
                 </div>

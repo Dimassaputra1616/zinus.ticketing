@@ -70,4 +70,20 @@ return [
     'history_title' => 'Ticket History',
     'history_subtitle_admin' => 'latest tickets received',
     'history_subtitle_user' => 'latest tickets you created',
+
+    // Ticket List Component
+    'filter_all' => 'All',
+    'sort_newest' => 'Newest',
+    'sort_oldest' => 'Oldest',
+    'sort_title' => 'Title (A-Z)',
+    'tickets' => 'tickets',
+    'view_all' => 'View All',
+    'no_tickets_title' => 'No recent tickets yet',
+    'no_tickets_desc' => 'Once a new ticket comes in, its summary will automatically appear here.',
+    'uncategorized' => 'Uncategorized',
+    'no_department' => 'No department',
+    'external_user' => 'External user',
+    'attachments' => 'attachments',
+    'detail' => 'Detail',
+    'copy_id' => 'Copy ID',
 ];
