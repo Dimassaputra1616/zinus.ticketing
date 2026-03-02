@@ -9,21 +9,21 @@
         x-init="initPage()"
     >
         <x-ui.page-hero
-            pill="Kelola User"
+            pill="{{ __('messages.manage_users') }}"
             brand="Zinus Dream"
             eyebrow="Dashboard Ticketing"
-            title="Atur akses dan peran tim"
-            description="Tambah akun baru, ubah role, dan jaga keamanan akses support dari satu panel."
+            title="{{ __('messages.manage_users_subtitle') }}"
+            description="{{ __('messages.manage_users_desc') }}"
             :badges="[
-                ['label' => $adminCount . ' Admin', 'dot' => '#10b981'],
-                ['label' => $staffCount . ' User', 'dot' => '#38bdf8'],
-                ['label' => $totalUsers . ' Total', 'dot' => '#fbbf24'],
+                ['label' => __('messages.admin_count', ['count' => $adminCount]), 'dot' => '#10b981'],
+                ['label' => __('messages.user_count', ['count' => $staffCount]), 'dot' => '#38bdf8'],
+                ['label' => __('messages.total_count', ['count' => $totalUsers]), 'dot' => '#fbbf24'],
             ]"
         >
             <x-slot:side>
                 <div class="space-y-3">
-                    <p class="text-sm font-semibold text-ink-900">Gunakan role admin hanya untuk pengelola.</p>
-                    <p class="text-xs text-ink-600">Jaga keamanan dengan password kuat dan reset berkala.</p>
+                    <p class="text-sm font-semibold text-ink-900">{{ __('messages.admin_role_notice') }}</p>
+                    <p class="text-xs text-ink-600">{{ __('messages.security_notice') }}</p>
                     <x-ui.button
                         type="button"
                         size="sm"
@@ -32,7 +32,7 @@
                         icon='<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>'
                         @click="openAdd()"
                     >
-                        Tambah User Baru
+                        {{ __('messages.add_new_user') }}
                     </x-ui.button>
                 </div>
             </x-slot:side>
@@ -97,18 +97,18 @@
         </template>
 
         <x-ui.panel
-            title="Daftar User"
-            subtitle="Ubah role atau hapus akun yang tidak diperlukan"
+            title="{{ __('messages.user_list') }}"
+            subtitle="{{ __('messages.user_list_subtitle') }}"
             class="shadow-md border-ink-100/80 bg-white/95 [&>div:first-child]:!border-b [&>div:first-child]:!px-5 [&>div:first-child]:!py-3 [&_h3]:text-lg [&_h3]:font-semibold space-y-4"
         >
             <form class="flex flex-col gap-3 text-sm sm:flex-row sm:items-center" @submit.prevent="submitSearch">
-                <label class="text-2xs font-semibold uppercase tracking-[0.22em] text-slate-500">Cari User</label>
+                <label class="text-2xs font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('messages.search_user') }}</label>
                 <div class="relative flex items-center" @click.away="suggestionsOpen = false">
                     <input
                         type="search"
                         name="q"
                         x-model="searchTerm"
-                        placeholder="Cari nama/email/role..."
+                        placeholder="{{ __('messages.search_user_placeholder') }}"
                         class="w-full sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-2 pr-20 text-sm shadow-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 appearance-none"
                         @input="queueTypeahead"
                         @focus="suggestionsOpen = true; fetchSuggestions()"
@@ -121,7 +121,7 @@
                     >
                         ×
                     </button>
-                    <x-ui.button type="submit" size="sm" variant="primary" class="absolute right-1">Search</x-ui.button>
+                    <x-ui.button type="submit" size="sm" variant="primary" class="absolute right-1">{{ __('messages.search_button') }}</x-ui.button>
 
                     <div
                         x-show="suggestionsOpen && (suggestionsLoading || suggestions.length || searchTerm)"
@@ -129,7 +129,7 @@
                         x-transition
                     >
                         <template x-if="suggestionsLoading">
-                            <div class="px-4 py-3 text-sm text-slate-500">Memuat...</div>
+                            <div class="px-4 py-3 text-sm text-slate-500">{{ __('messages.loading') }}</div>
                         </template>
                         <template x-if="!suggestionsLoading && suggestions.length">
                             <ul class="divide-y divide-slate-100">
@@ -151,7 +151,7 @@
                             </ul>
                         </template>
                         <template x-if="!suggestionsLoading && !suggestions.length && searchTerm">
-                            <div class="px-4 py-3 text-sm text-slate-500">Tidak ada hasil untuk pencarian ini.</div>
+                            <div class="px-4 py-3 text-sm text-slate-500">{{ __('messages.no_search_results') }}</div>
                         </template>
                     </div>
                 </div>
@@ -180,10 +180,10 @@
                                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white shadow-inner shadow-white/60 text-emerald-700">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
                                 </span>
-                                Reset Password
+                                {{ __('messages.reset_password') }}
                             </p>
                             <h3 class="mt-1 text-xl font-semibold text-slate-900" x-text="resetName || 'User'"></h3>
-                            <p class="text-sm text-emerald-900/80">Pastikan password baru kuat agar akses support tetap aman.</p>
+                            <p class="text-sm text-emerald-900/80">{{ __('messages.reset_password_notice') }}</p>
                         </div>
                         <button type="button" class="rounded-full p-1.5 text-slate-400 transition hover:bg-white hover:text-slate-600" @click="closeReset()">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -195,8 +195,8 @@
                     <form class="relative space-y-5 px-6 py-6" x-ref="resetForm" @submit.prevent="submitReset">
                         <div class="space-y-2">
                             <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                                <span>Password Baru</span>
-                                <span class="text-emerald-600">Min. 8 karakter</span>
+                                <span>{{ __('messages.new_password') }}</span>
+                                <span class="text-emerald-600">{{ __('messages.min_8_chars') }}</span>
                             </div>
                             <div class="relative" x-data="{ show: false }">
                                 <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-500">
@@ -234,8 +234,8 @@
 
                         <div class="space-y-2">
                             <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                                <span>Konfirmasi Password Baru</span>
-                                <span class="text-emerald-600">Harus sama</span>
+                                <span>{{ __('messages.confirm_new_password') }}</span>
+                                <span class="text-emerald-600">{{ __('messages.must_match') }}</span>
                             </div>
                             <div class="relative" x-data="{ show: false }">
                                 <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-500">
@@ -275,12 +275,12 @@
                             <span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shadow-inner shadow-white/70">
                                 <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a.75.75 0 0 1 .006 1.06l-6.71 6.75a.75.75 0 0 1-1.065.005L3.29 9.17a.75.75 0 0 1 1.06-1.06l4.02 4.02 6.18-6.21a.75.75 0 0 1 1.054-.006Z" clip-rule="evenodd" /></svg>
                             </span>
-                            <span>Gunakan kombinasi huruf besar, kecil, angka, dan simbol.</span>
+                            <span>{{ __('messages.password_combination_notice') }}</span>
                         </div>
                         <div class="flex items-center gap-4">
-                            <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeReset()">Batal</button>
+                            <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeReset()">{{ __('messages.cancel') }}</button>
                             <x-ui.button type="submit" size="md" variant="primary" class="shadow-button ml-1">
-                                Reset Password
+                                {{ __('messages.reset_password') }}
                             </x-ui.button>
                         </div>
                     </div>
@@ -310,10 +310,10 @@
                                         <span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 shadow-inner shadow-white/70">
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
                                         </span>
-                                        Tambah User
+                                        {{ __('messages.add_new_user') }}
                                     </p>
-                                    <h3 class="mt-1 text-2xl font-semibold text-[#0C1F2C] leading-tight">Buat akun baru</h3>
-                                    <p class="text-sm text-slate-600">Isi detail user dengan password kuat. Semua kolom wajib diisi.</p>
+                                    <h3 class="mt-1 text-2xl font-semibold text-[#0C1F2C] leading-tight">{{ __('messages.create_new_account') }}</h3>
+                                    <p class="text-sm text-slate-600">{{ __('messages.fill_user_details') }}</p>
                                 </div>
                                 <button type="button" class="text-slate-400 hover:text-slate-600 rounded-full p-1" @click="closeAdd()">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -327,8 +327,8 @@
                             <div class="grid gap-4 lg:grid-cols-2">
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                                        <span>Nama Lengkap</span>
-                                        <span class="text-[10px] text-emerald-600">Wajib</span>
+                                        <span>{{ __('messages.full_name') }}</span>
+                                        <span class="text-[10px] text-emerald-600">{{ __('messages.required') }}</span>
                                     </div>
                                     <div class="relative">
                                         <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-500">
@@ -340,8 +340,8 @@
                                 </div>
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                                        <span>Email</span>
-                                        <span class="text-[10px] text-emerald-600">Wajib</span>
+                                        <span>{{ __('messages.email') }}</span>
+                                        <span class="text-[10px] text-emerald-600">{{ __('messages.required') }}</span>
                                     </div>
                                     <div class="relative">
                                         <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-500">
@@ -353,8 +353,8 @@
                                 </div>
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                                        <span>Password</span>
-                                        <span class="text-[10px] text-emerald-600">Min. 8 karakter</span>
+                                        <span>{{ __('messages.password') }}</span>
+                                        <span class="text-[10px] text-emerald-600">{{ __('messages.min_8_chars') }}</span>
                                     </div>
                                     <div class="relative" x-data="{ show: false }">
                                         <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-500">
@@ -384,8 +384,8 @@
                                 </div>
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                                        <span>Konfirmasi Password</span>
-                                        <span class="text-[10px] text-emerald-600">Harus sama</span>
+                                        <span>{{ __('messages.confirm_password') }}</span>
+                                        <span class="text-[10px] text-emerald-600">{{ __('messages.must_match') }}</span>
                                     </div>
                                     <div class="relative" x-data="{ show: false }">
                                         <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-500">
@@ -415,8 +415,8 @@
                                 </div>
                                 <div class="space-y-2 lg:col-span-2">
                                     <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                                        <span>Role</span>
-                                        <span class="text-[10px] text-emerald-600">Pilih akses</span>
+                                        <span>{{ __('messages.role') }}</span>
+                                        <span class="text-[10px] text-emerald-600">{{ __('messages.select_access') }}</span>
                                     </div>
                                     <div class="relative">
                                         <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-500">
@@ -434,12 +434,12 @@
                                     <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                                         <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="CurrentColor"><path fill-rule="evenodd" d="M16.704 5.29a.75.75 0 0 1 .006 1.06l-6.71 6.75a.75.75 0 0 1-1.065.005L3.29 9.17a.75.75 0 0 1 1.06-1.06l4.02 4.02 6.18-6.21a.75.75 0 0 1 1.054-.006Z" clip-rule="evenodd" /></svg>
                                     </span>
-                                    <span>Pastikan email aktif dan password kuat.</span>
+                                    <span>{{ __('messages.active_email_notice') }}</span>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeAdd()">Batal</button>
+                                    <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeAdd()">{{ __('messages.cancel') }}</button>
                                     <x-ui.button type="submit" size="md" variant="primary" class="shadow-button">
-                                        Simpan User
+                                        {{ __('messages.save_user') }}
                                     </x-ui.button>
                                 </div>
                             </div>
@@ -460,7 +460,7 @@
                 <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl shadow-slate-900/20 ring-1 ring-slate-100 pointer-events-auto">
                     <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                         <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Update Role</p>
+                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{{ __('messages.update_role') }}</p>
                             <h3 class="text-lg font-semibold text-slate-900" x-text="updateForm.name"></h3>
                             <p class="text-xs text-slate-500" x-text="updateForm.email"></p>
                         </div>
@@ -481,9 +481,9 @@
                             <p class="text-xs text-rose-500" x-text="errors.role" x-show="errors.role"></p>
                         </div>
                         <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
-                            <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeUpdate()">Batal</button>
+                            <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeUpdate()">{{ __('messages.cancel') }}</button>
                             <x-ui.button type="submit" size="md" variant="primary">
-                                Update Role
+                                {{ __('messages.update_role') }}
                             </x-ui.button>
                         </div>
                     </form>
@@ -501,12 +501,12 @@
                 x-cloak
             >
                 <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl shadow-slate-900/20 ring-1 ring-slate-100 p-6 space-y-4 pointer-events-auto">
-                    <h3 class="text-lg font-semibold text-slate-900">Hapus User?</h3>
-                    <p class="text-sm text-slate-600">Anda yakin ingin menghapus <span class="font-semibold" x-text="confirmData.name"></span>? Tindakan ini tidak dapat dibatalkan.</p>
+                    <h3 class="text-lg font-semibold text-slate-900">{{ __('messages.delete_user_title') }}</h3>
+                    <p class="text-sm text-slate-600" x-html="`{{ str_replace(':name', '` + confirmData.name + `', __('messages.delete_user_confirmation')) }}`"></p>
                     <div class="flex items-center justify-end gap-3">
-                        <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeConfirm()">Batal</button>
+                        <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeConfirm()">{{ __('messages.cancel') }}</button>
                         <x-ui.button type="button" size="md" class="border border-red-200 bg-[#ffe4e6] text-red-600 hover:border-red-200 hover:bg-[#fecdd3]" @click="doDelete()">
-                            Ya, hapus
+                            {{ __('messages.yes_delete') }}
                         </x-ui.button>
                     </div>
                 </div>

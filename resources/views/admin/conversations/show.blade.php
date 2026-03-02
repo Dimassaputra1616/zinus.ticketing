@@ -6,7 +6,7 @@
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 6 9 17l-5-5" /></svg>
                 </span>
                 <div>
-                    <p class="text-sm font-semibold">Berhasil</p>
+                    <p class="text-sm font-semibold">{{ __('messages.success') }}</p>
                     <p class="text-sm text-emerald-700/80">{{ session('success') }}</p>
                 </div>
             </div>
@@ -15,14 +15,14 @@
         <div class="flex items-center gap-4">
             <a href="{{ route('admin.conversations.index') }}" class="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-emerald-600 transition">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg>
-                Kembali ke List
+                &larr; {{ __('messages.back') }}
             </a>
         </div>
 
         <x-ui.section-hero
             pill="Conversation Detail"
-            title="Chat dengan {{ $conversation->user->name }}"
-            description="Lihat dan balas pesan dari pengguna."
+            title="{{ __('messages.chat_with', ['name' => $conversation->user->name]) }}"
+            description="{{ __('messages.chat_with_desc') }}"
         >
             <x-slot:pillIcon>
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
@@ -66,7 +66,7 @@
                         @empty
                             <div class="flex flex-col items-center justify-center h-full text-gray-400">
                                 <svg class="h-16 w-16 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                <p class="text-sm">Belum ada pesan</p>
+                                <p class="text-sm">{{ __('messages.no_messages') }}</p>
                             </div>
                         @endforelse
                     </div>
@@ -79,7 +79,7 @@
                                 <input
                                     type="text"
                                     name="body"
-                                    placeholder="Ketik balasan Anda..."
+                                    placeholder="{{ __('messages.type_reply') }}"
                                     required
                                     class="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                                     autocomplete="off"
@@ -89,7 +89,7 @@
                                     class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 py-3 transition-colors duration-200 flex items-center gap-2 font-medium"
                                 >
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                                    Kirim
+                                    {{ __('messages.send_reply') }}
                                 </button>
                             </form>
                             @error('body')
@@ -98,11 +98,11 @@
                         </div>
                     @else
                         <div class="border-t border-gray-200 p-4 bg-gray-50 text-center">
-                            <p class="text-sm text-gray-600">Percakapan ini sudah ditutup.</p>
+                            <p class="text-sm text-gray-600">{{ __('messages.conversation_closed_msg') }}</p>
                             <form method="POST" action="{{ route('admin.conversations.reopen', $conversation) }}" class="mt-3">
                                 @csrf
                                 <button type="submit" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
-                                    Buka Kembali
+                                    {{ __('messages.reopen') }}
                                 </button>
                             </form>
                         </div>
@@ -114,18 +114,18 @@
             <div class="space-y-6">
                 <!-- User Info -->
                 <div class="rounded-2xl border border-[#CFEADF] surface-card bg-gradient-to-br from-[#F6F9F8] via-white to-[#EDF3F2] p-6 space-y-4">
-                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Informasi User</h3>
+                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">{{ __('messages.user_info') }}</h3>
                     <div class="space-y-3">
                         <div>
-                            <p class="text-xs text-slate-500">Nama</p>
+                            <p class="text-xs text-slate-500">{{ __('messages.full_name') }}</p>
                             <p class="text-sm font-semibold text-slate-800">{{ $conversation->user->name }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500">Email</p>
+                            <p class="text-xs text-slate-500">{{ __('messages.email') }}</p>
                             <p class="text-sm text-slate-700">{{ $conversation->user->email }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500">Bergabung</p>
+                            <p class="text-xs text-slate-500">{{ __('messages.joined') }}</p>
                             <p class="text-sm text-slate-700">{{ $conversation->user->created_at->format('d M Y') }}</p>
                         </div>
                     </div>
@@ -133,37 +133,37 @@
 
                 <!-- Actions -->
                 <div class="rounded-2xl border border-[#CFEADF] surface-card bg-gradient-to-br from-[#F6F9F8] via-white to-[#EDF3F2] p-6 space-y-4">
-                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Aksi</h3>
+                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">{{ __('messages.actions') }}</h3>
                     
                     @if ($conversation->is_open)
                         <form method="POST" action="{{ route('admin.conversations.close', $conversation) }}">
                             @csrf
                             <button type="submit" class="w-full btn-danger rounded-xl px-4 py-2.5 text-sm font-medium">
-                                Tutup Percakapan
+                                {{ __('messages.close_conversation') }}
                             </button>
                         </form>
                     @else
                         <div class="flex items-center gap-2 text-sm text-slate-600">
                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            Percakapan Tertutup
+                            {{ __('messages.conversation_closed') }}
                         </div>
                     @endif
                 </div>
 
                 <!-- Stats -->
                 <div class="rounded-2xl border border-[#CFEADF] surface-card bg-gradient-to-br from-[#F6F9F8] via-white to-[#EDF3F2] p-6 space-y-4">
-                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Statistik</h3>
+                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">{{ __('messages.statistics') }}</h3>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
-                            <span class="text-xs text-slate-500">Total Pesan</span>
+                            <span class="text-xs text-slate-500">{{ __('messages.total_messages') }}</span>
                             <span class="text-sm font-semibold text-slate-800">{{ $conversation->messages->count() }}</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-xs text-slate-500">Dibuat</span>
+                            <span class="text-xs text-slate-500">{{ __('messages.created_time') }}</span>
                             <span class="text-sm text-slate-700">{{ $conversation->created_at->diffForHumans() }}</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-xs text-slate-500">Terakhir Update</span>
+                            <span class="text-xs text-slate-500">{{ __('messages.last_update_time') }}</span>
                             <span class="text-sm text-slate-700">{{ $conversation->updated_at->diffForHumans() }}</span>
                         </div>
                     </div>

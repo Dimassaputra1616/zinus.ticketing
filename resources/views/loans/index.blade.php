@@ -20,8 +20,8 @@
     })" class="w-full pt-4 sm:pt-6 pb-10 space-y-6">
         <x-ui.section-hero
             pill="Asset & Inventory"
-            title="Log Peminjaman"
-            description="Pantau dan kelola peminjaman perangkat. Ajukan pinjam dan update status secara terpusat."
+            title="{{ __('messages.loan_log') }}"
+            description="{{ __('messages.loan_log_subtitle') }}"
         >
             <x-slot:icon>
                 <svg class="h-7 w-7 text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -34,9 +34,9 @@
             @if($showLoanForm)
                 <x-slot:side>
                     <x-ui.button type="button" size="sm" variant="primary" class="shadow-button" @click="openAdd()">
-                        + Ajukan Peminjaman
+                        {{ __('messages.apply_loan') }}
                     </x-ui.button>
-                    <p class="text-xs text-emerald-800 mt-1">Lihat status pengajuanmu atau ajukan peminjaman baru.</p>
+                    <p class="text-xs text-emerald-800 mt-1">{{ __('messages.loan_status_notice') }}</p>
                 </x-slot:side>
             @endif
         </x-ui.section-hero>
@@ -61,7 +61,7 @@
                                         id="search"
                                         name="search"
                                         x-model="searchTerm"
-                                        placeholder="{{ $isAdmin ? 'Cari user/asset...' : 'Cari asset atau catatan kamu...' }}"
+                                        placeholder="{{ $isAdmin ? __('messages.search_user_asset') : __('messages.search_asset_notes') }}"
                                         class="w-full border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:ring-0"
                                         @input="queueSearch"
                                     >
@@ -89,11 +89,11 @@
                                     </select>
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Mulai</label>
+                                    <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('messages.start_date') }}</label>
                                     <input type="date" name="start_date" value="{{ $startDate }}" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Selesai</label>
+                                    <label class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('messages.end_date') }}</label>
                                     <input type="date" name="end_date" value="{{ $endDate }}" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                                 </div>
                             @endif
@@ -103,7 +103,7 @@
                             <a href="{{ route('loans.index') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700">
                                 Reset
                             </a>
-                            <x-ui.button type="submit" size="sm" variant="primary">Terapkan</x-ui.button>
+                            <x-ui.button type="submit" size="sm" variant="primary">{{ __('messages.apply_button') }}</x-ui.button>
                         </div>
                     </form>
                 </div>
@@ -127,9 +127,9 @@
                                 <span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 shadow-inner shadow-white/70">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
                                 </span>
-                                Ajukan Peminjaman
+                                {{ __('messages.apply_loan_title') }}
                             </p>
-                            <h3 class="text-xl font-semibold text-ink-900 leading-tight mt-1">Form peminjaman device</h3>
+                            <h3 class="text-xl font-semibold text-ink-900 leading-tight mt-1">{{ __('messages.loan_form_title') }}</h3>
                         </div>
                         <button type="button" class="text-slate-400 hover:text-slate-600 rounded-full p-1" @click="closeAdd()">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -146,13 +146,13 @@
                     <form class="px-6 py-5 space-y-4" method="POST" action="{{ route('loans.store') }}">
                         @csrf
                         <div class="space-y-1">
-                            <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Departemen</label>
+                            <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('messages.department') }}</label>
                             <select
                                 name="department_id"
                                 class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                                 required
                             >
-                                <option value="">Pilih departemen</option>
+                                <option value="">{{ __('messages.select_department') }}</option>
                                 @foreach ($departments as $department)
                                     <option value="{{ $department->id }}" @selected(old('department_id', $authUser?->department_id) == $department->id)>
                                         {{ $department->name }}
@@ -168,7 +168,7 @@
                                 @disabled($noSpareDevices)
                                 required
                             >
-                                <option value="">{{ $noSpareDevices ? 'Tidak ada device spare tersedia' : 'Pilih device' }}</option>
+                                <option value="">{{ $noSpareDevices ? __('messages.no_spare_device') : __('messages.select_device') }}</option>
                                 @foreach ($spareDevices as $asset)
                                     @php
                                         $assetCategory = $asset->category ?? $asset->categoryRel?->name ?? 'Asset';
@@ -180,28 +180,28 @@
                             @if ($noSpareDevices)
                                 <div class="mt-2 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
                                     <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                                    Stok spare habis untuk asset yang available.
+                                    {{ __('messages.spare_out_of_stock') }}
                                 </div>
                             @endif
                         </div>
                         <div class="grid gap-3 lg:grid-cols-2">
                             <div class="space-y-1">
-                                <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Tanggal Pinjam</label>
+                                <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('messages.loan_date') }}</label>
                                 <input type="date" name="start_date" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                             </div>
                             <div class="space-y-1">
-                                <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Tanggal Kembali</label>
+                                <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('messages.return_date') }}</label>
                                 <input type="date" name="end_date" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100">
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Alasan Peminjaman</label>
-                            <textarea name="reason" rows="3" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" placeholder="Tuliskan kebutuhan peminjaman"></textarea>
+                            <label class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('messages.loan_reason') }}</label>
+                            <textarea name="reason" rows="3" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100" placeholder="{{ __('messages.loan_reason_placeholder') }}"></textarea>
                         </div>
                         <div class="flex items-center justify-end gap-3 pt-2">
-                            <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeAdd()">Batal</button>
+                            <button type="button" class="text-sm font-semibold text-slate-500 hover:text-slate-700" @click="closeAdd()">{{ __('messages.cancel') }}</button>
                             <x-ui.button type="submit" size="md" variant="primary" class="shadow-button {{ $noSpareDevices ? 'opacity-50 cursor-not-allowed' : '' }}" :disabled="$noSpareDevices">
-                                Kirim Pengajuan
+                                {{ __('messages.submit_request') }}
                             </x-ui.button>
                         </div>
                     </form>
@@ -219,13 +219,13 @@
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></svg>
                 </div>
                 <div class="space-y-1">
-                    <h4 class="text-base font-semibold text-ink-900">Konfirmasi aksi</h4>
+                    <h4 class="text-base font-semibold text-ink-900">{{ __('messages.confirm_action') }}</h4>
                     <p id="loan-confirm-message" class="text-sm text-slate-600"></p>
                 </div>
             </div>
             <div class="flex items-center justify-end gap-3">
-                <button type="button" class="text-sm font-semibold text-slate-600 hover:text-slate-800" onclick="window.hideLoanConfirm()">Batal</button>
-                <x-ui.button type="button" size="sm" variant="primary" onclick="window.submitLoanConfirm()">Lanjutkan</x-ui.button>
+                <button type="button" class="text-sm font-semibold text-slate-600 hover:text-slate-800" onclick="window.hideLoanConfirm()">{{ __('messages.cancel') }}</button>
+                <x-ui.button type="button" size="sm" variant="primary" onclick="window.submitLoanConfirm()">{{ __('messages.continue_button') }}</x-ui.button>
             </div>
         </div>
     </div>

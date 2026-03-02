@@ -1,20 +1,20 @@
 @php
     $statusMeta = [
-        \App\Models\Asset::STATUS_IN_USE => ['label' => 'Active', 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'],
-        \App\Models\Asset::STATUS_MAINTENANCE => ['label' => 'In Repair', 'class' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-100'],
-        \App\Models\Asset::STATUS_AVAILABLE => ['label' => 'Spare', 'class' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-100'],
-        \App\Models\Asset::STATUS_BROKEN => ['label' => 'Retired', 'class' => 'bg-rose-50 text-rose-700 ring-1 ring-rose-100'],
+        \App\Models\Asset::STATUS_IN_USE => ['label' => __('messages.active'), 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'],
+        \App\Models\Asset::STATUS_MAINTENANCE => ['label' => __('messages.in_repair'), 'class' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-100'],
+        \App\Models\Asset::STATUS_AVAILABLE => ['label' => __('messages.spare'), 'class' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-100'],
+        \App\Models\Asset::STATUS_BROKEN => ['label' => __('messages.retired'), 'class' => 'bg-rose-50 text-rose-700 ring-1 ring-rose-100'],
     ];
     $statusInfo = $statusMeta[$asset->status] ?? ['label' => ucfirst(str_replace('_', ' ', $asset->status)), 'class' => 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'];
-    $createdByName = data_get($asset, 'createdBy.name') ?? ($asset->created_by ?? 'Belum diisi');
-    $updatedByName = data_get($asset, 'updatedBy.name') ?? ($asset->updated_by ?? 'Belum diisi');
+    $createdByName = data_get($asset, 'createdBy.name') ?? ($asset->created_by ?? __('messages.not_set'));
+    $updatedByName = data_get($asset, 'updatedBy.name') ?? ($asset->updated_by ?? __('messages.not_set'));
 
     $compactValue = function ($value) {
-        return filled($value) ? $value : 'Belum diisi';
+        return filled($value) ? $value : __('messages.not_set');
     };
 
     $systemValue = function ($value) {
-        return filled($value) ? $value : 'Belum diisi';
+        return filled($value) ? $value : __('messages.not_set');
     };
 
     $syncSourceLabel = $asset->sync_source ? Str::of($asset->sync_source)->replace('_', ' ')->title() : 'Manual';
@@ -35,7 +35,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-sm font-semibold">Berhasil</p>
+                <p class="text-sm font-semibold">{{ __('messages.success') }}</p>
                 <p class="text-xs text-emerald-50">{{ session('success') }}</p>
             </div>
         </div>
@@ -74,26 +74,26 @@
                             {{ $statusInfo['label'] }}
                         </span>
                         @if ($asset->updated_at)
-                            <span class="text-xs text-slate-500">Last synced: {{ $asset->updated_at->format('Y-m-d H:i') }}</span>
+                            <span class="text-xs text-slate-500">{{ __('messages.last_synced') }}: {{ $asset->updated_at->format('Y-m-d H:i') }}</span>
                         @endif
                         @if ($asset->location)
-                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 shadow-sm">Location: {{ $asset->location }}</span>
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 shadow-sm">{{ __('messages.location') }}: {{ $asset->location }}</span>
                         @endif
                         @if ($asset->user?->name)
-                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 shadow-sm">Assigned: {{ $asset->user->name }}</span>
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 shadow-sm">{{ __('messages.assigned') }}: {{ $asset->user->name }}</span>
                         @endif
                     </div>
                     <div class="flex flex-wrap gap-3">
                         <a href="{{ route('assets.index') }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:text-emerald-700">
-                            &larr; Back
+                            &larr; {{ __('messages.back') }}
                         </a>
                         <a href="{{ route('assets.edit', $asset) }}" class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-400/30 hover:bg-emerald-700">
-                            Edit Asset
+                            {{ __('messages.edit_asset') }}
                         </a>
                     </div>
                 </div>
                 <div class="flex flex-col items-start gap-3 md:items-end">
-                    <p class="text-sm text-slate-600">Last updated {{ optional($asset->updated_at)->format('Y-m-d H:i') ?? 'Belum diisi' }}</p>
+                    <p class="text-sm text-slate-600">{{ __('messages.last_updated', ['time' => optional($asset->updated_at)->format('Y-m-d H:i') ?? __('messages.not_set')]) }}</p>
                 </div>
             </div>
 
@@ -101,8 +101,8 @@
                 {{-- Hardware first on mobile --}}
                 <div class="rounded-3xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50 to-white p-5 text-slate-900 shadow-sm shadow-emerald-100/60 md:p-6">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-base font-semibold text-slate-900">Hardware &amp; OS</h3>
-                        <span class="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-white shadow-sm">System</span>
+                        <h3 class="text-base font-semibold text-slate-900">{{ __('messages.hardware_os') }}</h3>
+                        <span class="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-white shadow-sm">{{ __('messages.system') }}</span>
                     </div>
                     <div class="mt-4 space-y-3">
                         @php
@@ -130,12 +130,12 @@
                             </div>
                         @endforeach
                         <div class="rounded-2xl border border-emerald-100 bg-emerald-100 px-4 py-3 text-sm text-emerald-900">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-800">Last synced from agent</p>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-800">{{ __('messages.last_synced_from_agent_title') }}</p>
                             @if ($asset->sync_source === 'agent' && $asset->last_synced_at)
                                 <p class="mt-1 font-semibold">{{ $asset->last_synced_at->format('d M Y H:i') }}</p>
                                 <p class="text-xs text-emerald-800/90">Source: Agent</p>
                             @else
-                                <p class="mt-1 font-semibold">Belum pernah sync dari agent</p>
+                                <p class="mt-1 font-semibold">{{ __('messages.never_synced_agent_full') }}</p>
                                 <p class="text-xs text-emerald-800/90">Source: {{ $syncSourceLabel }}</p>
                             @endif
                         </div>
@@ -145,21 +145,21 @@
                 {{-- Left column: Asset profile --}}
                 <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/70 md:p-6">
                     <div class="flex flex-col gap-1">
-                        <h3 class="text-base font-semibold text-slate-900">Asset profile</h3>
-                        <p class="text-sm text-slate-600">Detail identitas dan kepemilikan asset.</p>
+                        <h3 class="text-base font-semibold text-slate-900">{{ __('messages.asset_profile') }}</h3>
+                        <p class="text-sm text-slate-600">{{ __('messages.asset_profile_desc') }}</p>
                     </div>
                     @php
                         $fields = [
-                            ['label' => 'Asset Code', 'value' => $asset->asset_code],
-                            ['label' => 'Category', 'value' => $asset->category],
-                            ['label' => 'Brand & Model', 'value' => trim(($asset->brand ?? '') . ' ' . ($asset->model ?? ''))],
-                            ['label' => 'Location', 'value' => $asset->location],
-                            ['label' => 'Department', 'value' => $asset->department->name ?? null],
-                            ['label' => 'Assigned To', 'value' => $asset->user->name ?? null],
-                            ['label' => 'Serial Number', 'value' => $asset->serial_number],
-                            ['label' => 'Purchase Date', 'value' => optional($asset->purchase_date)->format('Y-m-d')],
-                            ['label' => 'Price', 'value' => $asset->price ? 'Rp ' . number_format($asset->price, 2) : null],
-                            ['label' => 'Warranty End', 'value' => optional($asset->warranty_expired)->format('Y-m-d')],
+                            ['label' => __('messages.asset_code'), 'value' => $asset->asset_code],
+                            ['label' => __('messages.category'), 'value' => $asset->category],
+                            ['label' => __('messages.brand_model'), 'value' => trim(($asset->brand ?? '') . ' ' . ($asset->model ?? ''))],
+                            ['label' => __('messages.location'), 'value' => $asset->location],
+                            ['label' => __('messages.department'), 'value' => $asset->department->name ?? null],
+                            ['label' => __('messages.assigned_to'), 'value' => $asset->user->name ?? null],
+                            ['label' => __('messages.serial_number'), 'value' => $asset->serial_number],
+                            ['label' => __('messages.purchase_date'), 'value' => optional($asset->purchase_date)->format('Y-m-d')],
+                            ['label' => __('messages.price'), 'value' => $asset->price ? 'Rp ' . number_format($asset->price, 2) : null],
+                            ['label' => __('messages.warranty_end'), 'value' => optional($asset->warranty_expired)->format('Y-m-d')],
                         ];
                     @endphp
                     <dl class="mt-4 grid gap-4 text-sm text-slate-700 md:grid-cols-2">
@@ -168,7 +168,7 @@
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                                 <dt class="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">{{ $field['label'] }}</dt>
                                 <dd class="mt-1 text-sm font-semibold text-slate-900">
-                                    @if ($val === 'Belum diisi')
+                                    @if ($val === __('messages.not_set'))
                                         <span class="text-gray-400 italic text-xs">{{ $val }}</span>
                                     @else
                                         {{ $val }}
@@ -178,12 +178,12 @@
                         @endforeach
 
                         <div class="md:col-span-2 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                            <dt class="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">Notes</dt>
+                            <dt class="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">{{ __('messages.notes') }}</dt>
                             <dd class="mt-2 text-sm text-slate-800">
                                 @if ($asset->notes)
                                     <span class="whitespace-pre-line">{{ $asset->notes }}</span>
                                 @else
-                                    <span class="italic text-gray-400 text-xs">Belum ada catatan untuk aset ini.</span>
+                                    <span class="italic text-gray-400 text-xs">{{ __('messages.no_notes') }}</span>
                                 @endif
                             </dd>
                         </div>
@@ -194,8 +194,8 @@
                 <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/70 md:p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-base font-semibold text-slate-900">Lifecycle &amp; audit trail</h3>
-                            <p class="text-sm text-slate-600">Riwayat pembuatan dan pembaruan.</p>
+                            <h3 class="text-base font-semibold text-slate-900">{{ __('messages.lifecycle_audit') }}</h3>
+                            <p class="text-sm text-slate-600">{{ __('messages.lifecycle_audit_desc') }}</p>
                         </div>
                     </div>
                     <div class="mt-5 space-y-5">
@@ -205,9 +205,9 @@
                                 <span class="mt-1 h-full w-px bg-slate-200"></span>
                             </div>
                             <div class="flex-1">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">Created</p>
-                                <p class="text-sm font-semibold text-slate-900">{{ optional($asset->created_at)->format('Y-m-d H:i') ?? 'Belum diisi' }}</p>
-                                <p class="text-sm text-slate-600">by {{ $createdByName }}</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">{{ __('messages.created') }}</p>
+                                <p class="text-sm font-semibold text-slate-900">{{ optional($asset->created_at)->format('Y-m-d H:i') ?? __('messages.not_set') }}</p>
+                                <p class="text-sm text-slate-600">{{ __('messages.by') }} {{ $createdByName }}</p>
                             </div>
                         </div>
                         <div class="flex gap-3">
@@ -216,9 +216,9 @@
                                 <span class="mt-1 h-full w-px bg-slate-200"></span>
                             </div>
                             <div class="flex-1">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">Updated</p>
-                                <p class="text-sm font-semibold text-slate-900">{{ optional($asset->updated_at)->format('Y-m-d H:i') ?? 'Belum diisi' }}</p>
-                                <p class="text-sm text-slate-600">by {{ $updatedByName }}</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">{{ __('messages.updated') }}</p>
+                                <p class="text-sm font-semibold text-slate-900">{{ optional($asset->updated_at)->format('Y-m-d H:i') ?? __('messages.not_set') }}</p>
+                                <p class="text-sm text-slate-600">{{ __('messages.by') }} {{ $updatedByName }}</p>
                             </div>
                         </div>
                     </div>

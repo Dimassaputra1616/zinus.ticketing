@@ -1,13 +1,13 @@
 @php
     $statusMeta = [
-        'in_use' => ['label' => 'Active', 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70'],
-        'active' => ['label' => 'Active', 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70'],
-        'maintenance' => ['label' => 'In Repair', 'class' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70'],
-        'in_repair' => ['label' => 'In Repair', 'class' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70'],
-        'available' => ['label' => 'Spare', 'class' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/70'],
-        'spare' => ['label' => 'Spare', 'class' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/70'],
-        'broken' => ['label' => 'Retired', 'class' => 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/70'],
-        'retired' => ['label' => 'Retired', 'class' => 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/70'],
+        'in_use' => ['label' => __('messages.active'), 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70'],
+        'active' => ['label' => __('messages.active'), 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70'],
+        'maintenance' => ['label' => __('messages.in_repair'), 'class' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70'],
+        'in_repair' => ['label' => __('messages.in_repair'), 'class' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70'],
+        'available' => ['label' => __('messages.spare'), 'class' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/70'],
+        'spare' => ['label' => __('messages.spare'), 'class' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/70'],
+        'broken' => ['label' => __('messages.retired'), 'class' => 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/70'],
+        'retired' => ['label' => __('messages.retired'), 'class' => 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/70'],
     ];
 
     $filterKeys = ['search', 'factory', 'department', 'category', 'status'];
@@ -30,7 +30,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-sm font-semibold">Berhasil</p>
+                <p class="text-sm font-semibold">{{ __('messages.success') }}</p>
                 <p class="text-xs text-emerald-50">{{ session('success') }}</p>
             </div>
         </div>
@@ -42,19 +42,19 @@
                 <div class="flex flex-col gap-4">
                     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div class="space-y-2">
-                            <p class="text-xs uppercase tracking-[0.35em] text-emerald-600/80">IT Asset Management</p>
+                            <p class="text-xs uppercase tracking-[0.35em] text-emerald-600/80">{{ __('messages.it_asset_management') }}</p>
                             <div class="flex flex-wrap items-center gap-3">
-                                <h1 class="text-3xl font-semibold text-slate-900">Asset & Inventory Control</h1>
-                                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/80">Showing {{ number_format($assets->total()) }} assets</span>
+                                <h1 class="text-3xl font-semibold text-slate-900">{{ __('messages.asset_control') }}</h1>
+                                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/80">{{ __('messages.showing_assets', ['count' => number_format($assets->total())]) }}</span>
                             </div>
-                            <p class="text-sm text-slate-600">Monitor ownership, location, lifecycle, and sync health in one modern console.</p>
+                            <p class="text-sm text-slate-600">{{ __('messages.asset_control_desc') }}</p>
                         </div>
                         <a
                             href="{{ route('assets.create') }}"
                             class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                         >
                             <span class="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-lg leading-none">+</span>
-                            Add Asset
+                            {{ __('messages.add_asset') }}
                         </a>
                     </div>
 
@@ -62,38 +62,38 @@
                         @php
                             $cards = [
                                 [
-                                    'label' => 'Total Assets',
+                                    'label' => __('messages.total_assets'),
                                     'key' => 'total',
-                                    'sublabel' => 'All registered devices',
+                                    'sublabel' => __('messages.all_devices'),
                                     'icon' => 'collection',
                                     'emphasis' => true,
                                     'status' => '',
                                 ],
                                 [
-                                    'label' => 'Active',
+                                    'label' => __('messages.active'),
                                     'key' => 'active',
-                                    'sublabel' => 'Currently in use',
+                                    'sublabel' => __('messages.in_use'),
                                     'icon' => 'bolt',
                                     'status' => 'active',
                                 ],
                                 [
-                                    'label' => 'In Repair',
+                                    'label' => __('messages.in_repair'),
                                     'key' => 'in_repair',
-                                    'sublabel' => 'Under maintenance',
+                                    'sublabel' => __('messages.under_maintenance'),
                                     'icon' => 'wrench',
                                     'status' => 'in_repair',
                                 ],
                                 [
-                                    'label' => 'Spare',
+                                    'label' => __('messages.spare'),
                                     'key' => 'spare',
-                                    'sublabel' => 'Standby stock',
+                                    'sublabel' => __('messages.standby_stock'),
                                     'icon' => 'stack',
                                     'status' => 'spare',
                                 ],
                                 [
-                                    'label' => 'Retired',
+                                    'label' => __('messages.retired'),
                                     'key' => 'retired',
-                                    'sublabel' => 'No longer in service',
+                                    'sublabel' => __('messages.no_longer_service'),
                                     'icon' => 'archive',
                                     'status' => 'retired',
                                 ],
@@ -168,7 +168,7 @@
                                     <span>{{ $card['label'] }}</span>
                                     @if ($showFiltered)
                                         <span class="ml-auto inline-flex items-center rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.25em] text-white">
-                                            Filtered
+                                            {{ __('messages.filtered') }}
                                         </span>
                                     @endif
                                 </div>
@@ -177,7 +177,7 @@
                                 <span
                                     class="{{ ($isActive || $isTotal) ? 'text-emerald-50/90' : 'text-slate-400' }} pointer-events-none absolute bottom-3 right-4 text-[10px] font-semibold uppercase tracking-[0.25em] opacity-0 transition duration-150 group-hover:opacity-100"
                                 >
-                                    Click to filter
+                                    {{ __('messages.click_filter') }}
                                 </span>
                             </a>
                         @endforeach
@@ -195,13 +195,13 @@
                 <div class="space-y-2">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
                         <div class="flex-1 space-y-1">
-                            <label class="text-xs font-semibold tracking-[0.25em] text-slate-500">Search</label>
+                            <label class="text-xs font-semibold tracking-[0.25em] text-slate-500">{{ __('messages.search') }}</label>
                             <div class="relative">
                                 <input
                                     type="search"
                                     name="search"
                                     value="{{ $filters['search'] ?? '' }}"
-                                    placeholder="Search asset code, serial, user..."
+                                    placeholder="{{ __('messages.search_asset_placeholder') }}"
                                     class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-11 text-sm text-slate-800 shadow-inner shadow-slate-100 placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                     id="asset-search-input"
                                 >
@@ -215,19 +215,19 @@
                             type="submit"
                             class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 text-sm font-semibold text-white shadow-md shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-200 sm:w-auto"
                         >
-                            <span>Apply Filters</span>
+                            <span>{{ __('messages.apply_filters') }}</span>
                         </button>
                     </div>
 
                     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <div class="space-y-1">
-                            <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Factory</label>
+                            <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{{ __('messages.factory') }}</label>
                             <div class="relative">
                                 <select
                                     name="factory"
                                     class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                 >
-                                    <option value="">All Factories</option>
+                                    <option value="">{{ __('messages.all_factories') }}</option>
                                     @foreach ($filterOptions['factories'] as $factory)
                                         <option value="{{ $factory }}" @selected(($filters['factory'] ?? null) === $factory)>{{ $factory }}</option>
                                     @endforeach
@@ -241,13 +241,13 @@
                         </div>
 
                         <div class="space-y-1">
-                            <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Department</label>
+                            <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{{ __('messages.department') }}</label>
                             <div class="relative">
                                 <select
                                     name="department"
                                     class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                 >
-                                    <option value="">All Departments</option>
+                                    <option value="">{{ __('messages.all_departments') }}</option>
                                     @foreach ($departments as $department)
                                         <option value="{{ $department->id }}" @selected(($filters['department'] ?? null) == $department->id)>{{ $department->name }}</option>
                                     @endforeach
@@ -261,13 +261,13 @@
                         </div>
 
                         <div class="space-y-1">
-                            <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Category</label>
+                            <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{{ __('messages.category') }}</label>
                             <div class="relative">
                                 <select
                                     name="category"
                                     class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                 >
-                                    <option value="">All Categories</option>
+                                    <option value="">{{ __('messages.all_categories') }}</option>
                                     @foreach ($filterOptions['categories'] as $category)
                                         <option value="{{ $category }}" @selected(($filters['category'] ?? null) === $category)>{{ $category }}</option>
                                     @endforeach
@@ -281,13 +281,13 @@
                         </div>
 
                         <div class="space-y-1">
-                            <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Status</label>
+                            <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{{ __('messages.status') }}</label>
                             <div class="relative">
                                 <select
                                     name="status"
                                     class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 shadow-inner shadow-slate-100 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                 >
-                                    <option value="">All Status</option>
+                                    <option value="">{{ __('messages.all_status') }}</option>
                                     @foreach ($filterOptions['statuses'] as $status)
                                         <option value="{{ $status }}" @selected(($filters['status'] ?? null) === $status)>{{ Str::of($status)->replace('_', ' ')->title() }}</option>
                                     @endforeach
@@ -304,16 +304,16 @@
 
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <div class="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-600">
-                            <span>Active filters: {{ $activeFilterCount }}</span>
+                            <span>{{ __('messages.active_filters', ['count' => $activeFilterCount]) }}</span>
                             <span class="text-slate-300">|</span>
-                            <a href="{{ route('assets.index') }}" class="text-slate-500 hover:text-emerald-700">Clear</a>
+                            <a href="{{ route('assets.index') }}" class="text-slate-500 hover:text-emerald-700">{{ __('messages.clear') }}</a>
                         </div>
                         <button
                             type="button"
                             class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"
                             @click="advancedOpen = !advancedOpen"
                         >
-                            Advanced Filters
+                            {{ __('messages.advanced_filters') }}
                             <svg
                                 class="h-3.5 w-3.5 transition"
                                 :class="{ 'rotate-180': advancedOpen }"
@@ -333,7 +333,7 @@
                     >
                         @if ($activeFilters->isNotEmpty())
                             <div class="flex flex-wrap gap-2">
-                                <span class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Active:</span>
+                                <span class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{{ __('messages.active') }}:</span>
                                 @foreach ($activeFilters as $key => $value)
                                     <span class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
                                         {{ Str::of($key)->replace('_', ' ')->title() }}: {{ $value }}
@@ -341,7 +341,7 @@
                                 @endforeach
                             </div>
                         @else
-                            <p class="text-sm text-slate-500">No advanced filters applied yet.</p>
+                            <p class="text-sm text-slate-500">{{ __('messages.no_advanced_filters') }}</p>
                         @endif
                     </div>
                 </div>
@@ -354,17 +354,17 @@
                 @endphp
                 <div class="flex flex-col gap-2 border-b border-slate-100 px-4 py-3 sm:px-5 sm:py-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <p class="text-xs uppercase tracking-[0.35em] text-emerald-600/80">Live Inventory</p>
+                        <p class="text-xs uppercase tracking-[0.35em] text-emerald-600/80">{{ __('messages.live_inventory') }}</p>
                         <div class="flex flex-wrap items-center gap-3">
-                            <h2 class="text-xl font-semibold text-slate-900">IT Asset List</h2>
+                            <h2 class="text-xl font-semibold text-slate-900">{{ __('messages.it_asset_list') }}</h2>
                             <span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
-                                {{ $hasAgentSync ? 'Updated in real time' : 'Manual records' }}
+                                {{ $hasAgentSync ? __('messages.real_time_update') : __('messages.manual_records') }}
                             </span>
                         </div>
-                        <p class="text-sm text-slate-600">Full-width table with responsive columns for factory, category, lifecycle, and assignments.</p>
+                        <p class="text-sm text-slate-600">{{ __('messages.table_desc') }}</p>
                     </div>
                     <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                        <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 ring-1 ring-slate-200">Filters ready</span>
+                        <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 ring-1 ring-slate-200">{{ __('messages.filters_ready') }}</span>
                     </div>
                 </div>
 
@@ -383,7 +383,7 @@
                         <article class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
-                                    <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Hostname</p>
+                                    <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('messages.hostname') }}</p>
                                     <p class="text-sm font-semibold text-slate-900 truncate" title="Asset Code: {{ $asset->asset_code }}">{{ $asset->hostname ?? $asset->name ?? $asset->asset_code }}</p>
                                     <p class="text-xs text-slate-500 truncate">{{ $asset->brand ?? '-' }} • {{ $asset->model ?? ($asset->name ?? '-') }}</p>
                                 </div>
@@ -394,35 +394,35 @@
 
                             <dl class="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-600">
                                 <div class="space-y-1">
-                                    <dt class="font-semibold text-slate-500">Factory</dt>
+                                    <dt class="font-semibold text-slate-500">{{ __('messages.factory') }}</dt>
                                     <dd class="text-slate-800">{{ $asset->factory ?? $asset->location ?? '-' }}</dd>
                                 </div>
                                 <div class="space-y-1">
-                                    <dt class="font-semibold text-slate-500">Department</dt>
+                                    <dt class="font-semibold text-slate-500">{{ __('messages.department') }}</dt>
                                     <dd class="text-slate-800">{{ $asset->department->name ?? '-' }}</dd>
                                 </div>
                                 <div class="space-y-1">
-                                    <dt class="font-semibold text-slate-500">Category</dt>
+                                    <dt class="font-semibold text-slate-500">{{ __('messages.category') }}</dt>
                                     <dd class="text-slate-800">{{ $asset->category ?? ($filters['category'] ?? '-') }}</dd>
                                 </div>
                                 <div class="space-y-1">
-                                    <dt class="font-semibold text-slate-500">Serial</dt>
+                                    <dt class="font-semibold text-slate-500">{{ __('messages.serial_number') }}</dt>
                                     <dd class="text-slate-800">{{ $asset->serial_number ?? '-' }}</dd>
                                 </div>
                                 <div class="space-y-1">
-                                    <dt class="font-semibold text-slate-500">Assigned</dt>
-                                    <dd class="text-slate-800">{{ $asset->user->name ?? 'Unassigned' }}</dd>
+                                    <dt class="font-semibold text-slate-500">{{ __('messages.assigned') }}</dt>
+                                    <dd class="text-slate-800">{{ $asset->user->name ?? __('messages.unassigned') }}</dd>
                                 </div>
                                 <div class="space-y-1">
-                                    <dt class="font-semibold text-slate-500">Location</dt>
+                                    <dt class="font-semibold text-slate-500">{{ __('messages.location') }}</dt>
                                     <dd class="text-slate-800">{{ $asset->location ?? '-' }}</dd>
                                 </div>
                                 <div class="space-y-1">
-                                    <dt class="font-semibold text-slate-500">Sync Source</dt>
+                                    <dt class="font-semibold text-slate-500">{{ __('messages.sync_source') }}</dt>
                                     <dd class="text-slate-800">{{ $asset->sync_source === 'agent' ? 'Agent' : 'Manual' }}</dd>
                                 </div>
                                 <div class="space-y-1">
-                                    <dt class="font-semibold text-slate-500">Last Synced</dt>
+                                    <dt class="font-semibold text-slate-500">{{ __('messages.last_synced') }}</dt>
                                     <dd class="text-slate-800">
                                         @if ($asset->last_synced_at)
                                             <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
@@ -430,7 +430,7 @@
                                             </span>
                                         @else
                                             <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200/70">
-                                                Never
+                                                {{ __('messages.never') }}
                                             </span>
                                         @endif
                                     </dd>
@@ -442,13 +442,13 @@
                                     href="{{ route('assets.show', $asset) }}"
                                     class="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-emerald-200 hover:text-emerald-700"
                                 >
-                                    View
+                                    {{ __('messages.view') }}
                                 </a>
                                 <a
                                     href="{{ route('assets.edit', $asset) }}"
                                     class="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-sm shadow-emerald-400/30 hover:bg-emerald-700"
                                 >
-                                    Edit
+                                    {{ __('messages.edit') }}
                                 </a>
                                 <div class="relative" x-data="{ open: false }">
                                     <button
@@ -489,9 +489,9 @@
                                                     <path d="M10 11v6" />
                                                     <path d="M14 11v6" />
                                                 </svg>
-                                                Delete
+                                                {{ __('messages.delete') }}
                                                 <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 shadow transition group-hover:opacity-100">
-                                                    Delete
+                                                    {{ __('messages.delete') }}
                                                 </span>
                                             </button>
                                         </form>
@@ -500,7 +500,7 @@
                             </div>
                         </article>
                     @empty
-                        <div class="px-3 py-4 text-center text-sm text-slate-500">Belum ada asset ditemukan.</div>
+                        <div class="px-3 py-4 text-center text-sm text-slate-500">{{ __('messages.no_assets_found') }}</div>
                     @endforelse
                 </div>
 
@@ -508,20 +508,20 @@
                     <table class="w-full table-auto text-sm border-separate border-spacing-y-2">
                         <thead>
                             <tr class="text-left text-xs font-semibold tracking-[0.15em] text-slate-500">
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Hostname</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Factory</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Department</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Category</th>
-                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">Brand</th>
-                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">Model</th>
-                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">Serial Number</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Status</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Created</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">Updated</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur lg:hidden">Assigned / Location</th>
-                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur lg:table-cell">Assigned To</th>
-                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur lg:table-cell">Location</th>
-                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 text-right backdrop-blur">Actions</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.hostname') }}</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.factory') }}</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.department') }}</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.category') }}</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">{{ __('messages.brand') }}</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">{{ __('messages.model') }}</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">{{ __('messages.serial_number') }}</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.status') }}</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.created') }}</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.updated') }}</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur lg:hidden">{{ __('messages.assigned_location') }}</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur lg:table-cell">{{ __('messages.assigned_to') }}</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur lg:table-cell">{{ __('messages.location') }}</th>
+                                <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 text-right backdrop-blur">{{ __('messages.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -573,11 +573,11 @@
                                     </td>
                                     <td class="px-3 py-2.5 text-slate-800 break-words lg:hidden">
                                         <div class="space-y-1">
-                                            <p class="text-sm text-slate-800">{{ $asset->user->name ?? 'Unassigned' }}</p>
+                                            <p class="text-sm text-slate-800">{{ $asset->user->name ?? __('messages.unassigned') }}</p>
                                             <p class="text-xs text-slate-500">{{ $asset->location ?? '-' }}</p>
                                         </div>
                                     </td>
-                                    <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->user->name ?? 'Unassigned' }}</td>
+                                    <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->user->name ?? __('messages.unassigned') }}</td>
                                     <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->location ?? '-' }}</td>
                                     <td class="px-3 py-2.5 text-right overflow-visible">
                                         <div class="flex items-center justify-end gap-2 opacity-80 transition group-hover:opacity-100">
@@ -643,13 +643,13 @@
                                                     <path d="M12 8v8" />
                                                 </svg>
                                             </div>
-                                            <p class="mt-3 text-sm font-semibold text-slate-800">Belum ada asset yang cocok dengan filter.</p>
-                                            <p class="mt-1 text-sm text-slate-600">Tambah asset baru atau ubah filter pencarian.</p>
+                                            <p class="mt-3 text-sm font-semibold text-slate-800">{{ __('messages.no_matching_assets') }}</p>
+                                            <p class="mt-1 text-sm text-slate-600">{{ __('messages.add_new_or_change_filter') }}</p>
                                             <a
                                                 href="{{ route('assets.create') }}"
                                                 class="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-400/30 transition hover:-translate-y-0.5 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                                             >
-                                                Tambah Asset
+                                                {{ __('messages.add_asset') }}
                                             </a>
                                         </div>
                                     </td>
@@ -660,11 +660,15 @@
                 </div>
                 <div class="flex flex-col gap-4 border-t border-slate-100 bg-slate-50/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div class="text-sm text-slate-600">
-                        Showing <span class="font-semibold text-slate-800">{{ $assets->firstItem() ?? 0 }}</span>&ndash;<span class="font-semibold text-slate-800">{{ $assets->lastItem() ?? 0 }}</span> of <span class="font-semibold text-slate-800">{{ $assets->total() }}</span> assets
+                        {!! __('messages.showing_results', [
+                            'first' => '<span class="font-semibold text-slate-800">' . ($assets->firstItem() ?? 0) . '</span>',
+                            'last' => '<span class="font-semibold text-slate-800">' . ($assets->lastItem() ?? 0) . '</span>',
+                            'total' => '<span class="font-semibold text-slate-800">' . $assets->total() . '</span>',
+                        ]) !!}
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <form method="GET" class="flex items-center gap-2 rounded-xl bg-white px-3 py-2 ring-1 ring-slate-200">
-                            <label for="per_page" class="text-sm text-slate-600">Per page</label>
+                            <label for="per_page" class="text-sm text-slate-600">{{ __('messages.per_page') }}</label>
                             <select
                                 id="per_page"
                                 name="per_page"
@@ -691,11 +695,11 @@
     </div>
     <div id="delete-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/50 px-4">
         <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/20">
-            <h3 class="text-lg font-semibold text-slate-900">Hapus Asset?</h3>
-            <p class="mt-2 text-sm text-slate-600">Anda yakin ingin menghapus asset <span id="delete-asset-name" class="font-semibold text-slate-900"></span>? Tindakan ini dapat dibatalkan melalui restore.</p>
+            <h3 class="text-lg font-semibold text-slate-900">{{ __('messages.delete_asset_title') }}</h3>
+            <p class="mt-2 text-sm text-slate-600">{!! __('messages.delete_asset_confirmation', ['name' => '<span id="delete-asset-name" class="font-semibold text-slate-900"></span>']) !!}</p>
             <div class="mt-4 flex items-center justify-end gap-3">
-                <button id="delete-cancel" type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-200 hover:text-emerald-700">Batal</button>
-                <button id="delete-confirm" type="button" class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-rose-400/30 hover:bg-rose-700">Hapus</button>
+                <button id="delete-cancel" type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-200 hover:text-emerald-700">{{ __('messages.cancel') }}</button>
+                <button id="delete-confirm" type="button" class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-rose-400/30 hover:bg-rose-700">{{ __('messages.delete') }}</button>
             </div>
         </div>
     </div>

@@ -14,8 +14,8 @@
 
         <x-ui.section-hero
             pill="Dashboard Ticketing"
-            title="Monitoring Tiket IT"
-            description="Pantau progres tim secara menyeluruh dan pastikan setiap permintaan tertangani dengan baik."
+            title="{{ __('messages.title_ticket_list') }}"
+            description="{{ __('messages.desc_ticket_list') }}"
         >
             <x-slot:pillIcon>
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">

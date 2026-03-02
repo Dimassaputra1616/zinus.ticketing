@@ -6,7 +6,7 @@
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 6 9 17l-5-5" /></svg>
                 </span>
                 <div>
-                    <p class="text-sm font-semibold">Berhasil</p>
+                    <p class="text-sm font-semibold">{{ __('messages.success') }}</p>
                     <p class="text-sm text-emerald-700/80">{{ session('success') }}</p>
                 </div>
             </div>
@@ -14,8 +14,8 @@
 
         <x-ui.section-hero
             pill="Admin"
-            title="Live Chat Conversations"
-            description="Kelola dan balas percakapan dengan pengguna."
+            title="{{ __('messages.live_chat_conversations') }}"
+            description="{{ __('messages.live_chat_desc') }}"
         >
             <x-slot:pillIcon>
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
@@ -34,7 +34,7 @@
                             type="text" 
                             name="search" 
                             value="{{ request('search') }}"
-                            placeholder="Cari berdasarkan nama user..."
+                            placeholder="{{ __('messages.search_by_user') }}"
                             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                         >
                     </div>
@@ -43,13 +43,13 @@
                             name="status" 
                             class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
                         >
-                            <option value="">Semua Status</option>
-                            <option value="open" @selected(request('status') === 'open')>Terbuka</option>
-                            <option value="closed" @selected(request('status') === 'closed')>Tertutup</option>
+                            <option value="">{{ __('messages.all_status') }}</option>
+                            <option value="open" @selected(request('status') === 'open')>{{ __('messages.status_open_filter') }}</option>
+                            <option value="closed" @selected(request('status') === 'closed')>{{ __('messages.status_closed_filter') }}</option>
                         </select>
                     </div>
                     <button type="submit" class="btn-primary px-5 py-2 text-sm rounded-xl">
-                        Filter
+                        {{ __('messages.search_button') }}
                     </button>
                 </form>
             </div>
@@ -58,20 +58,20 @@
             @if ($conversations->isEmpty())
                 <div class="text-center py-12 text-gray-400">
                     <svg class="h-16 w-16 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                    <p class="text-lg font-medium">Belum ada percakapan</p>
-                    <p class="text-sm mt-1">Percakapan akan muncul ketika pengguna mengirim pesan.</p>
+                    <p class="text-lg font-medium">{{ __('messages.no_conversations') }}</p>
+                    <p class="text-sm mt-1">{{ __('messages.no_conversations_desc') }}</p>
                 </div>
             @else
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
                             <tr class="border-b border-slate-200">
-                                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">User</th>
-                                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">Pesan Terakhir</th>
-                                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">Waktu</th>
-                                <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">Status</th>
-                                <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">Unread</th>
-                                <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">Aksi</th>
+                                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">{{ __('messages.sender') }}</th>
+                                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">{{ __('messages.latest_message') }}</th>
+                                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">{{ __('messages.time_ago') }}</th>
+                                <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">{{ __('messages.status') }}</th>
+                                <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">{{ __('messages.unread') }}</th>
+                                <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-600">{{ __('messages.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -95,11 +95,11 @@
                                         @if ($conversation->is_open)
                                             <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700">
                                                 <span class="h-1.5 w-1.5 bg-emerald-500 rounded-full"></span>
-                                                Terbuka
+                                                {{ __('messages.status_open_filter') }}
                                             </span>
                                         @else
                                             <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600">
-                                                Tertutup
+                                                {{ __('messages.status_closed_filter') }}
                                             </span>
                                         @endif
                                     </td>
@@ -118,7 +118,7 @@
                                             class="inline-flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition"
                                         >
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                                            Lihat
+                                            {{ __('messages.view') }}
                                         </a>
                                     </td>
                                 </tr>

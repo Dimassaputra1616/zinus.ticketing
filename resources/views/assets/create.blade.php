@@ -22,18 +22,18 @@
     @php
         $isEdit = isset($asset);
         $formAction = $isEdit ? route('assets.update', $asset) : route('assets.store');
-        $formTitle = $isEdit ? 'Ubah Asset' : 'Tambah Asset';
-        $formSubtitle = $isEdit ? 'Perbarui detail perangkat yang sudah terdaftar.' : 'Rekam perangkat baru ke master data asset.';
-        $submitLabel = $isEdit ? 'Simpan Perubahan' : 'Simpan Asset';
+        $formTitle = $isEdit ? __('messages.edit_asset') : __('messages.add_asset');
+        $formSubtitle = $isEdit ? __('messages.edit_asset_desc') : __('messages.add_asset_desc');
+        $submitLabel = $isEdit ? __('messages.save_changes') : __('messages.save_asset');
         $factoryOptions = ['Zinus F1 Bogor', 'Zinus F2 Karawang', 'Zinus F3 Tangerang'];
         $categoryOptions = collect(['PC', 'Laptop', 'Monitor', 'Peripheral'])->map(function ($label) {
             return ['id' => $label, 'name' => $label];
         });
         $statusOptions = [
-            ['label' => 'Active', 'value' => \App\Models\Asset::STATUS_IN_USE],
-            ['label' => 'In Repair', 'value' => \App\Models\Asset::STATUS_MAINTENANCE],
-            ['label' => 'Spare', 'value' => \App\Models\Asset::STATUS_AVAILABLE],
-            ['label' => 'Retired', 'value' => \App\Models\Asset::STATUS_BROKEN],
+            ['label' => __('messages.active'), 'value' => \App\Models\Asset::STATUS_IN_USE],
+            ['label' => __('messages.in_repair'), 'value' => \App\Models\Asset::STATUS_MAINTENANCE],
+            ['label' => __('messages.spare'), 'value' => \App\Models\Asset::STATUS_AVAILABLE],
+            ['label' => __('messages.retired'), 'value' => \App\Models\Asset::STATUS_BROKEN],
         ];
     @endphp
 
@@ -44,7 +44,7 @@
     @endphp
     <div class="w-full space-y-6 pb-12 pt-6">
         <x-ui.section-hero
-            pill="Asset & Inventory"
+            pill="{{ __('messages.asset_inventory') }}"
             title="{{ $formTitle }}"
             description="{{ $formSubtitle }}"
         >
@@ -60,7 +60,7 @@
                     href="{{ $isEdit ? route('assets.show', $asset) : route('assets.index') }}"
                     class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
                 >
-                    &larr; Kembali ke {{ $isEdit ? 'detail asset' : 'daftar asset' }}
+                    &larr; {{ $isEdit ? __('messages.back_to_detail') : __('messages.back_to_list') }}
                 </a>
             </x-slot:side>
         </x-ui.section-hero>
@@ -76,21 +76,21 @@
                     <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 shadow-inner shadow-slate-200/50">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Identitas Asset</p>
-                                <h3 class="text-lg font-semibold text-slate-900">Info Utama</h3>
+                                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">{{ __('messages.asset_identity') }}</p>
+                                <h3 class="text-lg font-semibold text-slate-900">{{ __('messages.main_info') }}</h3>
                             </div>
-                            <span class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-700 ring-1 ring-emerald-100">{{ $isEdit ? 'Edit' : 'Baru' }}</span>
+                            <span class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-700 ring-1 ring-emerald-100">{{ $isEdit ? __('messages.edit') : __('messages.new') }}</span>
                         </div>
 
                         <div class="mt-4 grid gap-4">
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Kode Asset <span class="text-rose-500">*</span></label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.asset_code') }} <span class="text-rose-500">*</span></label>
                                     <input
                                         name="asset_code"
                                         value="{{ old('asset_code', $asset?->asset_code) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                                        placeholder="Contoh: AS-001"
+                                        placeholder="{{ __('messages.asset_code_placeholder') }}"
                                         required
                                     >
                                     @error('asset_code')
@@ -98,12 +98,12 @@
                                     @enderror
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Nama Perangkat <span class="text-rose-500">*</span></label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.device_name') }} <span class="text-rose-500">*</span></label>
                                     <input
                                         name="name"
                                         value="{{ old('name', $asset?->name) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                                        placeholder="Contoh: Laptop Dell XPS 13"
+                                        placeholder="{{ __('messages.device_name_placeholder') }}"
                                         required
                                     >
                                     @error('name')
@@ -114,12 +114,12 @@
 
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Factory</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.factory') }}</label>
                                     <select
                                         name="factory"
                                         class="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                     >
-                                        <option value="">Pilih Factory</option>
+                                        <option value="">{{ __('messages.select_factory') }}</option>
                                         @foreach ($factoryOptions as $factory)
                                             <option value="{{ $factory }}" @selected(old('factory', $asset?->factory) === $factory)>{{ $factory }}</option>
                                         @endforeach
@@ -129,12 +129,12 @@
                                     @enderror
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Lokasi</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.location') }}</label>
                                     <input
                                         name="location"
                                         value="{{ old('location', $asset?->location) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                                        placeholder="Contoh: Warehouse 2"
+                                        placeholder="{{ __('messages.location_placeholder') }}"
                                     >
                                     @error('location')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -144,12 +144,12 @@
 
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Departemen</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.department') }}</label>
                                     <select
                                         name="department_id"
                                         class="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                     >
-                                        <option value="">Pilih Departemen</option>
+                                        <option value="">{{ __('messages.select_department') }}</option>
                                         @foreach ($departments as $department)
                                             <option value="{{ $department->id }}" @selected(old('department_id', $asset?->department_id) == $department->id)>{{ $department->name }}</option>
                                         @endforeach
@@ -159,13 +159,13 @@
                                     @enderror
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Kategori <span class="text-rose-500">*</span></label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.category') }} <span class="text-rose-500">*</span></label>
                                     <select
                                         name="category"
                                         class="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                         required
                                     >
-                                        <option value="" disabled @selected(! old('category', $asset?->category))>Pilih kategori</option>
+                                        <option value="" disabled @selected(! old('category', $asset?->category))>{{ __('messages.select_category') }}</option>
                                         @foreach ($categoryOptions as $categoryOption)
                                             <option value="{{ $categoryOption['id'] }}" @selected(old('category', $asset?->category) == $categoryOption['id'])>{{ $categoryOption['name'] }}</option>
                                         @endforeach
@@ -178,7 +178,7 @@
 
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Status <span class="text-rose-500">*</span></label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.status') }} <span class="text-rose-500">*</span></label>
                                     <select
                                         name="status"
                                         class="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
@@ -193,12 +193,12 @@
                                     @enderror
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Assigned To</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.assigned_to') }}</label>
                                     <select
                                         name="user_id"
                                         class="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                     >
-                                        <option value="">Tidak ada</option>
+                                        <option value="">{{ __('messages.none') }}</option>
                                         @foreach ($users as $user)
                                             <option value="{{ $user->id }}" @selected(old('user_id', $asset?->user_id) == $user->id)>{{ $user->name }}</option>
                                         @endforeach
@@ -215,24 +215,24 @@
                         @php $isAgent = ($asset->sync_source ?? null) === 'agent'; @endphp
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hardware & Lifecycle</p>
-                                <h3 class="text-lg font-semibold text-slate-900">Detail Perangkat</h3>
+                                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">{{ __('messages.hardware_lifecycle') }}</p>
+                                <h3 class="text-lg font-semibold text-slate-900">{{ __('messages.device_detail') }}</h3>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-700 ring-1 ring-emerald-100">Sync Source: {{ $syncSource ? Str::title($syncSource) : 'Manual' }}</span>
-                                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-700 ring-1 ring-slate-200">Optional</span>
+                                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-700 ring-1 ring-slate-200">{{ __('messages.optional') }}</span>
                             </div>
                         </div>
 
                         <div class="mt-4 grid gap-4">
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Brand</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.brand') }}</label>
                                     <input
                                         name="brand"
                                         value="{{ old('brand', $asset?->brand) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 {{ $isAgent ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : '' }}"
-                                        placeholder="Contoh: Dell"
+                                        placeholder="{{ __('messages.brand_placeholder') }}"
                                         @if ($isAgent) readonly @endif
                                     >
                                     @error('brand')
@@ -240,12 +240,12 @@
                                     @enderror
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Model</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.model') }}</label>
                                     <input
                                         name="model"
                                         value="{{ old('model', $asset?->model) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 {{ $isAgent ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : '' }}"
-                                        placeholder="Contoh: XPS 13"
+                                        placeholder="{{ __('messages.model_placeholder') }}"
                                         @if ($isAgent) readonly @endif
                                     >
                                     @error('model')
@@ -256,12 +256,12 @@
 
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Serial Number</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.serial_number') }}</label>
                                     <input
                                         name="serial_number"
                                         value="{{ old('serial_number', $asset?->serial_number) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 {{ $isAgent ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : '' }}"
-                                        placeholder="Isi serial number"
+                                        placeholder="{{ __('messages.serial_placeholder') }}"
                                         @if ($isAgent) readonly @endif
                                     >
                                     @error('serial_number')
@@ -269,7 +269,7 @@
                                     @enderror
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Harga (IDR)</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.price_idr') }}</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -287,7 +287,7 @@
 
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Tanggal Pembelian</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.purchase_date') }}</label>
                                     <input
                                         type="date"
                                         name="purchase_date"
@@ -300,7 +300,7 @@
                                     @enderror
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Warranty End</label>
+                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.warranty_end') }}</label>
                                     <input
                                         type="date"
                                         name="warranty_expired"
@@ -315,16 +315,16 @@
                             </div>
 
                             <div class="flex flex-col gap-1">
-                                <label class="text-sm font-semibold text-slate-700">Spesifikasi</label>
+                                <label class="text-sm font-semibold text-slate-700">{{ __('messages.specs') }}</label>
                                 <textarea
                                     name="specs"
                                     rows="3"
                                     class="rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 {{ $isAgent ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : '' }}"
-                                    placeholder="CPU, RAM, Storage, GPU..."
+                                    placeholder="{{ __('messages.specs_placeholder') }}"
                                     @if ($isAgent) readonly @endif
                                 >{{ old('specs', $asset?->specs) }}</textarea>
                                 <p class="text-xs text-slate-500">
-                                    Informasi ini diisi otomatis oleh agent. Tidak perlu diubah manual.
+                                    {{ __('messages.agent_auto_fill') }}
                                 </p>
                                 @error('specs')
                                     <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -332,12 +332,12 @@
                             </div>
 
                             <div class="flex flex-col gap-1">
-                                <label class="text-sm font-semibold text-slate-700">Catatan teknis</label>
+                                <label class="text-sm font-semibold text-slate-700">{{ __('messages.technical_notes') }}</label>
                                 <textarea
                                     name="notes"
                                     rows="3"
                                     class="rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                                    placeholder="Catatan tambahan atau kondisi khusus."
+                                    placeholder="{{ __('messages.notes_placeholder') }}"
                                 >{{ old('notes', $asset?->notes) }}</textarea>
                                 @error('notes')
                                     <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -345,14 +345,14 @@
                             </div>
 
                             @if ($isAgent)
-                                <p class="text-xs text-slate-500">Data ini diupdate otomatis dari agent. Untuk mengubah, jalankan sync di komputer aset.</p>
+                                <p class="text-xs text-slate-500">{{ __('messages.agent_update_notice') }}</p>
                             @endif
 
                             <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
                                 @if ($asset?->last_synced_at)
-                                    Last synced from agent: {{ $asset->last_synced_at }} (Source: {{ ucfirst($asset->sync_source ?? 'manual') }})
+                                    {{ __('messages.last_synced_from_agent', ['time' => $asset->last_synced_at, 'source' => ucfirst($asset->sync_source ?? 'manual')]) }}
                                 @elseif ($syncSource === 'manual')
-                                    Belum pernah sync dari agent (Source: Manual)
+                                    {{ __('messages.never_synced_agent') }}
                                 @endif
                             </div>
                         </div>
@@ -364,7 +364,7 @@
                         href="{{ $isEdit ? route('assets.show', $asset) : route('assets.index') }}"
                         class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-emerald-200 hover:text-emerald-700"
                     >
-                        Batal
+                        {{ __('messages.cancel') }}
                     </a>
                     <button
                         type="submit"

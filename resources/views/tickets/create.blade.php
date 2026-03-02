@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="max-w-lg mx-auto mt-10 bg-white shadow-md rounded p-6">
-    <h2 class="text-2xl font-bold mb-4">Buat Tiket IT Baru</h2>
+    <h2 class="text-2xl font-bold mb-4">{{ __('messages.create_new_ticket') }}</h2>
 
     {{-- Notifikasi sukses --}}
     @if(session('success'))
@@ -16,39 +16,39 @@
         <input type="hidden" name="idempotency_key" value="" data-idempotency-key>
 
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Judul Tiket</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.ticket_title') }}</label>
             <input type="text" name="title" class="w-full border rounded p-2" required>
         </div>
 
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.description') }}</label>
             <textarea name="description" rows="4" class="w-full border rounded p-2" required></textarea>
         </div>
 
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.category') }}</label>
             <select name="category_id" class="w-full border rounded p-2" required>
                 @forelse(($categories ?? []) as $category)
                     <option value="{{ $category->id }}">{{ $category->name }}</option>
                 @empty
-                    <option disabled>Belum ada kategori</option>
+                    <option disabled>{{ __('messages.no_category') }}</option>
                 @endforelse
             </select>
         </div>
 
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Departemen</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.department') }}</label>
             <select name="department_id" class="w-full border rounded p-2" required>
                 @forelse(($departments ?? []) as $department)
                     <option value="{{ $department->id }}">{{ $department->name }}</option>
                 @empty
-                    <option disabled>Belum ada departemen</option>
+                    <option disabled>{{ __('messages.no_department') }}</option>
                 @endforelse
             </select>
         </div>
 
         <div class="mb-4 space-y-2" data-file-preview>
-            <label class="block text-sm font-medium text-gray-700">Lampiran (Opsional)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ __('messages.attachment_optional') }}</label>
             <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50/80 px-4 py-4 text-sm text-gray-600">
                 <input
                     type="file"
@@ -57,7 +57,7 @@
                     class="block w-full text-xs text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-[#00bfa5] file:px-4 file:py-2 file:text-xs file:font-semibold file:uppercase file:tracking-wide file:text-white hover:file:bg-[#00a892]"
                     data-file-preview-input
                 >
-                <p class="mt-2 text-xs text-gray-500">Maks. 5 file, 5MB per file. Format: PDF, gambar, dokumen, ZIP.</p>
+                <p class="mt-2 text-xs text-gray-500">{{ __('messages.attachment_rules') }}</p>
                 <div class="mt-3 space-y-2" data-file-preview-list hidden></div>
             </div>
             @php $attachmentErrors = $errors->get('attachments.*'); @endphp
@@ -71,7 +71,7 @@
         </div>
 
         <button type="submit" class="rounded bg-[#00bfa5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#00a892] inline-flex items-center justify-center gap-2" data-submit-btn>
-            <span data-submit-label>Kirim Tiket</span>
+            <span data-submit-label>{{ __('messages.submit_ticket') }}</span>
             <span class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" data-submit-spinner></span>
         </button>
     </form>
@@ -106,7 +106,7 @@
                     submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
                 }
                 if (submitLabel) {
-                    submitLabel.textContent = 'Mengirim...';
+                    submitLabel.textContent = '{{ __('messages.submitting') }}';
                 }
                 if (submitSpinner) {
                     submitSpinner.classList.remove('hidden');

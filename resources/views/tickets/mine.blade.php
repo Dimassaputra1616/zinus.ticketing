@@ -8,9 +8,9 @@
         data-live-checksum="{{ $checksum }}"
     >
         <x-ui.section-hero
-            pill="Tiket Saya"
-            title="Tiket Saya"
-            description="Pantau dan kelola seluruh tiket yang kamu buat di sistem ini."
+            pill="{{ __('messages.title_my_tickets') }}"
+            title="{{ __('messages.title_my_tickets') }}"
+            description="{{ __('messages.desc_my_tickets') }}"
         >
             <x-slot:pillIcon>
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -34,8 +34,8 @@
         <section class="space-y-3 mt-0">
             <div class="space-y-4 w-full">
                 <x-ui.stats-panel
-                    title="Ringkasan Tiket"
-                    subtitle="Statistik cepat tiket yang kamu buat."
+                    title="{{ __('messages.ticket_summary') }}"
+                    subtitle="{{ __('messages.ticket_summary_sub') }}"
                 >
                     <div data-live-slot="my-ticket-cards">
                         @include('tickets.partials.mine-cards', [

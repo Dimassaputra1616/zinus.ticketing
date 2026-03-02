@@ -1,6 +1,6 @@
 @props([
     'tickets' => collect(),
-    'title' => 'Riwayat Tiket',
+    'title' => null,
     'subtitle' => null,
     'total' => null,
     'isAdmin' => false,
@@ -11,7 +11,7 @@
 <div {{ $attributes->merge(['class' => 'bg-white rounded-2xl border border-[#CFEADF] px-5 sm:px-6 py-5 space-y-4 w-full surface-card shadow-md max-h-none min-h-0 overflow-visible']) }} data-scroll-animate data-ticket-list>
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="space-y-1">
-            <p class="heading-font text-[9px] font-semibold uppercase tracking-[0.32em] text-[#23455D]/70">{{ $title }}</p>
+            <p class="heading-font text-[9px] font-semibold uppercase tracking-[0.32em] text-[#23455D]/70">{{ $title ?? __('messages.ticket_history') }}</p>
             @if ($subtitle)
                 <p class="text-[12px] text-gray-600">{{ $subtitle }}</p>
             @endif
@@ -20,11 +20,11 @@
             <label class="sr-only">Filter status</label>
             <select data-ticket-filter class="rounded-full border border-[#CFEADF] bg-white px-2.5 py-1 text-[11px] font-medium text-[#23455D] focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100">
                 <option value="all">{{ __('messages.filter_all') }}</option>
-                <option value="open">Open</option>
-                <option value="in_progress">In Progress</option>
+                <option value="open">{{ __('messages.stat_open') }}</option>
+                <option value="in_progress">{{ __('messages.stat_in_progress') }}</option>
                 <option value="done">{{ __('messages.stat_resolved') }}</option>
             </select>
-            <label class="sr-only">Urutkan</label>
+            <label class="sr-only">{{ __('messages.sort_label') }}</label>
             <select data-ticket-sort class="rounded-full border border-[#CFEADF] bg-white px-2.5 py-1 text-[11px] font-medium text-[#23455D] focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100">
                 <option value="newest">{{ __('messages.sort_newest') }}</option>
                 <option value="oldest">{{ __('messages.sort_oldest') }}</option>
@@ -102,9 +102,9 @@
                         'chip' => 'bg-slate-100 text-slate-600 border border-slate-200',
                     ];
                     $displayStatus = [
-                        'open' => 'OPEN',
-                        'in_progress' => 'ON TRACK',
-                        'done' => 'TUNTAS',
+                        'open' => __('messages.status_open'),
+                        'in_progress' => __('messages.status_on_track'),
+                        'done' => __('messages.status_done'),
                     ][$normalizedStatus] ?? strtoupper(str_replace('_', ' ', $ticket->status));
                 @endphp
                 <article
