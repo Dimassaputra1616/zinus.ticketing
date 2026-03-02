@@ -396,4 +396,21 @@ return [
     'history_title' => 'Ticket History',
     'history_subtitle_admin' => 'latest tickets received',
     'history_subtitle_user' => 'latest tickets you created',
+
+    // Missing keys fix
+    'attachments' => 'attachments',
+    'brand_model' => 'Brand / Model',
+    'detail' => 'Detail',
+    'external_user' => 'External user',
+    'last_synced_from_agent_title' => 'Last Synced from Agent',
+    'never_synced_agent_full' => 'Never synced from agent (Source: Manual)',
+    'no_tickets_desc' => 'Once a new ticket comes in, its summary will automatically appear here.',
+    'no_tickets_title' => 'No recent tickets yet',
+    'not_set' => 'Not filled',
+    'price' => 'Price',
+    'sort_newest' => 'Newest',
+    'sort_oldest' => 'Oldest',
+    'sort_title' => 'Title (A-Z)',
+    'tickets' => 'tickets',
+    'uncategorized' => 'Uncategorized',
 ];
