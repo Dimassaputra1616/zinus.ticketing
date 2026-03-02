@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'dashboard' => 'Dasbor',
+    'dashboard' => 'Dashboard',
     'my_tickets' => 'Tiket Saya',
     'ticket_list' => 'Daftar Tiket',
     'loan_log' => 'Riwayat Peminjaman',
