@@ -146,7 +146,7 @@ Route::get('/dashboard', function (Request $request) {
                          COUNT(tickets.id) as total_count')
             ->where('tickets.created_at', '>=', now()->subDays(30))
             ->groupBy('departments.name')
-            ->orderByDesc('open_count')
+            ->orderByDesc('total_count')
             ->limit(10)
             ->get();
             
@@ -159,7 +159,7 @@ Route::get('/dashboard', function (Request $request) {
                          COUNT(tickets.id) as total_count')
             ->where('tickets.created_at', '>=', now()->subDays(30))
             ->groupBy('categories.name')
-            ->orderByDesc('open_count')
+            ->orderByDesc('total_count')
             ->limit(10)
             ->get();
             
