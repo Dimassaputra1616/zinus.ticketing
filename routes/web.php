@@ -150,6 +150,19 @@ Route::get('/dashboard', function (Request $request) {
             ->limit(10)
             ->get();
             
+        // Category Heatmap Data
+        $categoryHeatmapQuery = \Illuminate\Support\Facades\DB::table('tickets')
+            ->join('categories', 'tickets.category_id', '=', 'categories.id')
+            ->selectRaw('categories.name as category_name, 
+                         SUM(CASE WHEN tickets.status NOT IN (\'resolved\', \'closed\') THEN 1 ELSE 0 END) as open_count,
+                         SUM(CASE WHEN tickets.status IN (\'resolved\', \'closed\') THEN 1 ELSE 0 END) as resolved_count,
+                         COUNT(tickets.id) as total_count')
+            ->where('tickets.created_at', '>=', now()->subDays(30))
+            ->groupBy('categories.name')
+            ->orderByDesc('open_count')
+            ->limit(10)
+            ->get();
+            
         // Assets / Infrastructure Overview
         try {
             $assetOverview = [
@@ -311,6 +324,7 @@ Route::get('/dashboard', function (Request $request) {
             'globalAvgResTime' => $globalAvgResTime ?? 0,
             'recentActivity' => $recentActivity ?? collect(),
             'departmentHeatmap' => $departmentHeatmapQuery ?? collect(),
+            'categoryHeatmap' => $categoryHeatmapQuery ?? collect(),
             'assetOverview' => $assetOverview ?? ['total'=>0,'active'=>0,'maintenance'=>0,'broken'=>0],
         ]);
     }

@@ -198,50 +198,118 @@
                         </div>
                     </div>
 
-                    <!-- Department Analytics (Incident Heatmap / Hotspots) -->
-                    <div class="rounded-2xl border border-slate-200/60 bg-white p-5 sm:p-6 shadow-sm flex flex-col surface-card">
+                    <!-- Analytics Sliders (Hotspots) -->
+                    <div x-data="{ slide: 'dept' }" class="rounded-2xl border border-slate-200/60 bg-white p-5 sm:p-6 shadow-sm flex flex-col surface-card relative overflow-hidden">
+                        
+                        <!-- Toggle Controls -->
                         <div class="flex items-center justify-between mb-5">
                             <div>
-                                <h3 class="font-bold text-slate-800 text-base">Department Hotspots</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">Ticket generation by department (30 Days)</p>
+                                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                    <span x-text="slide === 'dept' ? 'Department Hotspots' : 'Category Hotspots'"></span>
+                                </h3>
+                                <p class="text-xs text-slate-500 mt-0.5" x-text="slide === 'dept' ? 'Ticket generation by department (30 Days)' : 'Ticket generation by category (30 Days)'"></p>
+                            </div>
+                            <!-- Simple pills to toggle -->
+                            <div class="flex bg-slate-100/80 p-1 rounded-lg">
+                                <button @click="slide = 'dept'" type="button" :class="slide === 'dept' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'" class="px-3 py-1 text-xs font-semibold rounded-md transition-all">Depts</button>
+                                <button @click="slide = 'cat'" type="button" :class="slide === 'cat' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'" class="px-3 py-1 text-xs font-semibold rounded-md transition-all">Categories</button>
                             </div>
                         </div>
-                        <div class="flex-1 w-full flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar max-h-[260px]">
-                            @forelse($departmentHeatmap as $dept)
-                                @php
-                                    $maxTotal = max($departmentHeatmap->max('total_count'), 1);
-                                    $percentage = ($dept->total_count / $maxTotal) * 100;
-                                @endphp
-                                <div>
-                                    <div class="flex justify-between items-end mb-1">
-                                        <span class="text-sm font-medium text-slate-700">{{ $dept->department_name }}</span>
-                                        <div class="text-xs">
-                                            <span class="font-bold text-slate-900">{{ $dept->total_count }}</span>
-                                            <span class="text-slate-400 font-medium"> tickets</span>
+
+                        <div class="flex-1 w-full relative h-[260px]">
+                            
+                            <!-- Slide 1: Departments -->
+                            <div x-show="slide === 'dept'" 
+                                 x-transition:enter="transition ease-out duration-300 transform"
+                                 x-transition:enter-start="opacity-0 translate-x-4"
+                                 x-transition:enter-end="opacity-100 translate-x-0"
+                                 x-transition:leave="transition ease-in duration-200 transform absolute inset-0"
+                                 x-transition:leave-start="opacity-100 translate-x-0"
+                                 x-transition:leave-end="opacity-0 -translate-x-4"
+                                 class="w-full h-full flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                                @forelse($departmentHeatmap as $dept)
+                                    @php
+                                        $maxTotal = max($departmentHeatmap->max('total_count'), 1);
+                                        $percentage = ($dept->total_count / $maxTotal) * 100;
+                                    @endphp
+                                    <div>
+                                        <div class="flex justify-between items-end mb-1">
+                                            <span class="text-sm font-medium text-slate-700">{{ $dept->department_name }}</span>
+                                            <div class="text-xs">
+                                                <span class="font-bold text-slate-900">{{ $dept->total_count }}</span>
+                                                <span class="text-slate-400 font-medium"> tickets</span>
+                                            </div>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2.5 flex overflow-hidden">
+                                            @if($dept->open_count > 0)
+                                                <div class="bg-amber-400 h-2.5" style="width: {{ ($dept->open_count / $dept->total_count) * $percentage }}%"></div>
+                                            @endif
+                                            @if($dept->resolved_count > 0)
+                                                <div class="bg-indigo-500 h-2.5" style="width: {{ ($dept->resolved_count / $dept->total_count) * $percentage }}%"></div>
+                                            @endif
+                                        </div>
+                                        <div class="flex gap-3 text-[10px] mt-1.5">
+                                            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span> {{ $dept->open_count }} Open</span>
+                                            <span class="flex items-center gap-1 text-slate-500"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span> {{ $dept->resolved_count }} Resolved</span>
                                         </div>
                                     </div>
-                                    <div class="w-full bg-slate-100 rounded-full h-2.5 flex overflow-hidden">
-                                        @if($dept->open_count > 0)
-                                            <div class="bg-amber-400 h-2.5" style="width: {{ ($dept->open_count / $dept->total_count) * $percentage }}%"></div>
-                                        @endif
-                                        @if($dept->resolved_count > 0)
-                                            <div class="bg-indigo-500 h-2.5" style="width: {{ ($dept->resolved_count / $dept->total_count) * $percentage }}%"></div>
-                                        @endif
+                                @empty
+                                    <div class="flex flex-col items-center justify-center h-full text-center px-6 py-8">
+                                        <div class="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                                            <svg class="h-7 w-7 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                        </div>
+                                        <p class="text-sm font-semibold text-slate-700 mb-1">No data available yet</p>
+                                        <p class="text-xs text-slate-500">Create tickets to generate analytics</p>
                                     </div>
-                                    <div class="flex gap-3 text-[10px] mt-1.5">
-                                        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span> {{ $dept->open_count }} Open</span>
-                                        <span class="flex items-center gap-1 text-slate-500"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span> {{ $dept->resolved_count }} Resolved</span>
+                                @endforelse
+                            </div>
+
+                            <!-- Slide 2: Categories -->
+                            <div x-show="slide === 'cat'" style="display: none;"
+                                 x-transition:enter="transition ease-out duration-300 transform"
+                                 x-transition:enter-start="opacity-0 translate-x-4"
+                                 x-transition:enter-end="opacity-100 translate-x-0"
+                                 x-transition:leave="transition ease-in duration-200 transform absolute inset-0"
+                                 x-transition:leave-start="opacity-100 translate-x-0"
+                                 x-transition:leave-end="opacity-0 -translate-x-4"
+                                 class="w-full h-full flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                                @forelse($categoryHeatmap as $cat)
+                                    @php
+                                        $maxTotalCat = max($categoryHeatmap->max('total_count'), 1);
+                                        $percentageCat = ($cat->total_count / $maxTotalCat) * 100;
+                                    @endphp
+                                    <div>
+                                        <div class="flex justify-between items-end mb-1">
+                                            <span class="text-sm font-medium text-slate-700">{{ $cat->category_name }}</span>
+                                            <div class="text-xs">
+                                                <span class="font-bold text-slate-900">{{ $cat->total_count }}</span>
+                                                <span class="text-slate-400 font-medium"> tickets</span>
+                                            </div>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2.5 flex overflow-hidden">
+                                            @if($cat->open_count > 0)
+                                                <div class="bg-rose-400 h-2.5" style="width: {{ ($cat->open_count / $cat->total_count) * $percentageCat }}%"></div>
+                                            @endif
+                                            @if($cat->resolved_count > 0)
+                                                <div class="bg-indigo-500 h-2.5" style="width: {{ ($cat->resolved_count / $cat->total_count) * $percentageCat }}%"></div>
+                                            @endif
+                                        </div>
+                                        <div class="flex gap-3 text-[10px] mt-1.5">
+                                            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block"></span> {{ $cat->open_count }} Open</span>
+                                            <span class="flex items-center gap-1 text-slate-500"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span> {{ $cat->resolved_count }} Resolved</span>
+                                        </div>
                                     </div>
-                                </div>
-                            @empty
-                                <div class="flex flex-col items-center justify-center h-full text-center px-6 py-8">
-                                    <div class="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                                        <svg class="h-7 w-7 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                @empty
+                                    <div class="flex flex-col items-center justify-center h-full text-center px-6 py-8">
+                                        <div class="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                                            <svg class="h-7 w-7 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                        </div>
+                                        <p class="text-sm font-semibold text-slate-700 mb-1">No data available yet</p>
+                                        <p class="text-xs text-slate-500">Create tickets to generate analytics</p>
                                     </div>
-                                    <p class="text-sm font-semibold text-slate-700 mb-1">No data available yet</p>
-                                    <p class="text-xs text-slate-500">Create tickets to generate analytics</p>
-                                </div>
-                            @endforelse
+                                @endforelse
+                            </div>
+
                         </div>
                     </div>
                 </div>
