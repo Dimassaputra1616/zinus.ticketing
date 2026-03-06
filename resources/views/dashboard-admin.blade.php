@@ -223,10 +223,10 @@
                                  x-transition:enter="transition ease-out duration-300 transform"
                                  x-transition:enter-start="opacity-0 translate-x-4"
                                  x-transition:enter-end="opacity-100 translate-x-0"
-                                 x-transition:leave="transition ease-in duration-200 transform absolute inset-0"
+                                 x-transition:leave="transition ease-in duration-200 transform absolute inset-0 z-10"
                                  x-transition:leave-start="opacity-100 translate-x-0"
                                  x-transition:leave-end="opacity-0 -translate-x-4"
-                                 class="w-full h-full flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                                 class="w-full h-full flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar absolute top-0 left-0 bg-white">
                                 @forelse($departmentHeatmap as $dept)
                                     @php
                                         $maxTotal = max($departmentHeatmap->max('total_count'), 1);
@@ -266,13 +266,13 @@
 
                             <!-- Slide 2: Categories -->
                             <div x-show="slide === 'cat'" style="display: none;"
-                                 x-transition:enter="transition ease-out duration-300 transform"
+                                 x-transition:enter="transition ease-out duration-300 transform max-h-full"
                                  x-transition:enter-start="opacity-0 translate-x-4"
                                  x-transition:enter-end="opacity-100 translate-x-0"
-                                 x-transition:leave="transition ease-in duration-200 transform absolute inset-0"
+                                 x-transition:leave="transition ease-in duration-200 transform absolute inset-0 z-10"
                                  x-transition:leave-start="opacity-100 translate-x-0"
                                  x-transition:leave-end="opacity-0 -translate-x-4"
-                                 class="w-full h-full flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                                 class="w-full h-full flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar absolute top-0 left-0 bg-white">
                                 @forelse($categoryHeatmap as $cat)
                                     @php
                                         $maxTotalCat = max($categoryHeatmap->max('total_count'), 1);
