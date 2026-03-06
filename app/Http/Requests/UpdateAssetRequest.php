@@ -42,6 +42,7 @@ class UpdateAssetRequest extends FormRequest
             'warranty_expired' => ['nullable', 'date', 'after_or_equal:purchase_date'],
             'price' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'rustdesk_id' => ['nullable', 'string', 'max:100'],
         ];
     }
 }
