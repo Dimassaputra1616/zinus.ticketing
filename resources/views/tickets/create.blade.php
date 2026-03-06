@@ -15,6 +15,24 @@
         @csrf
         <input type="hidden" name="idempotency_key" value="" data-idempotency-key>
 
+        @if(isset($users) && count($users) > 0)
+        <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Create For (Employee)</label>
+            <select name="user_id" class="w-full border rounded p-2" required>
+                <option value="" disabled selected>Select an employee</option>
+                @foreach($users as $userOption)
+                    @if($userOption->id !== auth()->id())
+                        <option value="{{ $userOption->id }}">{{ $userOption->name }} ({{ $userOption->email }})</option>
+                    @endif
+                @endforeach
+            </select>
+            @error('user_id')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+            @enderror
+            <p class="mt-1 text-xs text-gray-500">Admins cannot create tickets for themselves.</p>
+        </div>
+        @endif
+
         <div class="mb-3">
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.ticket_title') }}</label>
             <input type="text" name="title" class="w-full border rounded p-2" required>
@@ -44,6 +62,16 @@
                 @empty
                     <option disabled>{{ __('messages.no_department') }}</option>
                 @endforelse
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.priority') }}</label>
+            <select name="priority" class="w-full border rounded p-2" required>
+                <option value="low">{{ __('messages.priority_low') }}</option>
+                <option value="medium" selected>{{ __('messages.priority_medium') }}</option>
+                <option value="high">{{ __('messages.priority_high') }}</option>
+                <option value="critical">{{ __('messages.priority_critical') }}</option>
             </select>
         </div>
 

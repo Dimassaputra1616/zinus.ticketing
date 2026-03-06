@@ -76,7 +76,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:user,admin',
+            'role' => 'required|in:user,admin,technician',
         ]);
 
         $newUser = User::create([
@@ -113,7 +113,7 @@ class UserController extends Controller
         }
 
         $request->validate([
-            'role' => 'required|in:user,admin',
+            'role' => 'required|in:user,admin,technician',
         ]);
 
         $user->role = $request->role;

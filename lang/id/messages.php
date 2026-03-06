@@ -439,4 +439,11 @@ return [
     'loan_status_approved' => 'Disetujui',
     'loan_status_returned' => 'Dikembalikan',
     'loan_status_rejected' => 'Ditolak',
+
+    // Priorities
+    'priority' => 'Prioritas',
+    'priority_low' => 'Rendah',
+    'priority_medium' => 'Sedang',
+    'priority_high' => 'Tinggi',
+    'priority_critical' => 'Kritis',
 ];

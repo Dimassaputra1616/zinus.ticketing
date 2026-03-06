@@ -157,9 +157,30 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    <p class="text-xs text-rose-500 {{ $departmentError ? '' : 'hidden' }}" data-field-error="department_id">
+                                        <p class="text-xs text-rose-500 {{ $departmentError ? '' : 'hidden' }}" data-field-error="department_id">
                                         {{ $departmentError }}
                                     </p>
+                                </div>
+
+                                <div class="md:col-span-2 space-y-2">
+                                    <label class="text-[11px] font-medium text-gray-500">{{ __('messages.priority') }}</label>
+                                    <div class="relative">
+                                        <select
+                                            name="priority"
+                                            required
+                                            class="w-full rounded-[12px] border border-slate-200 bg-white bg-none px-5 py-3 pr-10 text-sm text-slate-900 placeholder:text-slate-400 transition appearance-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 shadow-sm"
+                                        >
+                                            <option value="low">{{ __('messages.priority_low') }}</option>
+                                            <option value="medium" selected>{{ __('messages.priority_medium') }}</option>
+                                            <option value="high">{{ __('messages.priority_high') }}</option>
+                                            <option value="critical">{{ __('messages.priority_critical') }}</option>
+                                        </select>
+                                        <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
+                                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="m6 9 6 6 6-6" />
+                                            </svg>
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div class="md:col-span-2 space-y-2">

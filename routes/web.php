@@ -31,11 +31,15 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function (Request $request) {
     $user = auth()->user();
+    $hasDashboardAccess = $user && $user->hasDashboardAccess();
     $isAdmin = $user && $user->isAdmin();
+    $isTechnician = $user && $user->isTechnician();
 
     $baseQuery = Ticket::query();
 
-    if (! $isAdmin) {
+    if ($isTechnician) {
+        $baseQuery->where('assigned_admin_id', $user->id);
+    } elseif (! $isAdmin) {
         $baseQuery->where('user_id', $user?->id);
     }
 
@@ -48,46 +52,272 @@ Route::get('/dashboard', function (Request $request) {
     $inProgressTickets = (clone $baseQuery)->where('status', 'in_progress')->count();
     $resolvedTickets = (clone $baseQuery)->whereIn('status', ['resolved', 'closed'])->count();
 
+    $highPriorityTickets = 0;
+    $highPriorityList = collect();
+    $ticketsByCategory = collect();
+    $liveMonitoringQueue = collect();
+    
+    if ($hasDashboardAccess) {
+        $highPriorityQuery = (clone $baseQuery)->where('priority', 'high')->whereNotIn('status', ['resolved', 'closed']);
+        $highPriorityTickets = $highPriorityQuery->count();
+        $highPriorityList = $highPriorityQuery->with(['category', 'department', 'user'])->latest()->take(5)->get();
+        
+        $ticketsByCategory = \Illuminate\Support\Facades\DB::table('tickets')
+            ->selectRaw('category_id, count(*) as count')
+            ->whereNotIn('status', ['resolved', 'closed'])
+            ->groupBy('category_id')
+            ->orderByDesc('count')
+            ->get()->map(function($item) use ($categories) {
+            return [
+                'name' => $categories->firstWhere('id', $item->category_id)?->name ?? 'Unknown',
+                'count' => $item->count
+            ];
+        });
+
+        // NOC Live Queue: Open & In Progress, sorted by urgency (High first) then by oldest waiting time
+        $liveMonitoringQueue = (clone $baseQuery)
+            ->whereIn('status', ['open', 'in_progress'])
+            ->with(['category', 'department', 'user'])
+            ->orderByRaw("CASE WHEN priority = 'high' THEN 1 WHEN priority = 'medium' THEN 2 ELSE 3 END")
+            ->oldest() // Oldest indicates waiting the longest
+            ->limit(20)
+            ->get();
+            
+        // --- Executive Metrics ---
+        $today = now()->startOfDay();
+        $totalTicketsToday = (clone $baseQuery)->where('created_at', '>=', $today)->count();
+        $resolvedToday = (clone $baseQuery)->whereIn('status', ['resolved', 'closed'])->where('updated_at', '>=', $today)->count();
+
+        // Yesterday comparison for KPI trend indicators
+        $yesterday = now()->subDay()->startOfDay();
+        $totalTicketsYesterday = (clone $baseQuery)->where('created_at', '>=', $yesterday)->where('created_at', '<', $today)->count();
+        $resolvedYesterday = (clone $baseQuery)->whereIn('status', ['resolved', 'closed'])->where('updated_at', '>=', $yesterday)->where('updated_at', '<', $today)->count();
+        $activeTicketsNow = $openTickets + $inProgressTickets;
+
+        // Ticket Trend Chart Data (30 Days: Created vs Resolved)
+        // For the frontend we'll send 30 days of data and the frontend can toggle to 7. 
+        // Or we just send 30 days and the charts handles it. Let's send 30 and 90 raw data arrays for JavaScript.
+        $trendData30 = collect();
+        for ($i = 29; $i >= 0; $i--) {
+            $date = now()->subDays($i)->startOfDay();
+            $trendData30->put($date->format('Y-m-d'), ['created' => 0, 'resolved' => 0]);
+        }
+        
+        $createdTrendQuery = \Illuminate\Support\Facades\DB::table('tickets')
+            ->selectRaw('DATE(created_at) as date, count(*) as count')
+            ->where('created_at', '>=', now()->subDays(29)->startOfDay())
+            ->groupBy('date')
+            ->get();
+            
+        $resolvedTrendQuery = \Illuminate\Support\Facades\DB::table('tickets')
+            ->selectRaw('DATE(updated_at) as date, count(*) as count')
+            ->whereIn('status', ['resolved', 'closed'])
+            ->where('updated_at', '>=', now()->subDays(29)->startOfDay())
+            ->groupBy('date')
+            ->get();
+            
+        foreach ($createdTrendQuery as $row) {
+            if ($trendData30->has($row->date)) {
+                $item = $trendData30->get($row->date);
+                $item['created'] = $row->count;
+                $trendData30->put($row->date, $item);
+            }
+        }
+        foreach ($resolvedTrendQuery as $row) {
+            if ($trendData30->has($row->date)) {
+                $item = $trendData30->get($row->date);
+                $item['resolved'] = $row->count;
+                $trendData30->put($row->date, $item);
+            }
+        }
+        
+        $trendData = [
+            'labels' => $trendData30->keys()->map(fn($date) => Carbon\Carbon::parse($date)->format('M d'))->values(),
+            'created' => $trendData30->pluck('created')->values(),
+            'resolved' => $trendData30->pluck('resolved')->values(),
+        ];
+        
+        // Incident Heatmap Data (Tickets by Department)
+        $departmentHeatmapQuery = \Illuminate\Support\Facades\DB::table('tickets')
+            ->join('departments', 'tickets.department_id', '=', 'departments.id')
+            ->selectRaw('departments.name as department_name, 
+                         SUM(CASE WHEN tickets.status NOT IN (\'resolved\', \'closed\') THEN 1 ELSE 0 END) as open_count,
+                         SUM(CASE WHEN tickets.status IN (\'resolved\', \'closed\') THEN 1 ELSE 0 END) as resolved_count,
+                         COUNT(tickets.id) as total_count')
+            ->where('tickets.created_at', '>=', now()->subDays(30))
+            ->groupBy('departments.name')
+            ->orderByDesc('open_count')
+            ->limit(10)
+            ->get();
+            
+        // Assets / Infrastructure Overview
+        try {
+            $assetOverview = [
+                'total' => \Illuminate\Support\Facades\DB::table('assets')->count(),
+                'active' => \Illuminate\Support\Facades\DB::table('assets')->where('status', 'in_use')->count(),
+                'maintenance' => \Illuminate\Support\Facades\DB::table('assets')->where('status', 'maintenance')->count(),
+                'broken' => \Illuminate\Support\Facades\DB::table('assets')->where('status', 'broken')->count(),
+            ];
+        } catch (\Exception $e) {
+            // Fallback if Asset table doesn't have those exact string values or doesn't exist
+            $assetOverview = [
+                'total' => 0, 'active' => 0, 'maintenance' => 0, 'broken' => 0
+            ];
+        }
+
+        // Technician Performance
+        $technicians = \Illuminate\Support\Facades\DB::table('users')
+            ->whereIn('role', ['admin', 'Admin'])
+            ->orWhere('is_admin', true)
+            ->select('id', 'name', 'email')
+            ->get()
+            ->map(function ($tech) use ($baseQuery) {
+                $assignedTickets = (clone $baseQuery)->where('assigned_admin_id', $tech->id);
+                $openCount = (clone $assignedTickets)->whereNotIn('status', ['resolved', 'closed'])->count();
+                $resolvedCount = (clone $assignedTickets)->whereIn('status', ['resolved', 'closed'])->count();
+                
+                // Calculate avg resolution time (in hours) for this tech's resolved tickets
+                $resolvedTickets = (clone $assignedTickets)->whereIn('status', ['resolved', 'closed'])->get();
+                $avgResTime = 0;
+                if ($resolvedTickets->count() > 0) {
+                    $totalMinutes = $resolvedTickets->sum(function($ticket) {
+                         return $ticket->created_at->diffInMinutes($ticket->updated_at);
+                    });
+                    $avgResTime = round($totalMinutes / 60 / $resolvedTickets->count(), 1);
+                }
+
+                return [
+                    'id' => $tech->id,
+                    'name' => $tech->name,
+                    'email' => $tech->email,
+                    'open' => $openCount,
+                    'resolved' => $resolvedCount,
+                    'avg_res_time' => $avgResTime,
+                ];
+            })->sortByDesc('resolved')->values();
+
+        // SLA Breach (Naive calculation based on creation date vs priority thresholds)
+        // High: 2h, Medium: 24h, Low: 48h
+        $slaThresholds = [
+            'high' => now()->subHours(2),
+            'medium' => now()->subHours(24),
+            'low' => now()->subHours(48),
+        ];
+        
+        $slaBreachTickets = (clone $baseQuery)
+            ->whereNotIn('status', ['resolved', 'closed'])
+            ->where(function ($query) use ($slaThresholds) {
+                $query->where(function ($q) use ($slaThresholds) {
+                    $q->where('priority', 'high')->where('created_at', '<', $slaThresholds['high']);
+                })->orWhere(function ($q) use ($slaThresholds) {
+                    $q->where('priority', 'medium')->where('created_at', '<', $slaThresholds['medium']);
+                })->orWhere(function ($q) use ($slaThresholds) {
+                    $q->where('priority', 'low')->where('created_at', '<', $slaThresholds['low']);
+                });
+            })
+            ->with(['category', 'user', 'assignedAdmin'])
+            ->orderBy('created_at')
+            ->get();
+            
+        $slaBreachCount = $slaBreachTickets->count();
+
+        // System Avg Resolution Time (Last 30 days)
+        $globallyResolved = (clone $baseQuery)
+            ->whereIn('status', ['resolved', 'closed'])
+            ->where('updated_at', '>=', now()->subDays(30))
+            ->get();
+            
+        $globalAvgResTime = 0;
+        if ($globallyResolved->count() > 0) {
+            $totalMins = $globallyResolved->sum(function($ticket) {
+                 return $ticket->created_at->diffInMinutes($ticket->updated_at);
+            });
+            $globalAvgResTime = round($totalMins / 60 / $globallyResolved->count(), 1);
+        }
+        
+        // Recent Activity Feed (Ticket Logs)
+        $recentActivity = \App\Models\TicketLog::with(['ticket', 'user'])
+            ->latest()
+            ->take(10)
+            ->get();
+    }
+
     $checksumParts = [
         $totalTickets,
         $openTickets,
         $inProgressTickets,
         $resolvedTickets,
+        $highPriorityTickets,
         $recentTickets->pluck('id')->join('-'),
         $recentTickets->pluck('updated_at')->map(fn ($date) => optional($date)->format('U') ?? '0')->join('-'),
     ];
     $checksum = hash('sha256', implode('|', $checksumParts));
 
     if ($request->boolean('refresh')) {
+        $fragments = [];
+
+        $fragments['dashboard-stats'] = view($hasDashboardAccess ? 'dashboard.partials.stats-admin' : 'dashboard.partials.stats', [
+            'totalTickets' => $totalTickets,
+            'openTickets' => $openTickets,
+            'inProgressTickets' => $inProgressTickets,
+            'resolvedTickets' => $resolvedTickets,
+            'highPriorityTickets' => $highPriorityTickets,
+        ])->render();
+        $fragments['dashboard-history'] = view('dashboard.partials.history', [
+            'recentTickets' => $recentTickets,
+            'totalTickets' => $totalTickets,
+            'isAdmin' => $isAdmin,
+        ])->render();
+
+        if ($hasDashboardAccess) {
+            $fragments['dashboard-live-queue'] = view('dashboard.partials.live-queue', [
+                'liveMonitoringQueue' => $liveMonitoringQueue
+            ])->render();
+        }
+
         return response()->json([
             'checksum' => $checksum,
-            'fragments' => [
-                'dashboard-stats' => view('dashboard.partials.stats', [
-                    'totalTickets' => $totalTickets,
-                    'openTickets' => $openTickets,
-                    'inProgressTickets' => $inProgressTickets,
-                    'resolvedTickets' => $resolvedTickets,
-                ])->render(),
-                'dashboard-history' => view('dashboard.partials.history', [
-                    'recentTickets' => $recentTickets,
-                    'totalTickets' => $totalTickets,
-                    'isAdmin' => $isAdmin,
-                ])->render(),
-            ],
+            'fragments' => $fragments,
         ]);
     }
 
-    return view('dashboard', [
+    $viewData = [
         'categories' => $categories,
         'recentTickets' => $recentTickets,
         'totalTickets' => $totalTickets,
         'openTickets' => $openTickets,
         'inProgressTickets' => $inProgressTickets,
         'resolvedTickets' => $resolvedTickets,
+        'highPriorityTickets' => $highPriorityTickets,
+        'highPriorityList' => $highPriorityList,
+        'ticketsByCategory' => $ticketsByCategory,
+        'liveMonitoringQueue' => $liveMonitoringQueue,
         'isAdmin' => $isAdmin,
+        'hasDashboardAccess' => $hasDashboardAccess,
         'departments' => $departments,
         'checksum' => $checksum,
-    ]);
+    ];
+
+    if ($hasDashboardAccess) {
+        $viewData = array_merge($viewData, [
+            'totalTicketsToday' => $totalTicketsToday ?? 0,
+            'resolvedToday' => $resolvedToday ?? 0,
+            'totalTicketsYesterday' => $totalTicketsYesterday ?? 0,
+            'resolvedYesterday' => $resolvedYesterday ?? 0,
+            'trendData' => $trendData ?? [],
+            'technicians' => $technicians ?? collect(),
+            'slaBreachCount' => $slaBreachCount ?? 0,
+            'slaBreachTickets' => $slaBreachTickets ?? collect(),
+            'globalAvgResTime' => $globalAvgResTime ?? 0,
+            'recentActivity' => $recentActivity ?? collect(),
+            'departmentHeatmap' => $departmentHeatmapQuery ?? collect(),
+            'assetOverview' => $assetOverview ?? ['total'=>0,'active'=>0,'maintenance'=>0,'broken'=>0],
+        ]);
+    }
+
+    $viewName = $hasDashboardAccess ? 'dashboard-admin' : 'dashboard';
+    
+    return view($viewName, $viewData);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

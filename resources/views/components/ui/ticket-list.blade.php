@@ -24,9 +24,18 @@
                 <option value="in_progress">{{ __('messages.stat_in_progress') }}</option>
                 <option value="done">{{ __('messages.stat_resolved') }}</option>
             </select>
+            <label class="sr-only">Filter Priority</label>
+            <select data-ticket-filter-priority name="priority" class="rounded-full border border-[#CFEADF] bg-white px-2.5 py-1 text-[11px] font-medium text-[#23455D] focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100">
+                <option value="all">Semua Prioritas</option>
+                <option value="low">{{ __('messages.priority_low') }}</option>
+                <option value="medium">{{ __('messages.priority_medium') }}</option>
+                <option value="high">{{ __('messages.priority_high') }}</option>
+                <option value="critical">{{ __('messages.priority_critical') }}</option>
+            </select>
             <label class="sr-only">{{ __('messages.sort_label') }}</label>
-            <select data-ticket-sort class="rounded-full border border-[#CFEADF] bg-white px-2.5 py-1 text-[11px] font-medium text-[#23455D] focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100">
+            <select data-ticket-sort name="sort" class="rounded-full border border-[#CFEADF] bg-white px-2.5 py-1 text-[11px] font-medium text-[#23455D] focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100">
                 <option value="newest">{{ __('messages.sort_newest') }}</option>
+                <option value="priority">Prioritas Tertinggi</option>
                 <option value="oldest">{{ __('messages.sort_oldest') }}</option>
                 <option value="title">{{ __('messages.sort_title') }}</option>
             </select>
@@ -162,6 +171,20 @@
                             </svg>
                             {{ $displayStatus }}
                         </span>
+
+                        @if($ticket->priority)
+                            @php
+                                $pStyles = [
+                                    'low' => 'bg-emerald-100 text-emerald-700',
+                                    'medium' => 'bg-amber-100 text-amber-700',
+                                    'high' => 'bg-orange-100 text-orange-700 border border-orange-200',
+                                    'critical' => 'bg-rose-100 text-rose-700 border border-rose-200 font-bold',
+                                ][$ticket->priority] ?? 'bg-slate-100 text-slate-600';
+                            @endphp
+                            <span class="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[9px] uppercase tracking-widest {{ $pStyles }}">
+                                {{ __('messages.priority_' . $ticket->priority) }}
+                            </span>
+                        @endif
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2 justify-between text-[10px] pt-1">

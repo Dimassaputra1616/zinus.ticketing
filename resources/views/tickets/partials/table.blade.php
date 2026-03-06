@@ -128,6 +128,7 @@
                     searchTerm: @js($searchTerm),
                     status: @js($statusFilter),
                     department: @js($departmentFilter),
+                    priority: @js($priorityFilter ?? ''),
                     startDate: @js($startDate),
                     endDate: @js($endDate),
                     suggestions: [],
@@ -171,6 +172,7 @@
                             url.searchParams.set('search', term);
                             if (this.status) url.searchParams.set('status', this.status);
                             if (this.department) url.searchParams.set('department', this.department);
+                            if (this.priority) url.searchParams.set('priority', this.priority);
                             if (this.startDate) url.searchParams.set('start_date', this.startDate);
                             if (this.endDate) url.searchParams.set('end_date', this.endDate);
                             const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
@@ -261,6 +263,21 @@
                                         {{ $department->name }}
                                     </option>
                                 @endforeach
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <label for="priority" class="text-slate-500">{{ __('messages.priority') }}</label>
+                            <select
+                                id="priority"
+                                name="priority"
+                                class="h-[42px] w-full sm:min-w-[150px] rounded-[12px] border border-slate-200 bg-white px-[12px] py-[8px] text-[11px] font-medium text-slate-700 shadow-sm transition duration-150 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
+                                onchange="this.form.submit()"
+                            >
+                                <option value="">Semua Prioritas</option>
+                                <option value="low" @selected((isset($priorityFilter) ? $priorityFilter : '') == 'low')>{{ __('messages.priority_low') }}</option>
+                                <option value="medium" @selected((isset($priorityFilter) ? $priorityFilter : '') == 'medium')>{{ __('messages.priority_medium') }}</option>
+                                <option value="high" @selected((isset($priorityFilter) ? $priorityFilter : '') == 'high')>{{ __('messages.priority_high') }}</option>
+                                <option value="critical" @selected((isset($priorityFilter) ? $priorityFilter : '') == 'critical')>{{ __('messages.priority_critical') }}</option>
                             </select>
                         </div>
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -382,6 +399,22 @@
                             </div>
                             <x-ui.status-chip :status="$ticket->status" class="px-2.5 py-1 text-[0.65rem] tracking-[0.18em]" />
                         </div>
+
+                        @php
+                            $pStyles = [
+                                'low' => 'bg-emerald-100 text-emerald-700',
+                                'medium' => 'bg-amber-100 text-amber-700',
+                                'high' => 'bg-orange-100 text-orange-700 border border-orange-200',
+                                'critical' => 'bg-rose-100 text-rose-700 border border-rose-200 font-bold',
+                            ][$ticket->priority] ?? 'bg-slate-100 text-slate-600';
+                        @endphp
+                        @if($ticket->priority)
+                            <div class="flex">
+                                <span class="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[9px] uppercase tracking-widest {{ $pStyles }}">
+                                    {{ __('messages.priority_' . $ticket->priority) }}
+                                </span>
+                            </div>
+                        @endif
 
                         <p class="text-xs leading-relaxed text-ink-600 overflow-hidden text-ellipsis" style="-webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical;">
                             {{ Str::limit(strip_tags($ticket->description), 200) }}
@@ -529,6 +562,14 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-200 bg-white text-sm text-slate-800">
                                     @forelse ($tickets as $ticket)
+                                        @php
+                                            $pStyles = [
+                                                'low' => 'bg-emerald-100 text-emerald-700',
+                                                'medium' => 'bg-amber-100 text-amber-700',
+                                                'high' => 'bg-orange-100 text-orange-700 border border-orange-200',
+                                                'critical' => 'bg-rose-100 text-rose-700 border border-rose-200 font-bold',
+                                            ][$ticket->priority] ?? 'bg-slate-100 text-slate-600';
+                                        @endphp
                                         <tr class="table-hover-row group transition duration-150 {{ $loop->even ? 'bg-emerald-50/10' : 'bg-white' }} hover:bg-emerald-50/40 hover:shadow-md align-top">
                                             <td class="relative py-2 pl-4 pr-2 font-semibold text-slate-800 text-left whitespace-nowrap align-top before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-emerald-400 before:opacity-0 before:transition group-hover:before:opacity-100 w-[72px] min-w-[72px]">
                                                 <span class="inline-flex items-center gap-1">
@@ -561,6 +602,13 @@
                                                 >
                                                     {{ Str::limit(strip_tags($ticket->description), 180) }}
                                                 </p>
+                                                @if($ticket->priority)
+                                                    <div class="mt-2">
+                                                        <span class="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[9px] uppercase tracking-widest {{ $pStyles }}">
+                                                            {{ __('messages.priority_' . $ticket->priority) }}
+                                                        </span>
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td class="px-2 py-2 text-sm text-slate-600 text-left align-top truncate w-[180px] min-w-[180px] max-w-[180px]">
                                                 <div class="truncate">{{ optional($ticket->user)->name ?? __('messages.external_user') }}</div>

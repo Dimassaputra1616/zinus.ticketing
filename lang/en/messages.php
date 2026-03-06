@@ -443,4 +443,11 @@ return [
     'loan_status_approved' => 'Approved',
     'loan_status_returned' => 'Returned',
     'loan_status_rejected' => 'Rejected',
+
+    // Priorities
+    'priority' => 'Priority',
+    'priority_low' => 'Low',
+    'priority_medium' => 'Medium',
+    'priority_high' => 'High',
+    'priority_critical' => 'Critical',
 ];

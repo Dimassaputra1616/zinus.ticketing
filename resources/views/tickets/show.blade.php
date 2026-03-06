@@ -101,6 +101,23 @@
                             <p class="mt-2 text-sm font-semibold text-ink-900 break-words">{{ $reporterDisplayEmail }}</p>
                         </div>
                         <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 w-full sm:flex-1 sm:min-w-[160px]">
+                            <p class="text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500">{{ __('messages.priority') }}</p>
+                            @php
+                                $priorityColors = [
+                                    'low' => 'text-slate-700 bg-slate-100 border-slate-200',
+                                    'medium' => 'text-amber-700 bg-amber-100 border-amber-200',
+                                    'high' => 'text-orange-700 bg-orange-100 border-orange-200',
+                                    'critical' => 'text-rose-700 bg-rose-100 border-rose-200 font-bold',
+                                ];
+                                $pColor = $priorityColors[$ticket->priority] ?? $priorityColors['medium'];
+                            @endphp
+                            <p class="mt-2 text-sm font-semibold">
+                                <span class="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs uppercase tracking-widest border {{ $pColor }}">
+                                    {{ __('messages.priority_' . $ticket->priority) }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="rounded-2xl border border-ink-100 bg-ink-50/50 p-4 w-full sm:flex-1 sm:min-w-[160px]">
                             <p class="text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500">{{ __('messages.attachment') }}</p>
                             <p class="mt-2 text-base font-semibold text-ink-900">{{ $ticket->attachments_count }} file</p>
                         </div>

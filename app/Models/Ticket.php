@@ -26,6 +26,7 @@ class Ticket extends Model
         'description',
         'status',
         'priority',
+        'assigned_admin_id',
     ];
 
     protected $withCount = [
@@ -40,6 +41,11 @@ class Ticket extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function assignedAdmin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_admin_id');
     }
 
     public function department(): BelongsTo

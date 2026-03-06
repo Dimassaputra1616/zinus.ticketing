@@ -41,6 +41,7 @@
                 }
             })();
         </script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
             html { scroll-behavior: smooth; }
@@ -326,7 +327,8 @@
     @php $authUser = Auth::user(); @endphp
     <body
         x-init="setTimeout(() => { document.body.classList.remove('page-preload'); document.body.classList.add('page-loaded'); }, 10)"
-        x-data="{ sidebarOpen: false }"
+        x-data="{ sidebarOpen: false, sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true' }"
+        x-effect="localStorage.setItem('sidebarCollapsed', sidebarCollapsed)"
         :class="sidebarOpen ? 'overflow-hidden max-h-screen' : ''"
         class="page-preload font-sans bg-white text-slate-800 antialiased min-h-screen overflow-x-hidden lg:flex"
         @if($authUser?->isAdmin()) data-notifications-endpoint="{{ route('admin.notifications.summary') }}" @endif
@@ -472,33 +474,36 @@
             ];
         @endphp
 
-        <aside class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen w-[260px] z-50 lg:shrink-0 flex-col justify-between bg-[#0E1F1B] text-emerald-50 shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto">
+        <aside
+            class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen z-50 lg:shrink-0 flex-col justify-between bg-[#0E1F1B] text-emerald-50 shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out"
+            :class="sidebarCollapsed ? 'w-[72px]' : 'w-[260px]'"
+        >
             <div class="flex flex-col w-full h-full">
-                <div class="px-6 pt-10 pb-6 space-y-5">
+                <div class="px-6 pt-10 pb-6 space-y-5 transition-all duration-300" :class="sidebarCollapsed ? 'px-3 pt-5 pb-3' : 'px-6 pt-10 pb-6'">
                         <div class="flex flex-col items-center text-center space-y-3">
-                            <img src="/images/logo-email.png" alt="Zinus Dream" class="h-32 w-auto max-h-32 object-contain select-none">
-                            <div class="space-y-1.5">
-                                <p class="text-[12px] font-semibold uppercase tracking-[0.24em] text-emerald-50">Zinus Dream</p>
-                                <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#cfe9dd]">IT Support Center</p>
+                            <img src="/images/logo-email.png" alt="Zinus Dream" class="object-contain select-none transition-all duration-300" :class="sidebarCollapsed ? 'h-10 w-10' : 'h-32 w-auto max-h-32'">
+                            <div class="space-y-1.5 overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'h-0 opacity-0' : 'h-auto opacity-100'">
+                                <p class="text-[12px] font-semibold uppercase tracking-[0.24em] text-emerald-50 whitespace-nowrap">Zinus Dream</p>
+                                <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#cfe9dd] whitespace-nowrap">IT Support Center</p>
                             </div>
                         </div>
                     @if ($user)
-                        <div class="text-center space-y-2 mt-2">
-                            <p class="text-sm font-semibold text-white">{{ $user->name }}</p>
+                        <div class="text-center space-y-2 mt-2 overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'h-0 opacity-0 mt-0' : 'h-auto opacity-100'">
+                            <p class="text-sm font-semibold text-white whitespace-nowrap">{{ $user->name }}</p>
                             @php $isAdmin = $user->isAdmin(); @endphp
-                            <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.28em] {{ $isAdmin ? 'role-badge-gold' : 'role-badge-soft text-emerald-700' }}">
+                            <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.28em] whitespace-nowrap {{ $isAdmin ? 'role-badge-gold' : 'role-badge-soft text-emerald-700' }}">
                                 <svg class="h-3 w-3 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 2 3 6v6c0 5.25 3.438 10 9 11 5.562-1 9-5.75 9-11V6l-9-4Z" />
                                     <path d="m9 12 2 2 4-4" />
                                 </svg>
-                                {{ $isAdmin ? 'IT ADMIN' : 'USER' }}
+                                <span x-show="!sidebarCollapsed" x-transition>{{ $isAdmin ? 'IT ADMIN' : 'USER' }}</span>
                             </span>
                         </div>
                     @endif
-                    <div class="h-px w-full bg-white/20"></div>
+                    <div class="h-px w-full bg-white/20" x-show="!sidebarCollapsed" x-transition></div>
                 </div>
 
-                <nav class="flex-1 px-4 space-y-1.5 sidebar-nav text-[14px]">
+                <nav class="flex-1 space-y-1.5 sidebar-nav text-[14px] transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
                     @foreach ($navItems as $item)
                         @continue(! $item['visible'])
                         @php
@@ -509,10 +514,12 @@
                         <a
                             href="{{ route($item['route']) }}"
                             @class([
-                                'group flex items-center gap-3 rounded-lg px-5 py-3 text-[14px] font-medium transition-all duration-150 hover:text-white border-l-[3px] border-transparent',
+                                'group flex items-center gap-3 rounded-lg py-3 text-[14px] font-medium transition-all duration-150 hover:text-white border-l-[3px] border-transparent',
                                 'text-emerald-100/80' => ! $isActive,
                                 'is-active text-white border-[#53B77A]' => $isActive,
                             ])
+                            :class="sidebarCollapsed ? 'justify-center px-3' : 'px-5'"
+                            :title="sidebarCollapsed ? '{{ $item['label'] }}' : ''"
                         >
                             <svg
                                 class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
@@ -526,29 +533,47 @@
                             >
                                 {!! $item['icon'] !!}
                             </svg>
-                            <span class="flex-1">{{ $item['label'] }}</span>
+                            <span class="flex-1 whitespace-nowrap overflow-hidden transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>{{ $item['label'] }}</span>
                             @if ($badgeType)
                                 <span
-                                    class="ml-auto inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-rose-600"
+                                    class="inline-flex items-center gap-1 rounded-full bg-rose-100 py-0.5 text-[0.65rem] font-semibold uppercase text-rose-600 transition-all duration-300"
+                                    :class="sidebarCollapsed ? 'absolute -top-1 -right-1 w-2 h-2 p-0 min-w-0 rounded-full' : 'ml-auto px-2 tracking-[0.25em]'"
                                     data-notification-badge="{{ $badgeType }}"
                                     @if ($badgeCount === 0) hidden style="display: none;" @endif
                                 >
-                                    <span>New</span>
-                                    <span class="tracking-normal" data-notification-count="{{ $badgeType }}">{{ $badgeCount > 9 ? '9+' : $badgeCount }}</span>
+                                    <template x-if="!sidebarCollapsed">
+                                        <span class="flex items-center gap-1"><span>New</span><span class="tracking-normal" data-notification-count="{{ $badgeType }}">{{ $badgeCount > 9 ? '9+' : $badgeCount }}</span></span>
+                                    </template>
                                 </span>
                             @endif
                         </a>
                     @endforeach
                 </nav>
 
-                <div class="px-6 py-6 border-t border-white/10">
+                <!-- Toggle Collapse Button -->
+                <div class="px-3 py-2 border-t border-white/10">
+                    <button
+                        @click="sidebarCollapsed = !sidebarCollapsed"
+                        class="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-emerald-200/70 hover:text-white hover:bg-white/10 transition-all duration-200"
+                        :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+                    >
+                        <svg class="h-5 w-5 flex-shrink-0 transition-transform duration-300" :class="sidebarCollapsed ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="9" y1="3" x2="9" y2="21"/>
+                            <polyline points="16 15 13 12 16 9"/>
+                        </svg>
+                        <span class="whitespace-nowrap overflow-hidden transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>Collapse</span>
+                    </button>
+                </div>
+
+                <div class="px-3 pb-4 transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-6'">
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:from-emerald-600 hover:to-emerald-500">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <button type="submit" class="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:from-emerald-600 hover:to-emerald-500" :title="sidebarCollapsed ? '{{ __('messages.logout') }}' : ''">
+                            <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
                             </svg>
-                            {{ __('messages.logout') }}
+                            <span class="whitespace-nowrap overflow-hidden transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>{{ __('messages.logout') }}</span>
                         </button>
                     </form>
                 </div>

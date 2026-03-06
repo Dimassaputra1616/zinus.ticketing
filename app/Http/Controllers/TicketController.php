@@ -23,14 +23,20 @@ class TicketController extends Controller
     /**
      * Form membuat tiket baru
      */
-    public function create()
+    public function create(Request $request)
     {
         $categories = Category::orderBy('name')->get();
         $departments = Department::orderBy('name')->get();
+        
+        $users = [];
+        if ($request->user() && $request->user()->isAdmin()) {
+            $users = User::orderBy('name')->get();
+        }
 
         return view('tickets.create', [
             'categories' => $categories,
             'departments' => $departments,
+            'users' => $users,
         ]);
     }
 
@@ -51,8 +57,13 @@ class TicketController extends Controller
         ];
 
         $statusFilter = $request->query('status');
+        $sortFilter = $request->query('sort', 'newest'); // default to newest
 
-        $ticketsQuery = Ticket::with(['category', 'department', 'user', 'attachments'])->latest();
+        $ticketsQuery = Ticket::with(['category', 'department', 'user', 'attachments']);
+
+        if ($user->isTechnician()) {
+            $ticketsQuery->where('assigned_admin_id', $user->id);
+        }
 
         if ($statusFilter && array_key_exists($statusFilter, $statuses)) {
             $ticketsQuery->where('status', $statusFilter);
@@ -62,6 +73,12 @@ class TicketController extends Controller
 
         if ($departmentFilter) {
             $ticketsQuery->where('department_id', $departmentFilter);
+        }
+
+        $priorityFilter = $request->query('priority');
+
+        if ($priorityFilter && in_array($priorityFilter, ['low', 'medium', 'high', 'critical'])) {
+            $ticketsQuery->where('priority', $priorityFilter);
         }
 
         $startDate = $request->query('start_date');
@@ -96,6 +113,26 @@ class TicketController extends Controller
             });
         }
 
+        // Apply distinct sorting logic based on the $sortFilter
+        if ($sortFilter === 'priority') {
+            $ticketsQuery->orderByRaw("
+                CASE priority
+                    WHEN 'critical' THEN 1
+                    WHEN 'high' THEN 2
+                    WHEN 'medium' THEN 3
+                    WHEN 'low' THEN 4
+                    ELSE 5
+                END ASC
+            ")->latest();
+        } elseif ($sortFilter === 'oldest') {
+            $ticketsQuery->oldest();
+        } elseif ($sortFilter === 'title') {
+            $ticketsQuery->orderBy('title', 'asc');
+        } else {
+            // Default newest sorting
+            $ticketsQuery->latest();
+        }
+
         if ($request->boolean('autocomplete')) {
             $suggestions = (clone $ticketsQuery)
                 ->orderBy('created_at', 'desc')
@@ -120,16 +157,20 @@ class TicketController extends Controller
 
         $statusCounts = DB::table('tickets')
             ->when($departmentFilter, fn ($query) => $query->where('department_id', $departmentFilter))
+            ->when($priorityFilter, fn ($query) => $query->where('priority', $priorityFilter))
             ->when($parsedStartDate, fn ($query) => $query->where('created_at', '>=', $parsedStartDate))
             ->when($parsedEndDate, fn ($query) => $query->where('created_at', '<=', $parsedEndDate))
+            ->when($user->isTechnician(), fn ($query) => $query->where('assigned_admin_id', $user->id))
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
 
         $totalTickets = DB::table('tickets')
             ->when($departmentFilter, fn ($query) => $query->where('department_id', $departmentFilter))
+            ->when($priorityFilter, fn ($query) => $query->where('priority', $priorityFilter))
             ->when($parsedStartDate, fn ($query) => $query->where('created_at', '>=', $parsedStartDate))
             ->when($parsedEndDate, fn ($query) => $query->where('created_at', '<=', $parsedEndDate))
+            ->when($user->isTechnician(), fn ($query) => $query->where('assigned_admin_id', $user->id))
             ->count();
 
         $departments = Department::orderBy('name')->get();
@@ -158,6 +199,8 @@ class TicketController extends Controller
                         'statusFilter' => $statusFilter,
                         'departments' => $departments,
                         'departmentFilter' => $departmentFilter,
+                        'priorityFilter' => $priorityFilter,
+                        'sortFilter' => $sortFilter,
                         'searchTerm' => $searchTerm,
                         'startDate' => $startDate,
                         'endDate' => $endDate,
@@ -173,6 +216,8 @@ class TicketController extends Controller
             'statusFilter' => $statusFilter,
             'departments' => $departments,
             'departmentFilter' => $departmentFilter,
+            'priorityFilter' => $priorityFilter,
+            'sortFilter' => $sortFilter,
             'totalTickets' => $totalTickets,
             'checksum' => $checksum,
             'searchTerm' => $searchTerm,
@@ -186,7 +231,7 @@ class TicketController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validationRules = [
             'title' => 'required|string|min:8|max:255',
             'description' => 'required|string|min:20',
             'category_id' => 'required|exists:categories,id',
@@ -194,6 +239,15 @@ class TicketController extends Controller
             'attachments' => 'nullable|array|max:5',
             'attachments.*' => 'nullable|file|max:5120|mimes:pdf,jpeg,jpg,png,doc,docx,xls,xlsx,txt,zip',
             'idempotency_key' => 'nullable|string|max:64',
+            'priority' => 'required|in:low,medium,high,critical',
+        ];
+
+        if ($request->user() && $request->user()->isAdmin()) {
+            $validationRules['user_id'] = 'required|exists:users,id|not_in:' . $request->user()->id;
+        }
+
+        $request->validate($validationRules, [
+            'user_id.not_in' => __('messages.admin_cannot_create_for_self', [], 'id') ?? 'Admin tidak dapat membuat tiket untuk diri sendiri.',
         ]);
 
         $idempotencyKey = $request->input('idempotency_key') ?: (string) Str::uuid();
@@ -212,6 +266,7 @@ class TicketController extends Controller
             'description' => $request->description,
             'category_id' => $request->category_id,
             'department_id' => $request->department_id,
+            'priority' => $request->priority,
             'attachments' => $attachmentMeta,
         ]));
 
@@ -274,15 +329,27 @@ class TicketController extends Controller
         $reporterName = $request->user()?->name ?? $request->input('reporter_name');
         $reporterEmail = $request->user()?->email ?? $request->input('reporter_email');
 
+        $ticketUserId = auth()->id();
+        if ($request->user() && $request->user()->isAdmin()) {
+            $ticketUserId = $request->input('user_id');
+            // override reporter name/email for the target user
+            $targetUser = User::find($ticketUserId);
+            if ($targetUser) {
+                $reporterName = $targetUser->name;
+                $reporterEmail = $targetUser->email;
+            }
+        }
+
         $ticket = Ticket::create([
             'title' => $request->title,
             'description' => $request->description,
             'category_id' => $request->category_id,
             'department_id' => $request->department_id,
-            'user_id' => auth()->id(),
+            'user_id' => $ticketUserId,
             'reporter_name' => $reporterName,
             'reporter_email' => $reporterEmail,
             'status' => 'open',
+            'priority' => $request->priority,
         ]);
 
         DB::table('ticket_idempotency_keys')
@@ -375,7 +442,11 @@ class TicketController extends Controller
             abort(403);
         }
 
-        if (! $user->isAdmin() && $ticket->user_id !== $user->id) {
+        if ($user->isTechnician() && $ticket->assigned_admin_id !== $user->id) {
+            abort(403, 'Akses ditolak - tiket ini tidak di-assign ke Anda.');
+        }
+
+        if (! $user->hasDashboardAccess() && $ticket->user_id !== $user->id) {
             abort(403);
         }
 
