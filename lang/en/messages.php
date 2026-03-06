@@ -450,4 +450,13 @@ return [
     'priority_medium' => 'Medium',
     'priority_high' => 'High',
     'priority_critical' => 'Critical',
+
+    // Remote System
+    'remote_system' => 'Remote System',
+    'title_remote_system' => 'Remote System',
+    'desc_remote_system' => 'Monitor registered devices and launch remote desktop connections.',
+    'connect_remote' => 'Connect Remote',
+    'online' => 'Online',
+    'offline' => 'Offline',
+    'no_rustdesk_id' => 'No RustDesk ID set',
 ];

@@ -389,6 +389,14 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/conversations/{conversation}/reopen', [App\Http\Controllers\Admin\ConversationController::class, 'reopen'])->name('admin.conversations.reopen');
     
     Route::get('/admin/notifications/summary', AdminNotificationSummaryController::class)->name('admin.notifications.summary');
+
+    // Remote System
+    Route::get('/remote-system', function () {
+        $assets = \App\Models\Asset::with(['user', 'department'])
+            ->orderByDesc('updated_at')
+            ->get();
+        return view('remote-system.index', compact('assets'));
+    })->name('remote-system.index');
 });
 
 require __DIR__.'/auth.php';

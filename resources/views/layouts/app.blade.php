@@ -407,7 +407,22 @@
                         <path d="M7 9h4" />
                         <path d="M7 15h4" />
                     ',
-                    'visible' => true,
+                    'visible' => !$isAdmin,
+                    'badgeCount' => 0,
+                    'badgeType' => null,
+                ],
+                [
+                    'label' => __('messages.remote_system'),
+                    'route' => 'remote-system.index',
+                    'icon' => '
+                        <path d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6Z" />
+                        <path d="M10 19h4" />
+                        <path d="M12 15v4" />
+                        <circle cx="12" cy="10" r="1" />
+                        <path d="M9.17 7.17a4 4 0 0 1 5.66 0" />
+                        <path d="M7.05 5.05a7 7 0 0 1 9.9 0" />
+                    ',
+                    'visible' => $isAdmin,
                     'badgeCount' => 0,
                     'badgeType' => null,
                 ],
@@ -695,7 +710,7 @@
                     </div>
                 </div>
 
-                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*'))
+                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*') || request()->routeIs('remote-system.*'))
                     @php
                         $topbarTitle = match (true) {
                             request()->routeIs('tickets.show') => __('messages.title_ticket_detail'),
@@ -706,6 +721,7 @@
                             request()->routeIs('assets.*') => __('messages.title_manage_assets'),
                             request()->routeIs('admin.conversations.index') => __('messages.title_live_chat'),
                             request()->routeIs('admin.conversations.show') => 'Detail Percakapan',
+                            request()->routeIs('remote-system.*') => __('messages.title_remote_system'),
                             default => __('messages.dashboard'),
                         };
                         $topbarDescription = match (true) {
@@ -716,6 +732,7 @@
                             request()->routeIs('loans.*') => __('messages.desc_loan_log'),
                             request()->routeIs('assets.*') => __('messages.desc_manage_assets'),
                             request()->routeIs('admin.conversations.*') => __('messages.desc_live_chat'),
+                            request()->routeIs('remote-system.*') => __('messages.desc_remote_system'),
                             default => __('messages.desc_ticket_management'),
                         };
                     @endphp

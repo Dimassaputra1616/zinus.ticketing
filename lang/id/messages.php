@@ -446,4 +446,13 @@ return [
     'priority_medium' => 'Sedang',
     'priority_high' => 'Tinggi',
     'priority_critical' => 'Kritis',
+
+    // Remote System
+    'remote_system' => 'Remote System',
+    'title_remote_system' => 'Remote System',
+    'desc_remote_system' => 'Pantau perangkat terdaftar dan luncurkan koneksi remote desktop.',
+    'connect_remote' => 'Hubungkan Remote',
+    'online' => 'Online',
+    'offline' => 'Offline',
+    'no_rustdesk_id' => 'Belum ada RustDesk ID',
 ];
