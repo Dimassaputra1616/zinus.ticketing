@@ -473,13 +473,17 @@
                     </h3>
                     <p class="text-xs text-slate-400 mb-5 relative z-10">Asset inventory snapshot</p>
                     <div class="grid grid-cols-2 gap-3 relative z-10">
-                        <div class="bg-white/10 rounded-xl p-3.5 backdrop-blur-sm border border-white/5">
+                        <div class="col-span-2 bg-white/10 rounded-xl p-3.5 backdrop-blur-sm border border-white/5">
                             <span class="text-2xl font-bold text-white block">{{ $assetOverview['total'] }}</span>
                             <span class="text-[10px] text-slate-300 uppercase tracking-wider font-semibold">Total Assets</span>
                         </div>
                         <div class="bg-emerald-500/20 rounded-xl p-3.5 backdrop-blur-sm border border-emerald-500/20">
                             <span class="text-2xl font-bold text-emerald-400 block">{{ $assetOverview['active'] }}</span>
                             <span class="text-[10px] text-emerald-200 uppercase tracking-wider font-semibold">In Use</span>
+                        </div>
+                        <div class="bg-sky-500/20 rounded-xl p-3.5 backdrop-blur-sm border border-sky-500/20">
+                            <span class="text-2xl font-bold text-sky-400 block">{{ $assetOverview['available'] }}</span>
+                            <span class="text-[10px] text-sky-200 uppercase tracking-wider font-semibold">Available</span>
                         </div>
                         <div class="bg-amber-500/20 rounded-xl p-3.5 backdrop-blur-sm border border-amber-500/20">
                             <span class="text-2xl font-bold text-amber-400 block">{{ $assetOverview['maintenance'] }}</span>

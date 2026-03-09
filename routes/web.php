@@ -166,15 +166,16 @@ Route::get('/dashboard', function (Request $request) {
         // Assets / Infrastructure Overview
         try {
             $assetOverview = [
-                'total' => \Illuminate\Support\Facades\DB::table('assets')->count(),
-                'active' => \Illuminate\Support\Facades\DB::table('assets')->where('status', 'in_use')->count(),
-                'maintenance' => \Illuminate\Support\Facades\DB::table('assets')->where('status', 'maintenance')->count(),
-                'broken' => \Illuminate\Support\Facades\DB::table('assets')->where('status', 'broken')->count(),
+                'total' => \Illuminate\Support\Facades\DB::table('assets')->whereNull('deleted_at')->count(),
+                'active' => \Illuminate\Support\Facades\DB::table('assets')->whereNull('deleted_at')->where('status', 'in_use')->count(),
+                'available' => \Illuminate\Support\Facades\DB::table('assets')->whereNull('deleted_at')->where('status', 'available')->count(),
+                'maintenance' => \Illuminate\Support\Facades\DB::table('assets')->whereNull('deleted_at')->where('status', 'maintenance')->count(),
+                'broken' => \Illuminate\Support\Facades\DB::table('assets')->whereNull('deleted_at')->where('status', 'broken')->count(),
             ];
         } catch (\Exception $e) {
             // Fallback if Asset table doesn't have those exact string values or doesn't exist
             $assetOverview = [
-                'total' => 0, 'active' => 0, 'maintenance' => 0, 'broken' => 0
+                'total' => 0, 'active' => 0, 'available' => 0, 'maintenance' => 0, 'broken' => 0
             ];
         }
 
