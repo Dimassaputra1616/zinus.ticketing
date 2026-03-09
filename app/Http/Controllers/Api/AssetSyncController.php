@@ -215,7 +215,7 @@ class AssetSyncController extends Controller
                 'brand' => $data['brand'] ?? null,
                 'model' => $data['model'] ?? null,
                 'cpu' => $data['cpu'] ?? null,
-                'ram_gb' => $data['ram_gb'] ?? null,
+                'ram_gb' => isset($data['ram_gb']) ? (int) round($data['ram_gb']) : null,
                 'serial_number' => $serialNumber,
                 'specs' => $specString ?: null,
                 'storage_gb' => $data['storage_gb'] ?? null,
