@@ -1,5 +1,5 @@
 param(
-    [string]$Token = "qAccfWhyBO79J0GkaTV0khGzFXbIfdiuhMmpdMiPLtZxkkNCw3qijNZF9oaGEBXQ",
+    [string]$Token = "qAccfWhyBO79J0GkaTVOkhGzFXbIfdiuhMmpdMiPLtZxkkNCw3qijMZF9oaGEBXQ",
     [string]$Factory = "GCI-HWANG",
     [string]$Department = "IT",
     [string]$ServerUrl = "https://app.it-ticketing.web.id/api/asset-sync",
