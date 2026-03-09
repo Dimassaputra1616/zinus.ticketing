@@ -54,89 +54,140 @@
             $resolvedTrend = $trendPct($resolvedToday, $resolvedYesterday);
         @endphp
 
-        <!-- KPI Cards -->
-        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <!-- Total Today -->
-            <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50/80 text-indigo-600">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                    </span>
-                    <h3 class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Tickets Today</h3>
-                </div>
-                <div class="flex items-baseline gap-2 mt-3">
-                    <span class="text-3xl font-bold text-slate-900">{{ $totalTicketsToday }}</span>
-                    @if($ticketsTrend !== 0)
-                        <span class="inline-flex items-center gap-0.5 text-[11px] font-bold {{ $ticketsTrend > 0 ? 'text-rose-500' : 'text-emerald-500' }} bg-{{ $ticketsTrend > 0 ? 'rose' : 'emerald' }}-50 px-1.5 py-0.5 rounded-md">
-                            {!! $ticketsTrend > 0 ? '↑' : '↓' !!} {{ abs($ticketsTrend) }}%
+        <!-- KPI Cards — Premium Enterprise -->
+        <div class="grid grid-cols-2 lg:grid-cols-6 gap-3.5">
+
+            <!-- ① Total Tickets (All-Time) — Hero Card -->
+            <div class="col-span-2 lg:col-span-2 relative overflow-hidden rounded-2xl p-5 shadow-sm border border-violet-200/60 bg-gradient-to-br from-violet-50 via-white to-indigo-50/50 group hover:shadow-lg hover:border-violet-300/80 transition-all duration-300">
+                <div class="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-gradient-to-br from-violet-200/40 to-indigo-200/20 blur-xl group-hover:scale-125 transition-transform duration-500"></div>
+                <div class="relative">
+                    <div class="flex items-center gap-2.5 mb-3">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-violet-300/40">
+                            <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
                         </span>
-                    @endif
-                </div>
-                <p class="text-[10px] text-slate-400 mt-1">vs yesterday ({{ $totalTicketsYesterday }})</p>
-            </div>
-
-            <!-- Active Tickets -->
-            <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50/80 text-amber-600">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </span>
-                    <h3 class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Active Tickets</h3>
-                </div>
-                <div class="flex items-baseline gap-2 mt-3">
-                    <span class="text-3xl font-bold text-slate-900">{{ $openTickets + $inProgressTickets }}</span>
-                    <span class="text-xs font-medium text-slate-400">In queue</span>
+                        <h3 class="text-[10.5px] font-bold text-violet-600/80 uppercase tracking-[0.18em]">Total Tickets</h3>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <div>
+                            <span class="text-4xl font-extrabold text-slate-900 tracking-tight">{{ number_format($totalTickets) }}</span>
+                            <p class="text-[10.5px] text-slate-400 mt-1 font-medium">All-time records</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="inline-flex items-center gap-1 bg-violet-100/80 text-violet-700 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                Lifetime
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Resolved Today -->
-            <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50/80 text-emerald-600">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    </span>
-                    <h3 class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Resolved Today</h3>
-                </div>
-                <div class="flex items-baseline gap-2 mt-3">
-                    <span class="text-3xl font-bold text-slate-900">{{ $resolvedToday }}</span>
-                    @if($resolvedTrend !== 0)
-                        <span class="inline-flex items-center gap-0.5 text-[11px] font-bold {{ $resolvedTrend > 0 ? 'text-emerald-500' : 'text-rose-500' }} bg-{{ $resolvedTrend > 0 ? 'emerald' : 'rose' }}-50 px-1.5 py-0.5 rounded-md">
-                            {!! $resolvedTrend > 0 ? '↑' : '↓' !!} {{ abs($resolvedTrend) }}%
+            <!-- ② Tickets Today -->
+            <div class="relative overflow-hidden rounded-2xl p-5 shadow-sm border border-slate-200/70 bg-white group hover:shadow-lg hover:border-indigo-200/70 transition-all duration-300">
+                <div class="absolute -right-4 -bottom-4 h-20 w-20 rounded-full bg-gradient-to-br from-indigo-100/50 to-blue-50/30 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative">
+                    <div class="flex items-center gap-2.5 mb-3">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100 group-hover:bg-indigo-100 transition-colors">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                         </span>
-                    @endif
-                </div>
-                <p class="text-[10px] text-slate-400 mt-1">vs yesterday ({{ $resolvedYesterday }})</p>
-            </div>
-
-            <!-- SLA Breach -->
-            <div class="rounded-2xl border {{ $slaBreachCount > 0 ? 'border-rose-300 bg-rose-50/50 shadow-[0_0_15px_rgba(225,29,72,0.1)]' : 'border-slate-200/80 bg-white shadow-sm' }} p-5 transition-all">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-lg {{ $slaBreachCount > 0 ? 'bg-rose-100 text-rose-600' : 'bg-slate-100/80 text-slate-500' }}">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-                    </span>
-                    <h3 class="text-[10px] font-medium {{ $slaBreachCount > 0 ? 'text-rose-700' : 'text-slate-500' }} uppercase tracking-wider">SLA Breaches</h3>
-                </div>
-                <div class="flex items-baseline gap-2 mt-3">
-                    <span class="text-3xl font-bold {{ $slaBreachCount > 0 ? 'text-rose-600' : 'text-slate-900' }}">{{ $slaBreachCount }}</span>
-                    @if($slaBreachCount > 0)
-                        <span class="text-xs font-semibold text-rose-500 animate-pulse bg-rose-100/50 px-2 py-0.5 rounded">Action req.</span>
-                    @endif
+                        <h3 class="text-[10px] font-bold text-slate-500/80 uppercase tracking-[0.15em]">Tickets Today</h3>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $totalTicketsToday }}</span>
+                        @if($ticketsTrend !== 0)
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold {{ $ticketsTrend > 0 ? 'text-rose-600 bg-rose-50 ring-1 ring-rose-100' : 'text-emerald-600 bg-emerald-50 ring-1 ring-emerald-100' }} px-1.5 py-0.5 rounded-md">
+                                {!! $ticketsTrend > 0 ? '↑' : '↓' !!} {{ abs($ticketsTrend) }}%
+                            </span>
+                        @endif
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1 font-medium">vs yesterday ({{ $totalTicketsYesterday }})</p>
                 </div>
             </div>
 
-            <!-- Avg Resolution Time -->
-            <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow hidden lg:block">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50/80 text-blue-600">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </span>
-                    <h3 class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">MTTR (30d)</h3>
-                </div>
-                <div class="flex items-baseline gap-1.5 mt-3">
-                    <span class="text-3xl font-bold text-slate-900">{{ $globalAvgResTime }}</span>
-                    <span class="text-sm font-semibold text-slate-400 pb-1">hrs</span>
+            <!-- ③ Active Tickets -->
+            <div class="relative overflow-hidden rounded-2xl p-5 shadow-sm border border-slate-200/70 bg-white group hover:shadow-lg hover:border-amber-200/70 transition-all duration-300">
+                <div class="absolute -right-4 -bottom-4 h-20 w-20 rounded-full bg-gradient-to-br from-amber-100/50 to-orange-50/30 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative">
+                    <div class="flex items-center gap-2.5 mb-3">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100 group-hover:bg-amber-100 transition-colors">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </span>
+                        <h3 class="text-[10px] font-bold text-slate-500/80 uppercase tracking-[0.15em]">Active</h3>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $openTickets + $inProgressTickets }}</span>
+                        <span class="text-[10px] font-semibold text-amber-600/80 bg-amber-50 px-1.5 py-0.5 rounded ring-1 ring-amber-100/80">In queue</span>
+                    </div>
+                    <div class="flex items-center gap-3 mt-2">
+                        <span class="text-[10px] text-slate-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-amber-400 mr-1"></span>Open {{ $openTickets }}</span>
+                        <span class="text-[10px] text-slate-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 mr-1"></span>Progress {{ $inProgressTickets }}</span>
+                    </div>
                 </div>
             </div>
+
+            <!-- ④ Resolved Today -->
+            <div class="relative overflow-hidden rounded-2xl p-5 shadow-sm border border-slate-200/70 bg-white group hover:shadow-lg hover:border-emerald-200/70 transition-all duration-300">
+                <div class="absolute -right-4 -bottom-4 h-20 w-20 rounded-full bg-gradient-to-br from-emerald-100/50 to-green-50/30 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative">
+                    <div class="flex items-center gap-2.5 mb-3">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100 group-hover:bg-emerald-100 transition-colors">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </span>
+                        <h3 class="text-[10px] font-bold text-slate-500/80 uppercase tracking-[0.15em]">Resolved Today</h3>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $resolvedToday }}</span>
+                        @if($resolvedTrend !== 0)
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold {{ $resolvedTrend > 0 ? 'text-emerald-600 bg-emerald-50 ring-1 ring-emerald-100' : 'text-rose-600 bg-rose-50 ring-1 ring-rose-100' }} px-1.5 py-0.5 rounded-md">
+                                {!! $resolvedTrend > 0 ? '↑' : '↓' !!} {{ abs($resolvedTrend) }}%
+                            </span>
+                        @endif
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1 font-medium">vs yesterday ({{ $resolvedYesterday }})</p>
+                </div>
+            </div>
+
+            <!-- ⑤ SLA Breaches -->
+            <div class="relative overflow-hidden rounded-2xl p-5 shadow-sm border {{ $slaBreachCount > 0 ? 'border-rose-200/80 bg-gradient-to-br from-rose-50/60 via-white to-red-50/30' : 'border-slate-200/70 bg-white' }} group hover:shadow-lg transition-all duration-300 {{ $slaBreachCount > 0 ? 'hover:border-rose-300' : 'hover:border-slate-300' }}">
+                @if($slaBreachCount > 0)
+                <div class="absolute -right-3 -top-3 h-16 w-16 rounded-full bg-rose-200/40 blur-xl animate-pulse"></div>
+                @endif
+                <div class="relative">
+                    <div class="flex items-center gap-2.5 mb-3">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl {{ $slaBreachCount > 0 ? 'bg-rose-100 text-rose-600 ring-1 ring-rose-200' : 'bg-slate-50 text-slate-400 ring-1 ring-slate-100' }} transition-colors">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                        </span>
+                        <h3 class="text-[10px] font-bold {{ $slaBreachCount > 0 ? 'text-rose-600/80' : 'text-slate-500/80' }} uppercase tracking-[0.15em]">SLA Breaches</h3>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-extrabold {{ $slaBreachCount > 0 ? 'text-rose-600' : 'text-slate-900' }} tracking-tight">{{ $slaBreachCount }}</span>
+                        @if($slaBreachCount > 0)
+                            <span class="text-[10px] font-bold text-rose-600 bg-rose-100/60 px-1.5 py-0.5 rounded ring-1 ring-rose-200/60 animate-pulse">Action req.</span>
+                        @else
+                            <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded ring-1 ring-emerald-100">All clear</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- ⑥ MTTR (Avg Resolution Time) -->
+            <div class="relative overflow-hidden rounded-2xl p-5 shadow-sm border border-slate-200/70 bg-white group hover:shadow-lg hover:border-blue-200/70 transition-all duration-300 hidden lg:block">
+                <div class="absolute -right-4 -bottom-4 h-20 w-20 rounded-full bg-gradient-to-br from-blue-100/50 to-cyan-50/30 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative">
+                    <div class="flex items-center gap-2.5 mb-3">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100 group-hover:bg-blue-100 transition-colors">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </span>
+                        <h3 class="text-[10px] font-bold text-slate-500/80 uppercase tracking-[0.15em]">MTTR (30d)</h3>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $globalAvgResTime }}</span>
+                        <span class="text-xs font-bold text-slate-400 pb-0.5">hrs</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1 font-medium">Mean time to resolve</p>
+                </div>
+            </div>
+
         </div>
 
         <!-- Quick Admin Actions -->
