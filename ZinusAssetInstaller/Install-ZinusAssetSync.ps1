@@ -1,8 +1,8 @@
 param(
-    [string]$Token = "qAccfWhyBO79J0GkaTVOkhGzFXbIfdiuhMmpdMiPLtZxkkNCw3qijMZF9oaGEBXQ",
+    [string]$Token = "3|QWepyRKgxtvrVYyoJ9QwJZGVXDAjqhl4oPa4660z77cad43a",
     [string]$Factory = "GCI-HWANG",
     [string]$Department = "IT",
-    [string]$ServerUrl = "http://10.62.38.208/api/asset-sync",
+    [string]$ServerUrl = "https://app.it-ticketing.web.id/api/asset-sync",
     [string]$AgentVersion = "1.0.0",
     [switch]$SkipRun
 )
