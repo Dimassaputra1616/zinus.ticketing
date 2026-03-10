@@ -9,6 +9,17 @@ Route::post('/asset-sync', [AssetSyncController::class, 'store'])
     ->middleware('asset.sync')
     ->name('api.asset-sync');
 
+// Temporary route to fix PostgreSQL sequences on production
+Route::get('/fix-db', function () {
+    try {
+        \Illuminate\Support\Facades\DB::statement("SELECT setval('assets_id_seq', coalesce(max(id), 1), max(id) IS NOT null) FROM assets");
+        \Illuminate\Support\Facades\DB::statement("SELECT setval('asset_sync_logs_id_seq', coalesce(max(id), 1), max(id) IS NOT null) FROM asset_sync_logs");
+        return response()->json(['success' => true, 'message' => 'Database sequences successfully reset. You can run the sync agent again.']);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'error' => $e->getMessage()]);
+    }
+});
+
 // n8n Live Chat API (v1)
 Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     // Conversations
