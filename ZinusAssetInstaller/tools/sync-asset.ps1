@@ -272,14 +272,14 @@ function Set-RustDeskConfig {
         if ($modified) {
             try {
                 Set-Content -Path $path -Value $content -Encoding UTF8 -Force
-                Write-Log "Updated RustDesk config at $path" "INFO"
+                Write-Log "Updated RustDesk config at ${path}" "INFO"
                 
                 $service = Get-Service -Name "RustDesk" -ErrorAction SilentlyContinue
                 if ($service -and $service.Status -eq 'Running') {
                     Restart-Service -Name "RustDesk" -Force -ErrorAction SilentlyContinue
                 }
             } catch {
-                Write-Log "Failed to write RustDesk config at $path: $($_.Exception.Message)" "WARN"
+                Write-Log "Failed to write RustDesk config at ${path}: $($_.Exception.Message)" "WARN"
             }
         }
     }

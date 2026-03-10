@@ -4,9 +4,9 @@ param(
     [string]$Department = "IT",
     [string]$ServerUrl = "https://app.it-ticketing.web.id/api/asset-sync",
     [string]$AgentVersion = "1.0.0",
-    [string]$RustdeskIdServer = "",
-    [string]$RustdeskRelayServer = "",
-    [string]$RustdeskKey = "",
+    [string]$RustdeskIdServer = "10.62.38.204",
+    [string]$RustdeskRelayServer = "10.62.38.204",
+    [string]$RustdeskKey = "KNvKx1FO3BHoVfXnT97eSkhYkg7fHXr1OSAGdBja39M",
     [switch]$SkipRun
 )
 
