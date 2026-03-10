@@ -217,6 +217,74 @@ function Get-RustDesktopId {
     return $null
 }
 
+function Set-RustDeskConfig {
+    param(
+        [string]$IdServer,
+        [string]$RelayServer,
+        [string]$Key
+    )
+
+    if ([string]::IsNullOrWhiteSpace($IdServer)) { return }
+
+    $paths = @(
+        "C:\Windows\ServiceProfiles\LocalService\AppData\Roaming\RustDesk\config\RustDesk2.toml",
+        "$env:ProgramData\RustDesk\config\RustDesk2.toml",
+        "$env:APPDATA\RustDesk\config\RustDesk2.toml"
+    )
+
+    foreach ($path in $paths) {
+        $dir = Split-Path $path -Parent
+        if (-not (Test-Path $dir)) {
+            try { New-Item -ItemType Directory -Path $dir -Force | Out-Null } catch {}
+        }
+
+        $content = ""
+        if (Test-Path $path) {
+            $content = Get-Content $path -Raw
+        }
+
+        $modified = $false
+        
+        $updateSetting = {
+            param($name, $value)
+            $pattern = "(?m)^$name\s*=.*$"
+            if ($content -match $pattern) {
+                $content = $content -replace $pattern, "$name = '$value'"
+            } else {
+                if ($content -and -not $content.EndsWith("`n")) { $content += "`n" }
+                $content += "$name = '$value'`n"
+            }
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($IdServer)) {
+            &$updateSetting "custom-rendezvous-server" $IdServer
+            $modified = $true
+        }
+        if (-not [string]::IsNullOrWhiteSpace($RelayServer)) {
+            &$updateSetting "relay-server" $RelayServer
+            $modified = $true
+        }
+        if (-not [string]::IsNullOrWhiteSpace($Key)) {
+            &$updateSetting "key" $Key
+            $modified = $true
+        }
+
+        if ($modified) {
+            try {
+                Set-Content -Path $path -Value $content -Encoding UTF8 -Force
+                Write-Log "Updated RustDesk config at $path" "INFO"
+                
+                $service = Get-Service -Name "RustDesk" -ErrorAction SilentlyContinue
+                if ($service -and $service.Status -eq 'Running') {
+                    Restart-Service -Name "RustDesk" -Force -ErrorAction SilentlyContinue
+                }
+            } catch {
+                Write-Log "Failed to write RustDesk config at $path: $($_.Exception.Message)" "WARN"
+            }
+        }
+    }
+}
+
 if (-not (Test-Path $configPath)) {
     Write-Log "Config file not found at $configPath." "ERROR"
     exit 1
@@ -234,6 +302,10 @@ $token = $configJson.token
 $factory = $configJson.factory
 $department = $configJson.department
 $agentVersion = $configJson.agent_version
+$rustdeskIdServer = $configJson.rustdesk_id_server
+$rustdeskRelayServer = $configJson.rustdesk_relay_server
+$rustdeskKey = $configJson.rustdesk_key
+
 if ($serverUrl) {
     $serverUrl = $serverUrl.Trim()
 }
@@ -242,6 +314,10 @@ if ($token) {
 }
 if (-not $agentVersion) {
     $agentVersion = "unknown"
+}
+
+if ($rustdeskIdServer) {
+    Set-RustDeskConfig -IdServer $rustdeskIdServer -RelayServer $rustdeskRelayServer -Key $rustdeskKey
 }
 
 if (-not $serverUrl -or -not $token -or -not $factory -or -not $department) {

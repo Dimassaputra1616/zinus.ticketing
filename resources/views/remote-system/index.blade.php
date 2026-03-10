@@ -27,6 +27,16 @@
                     $statusColor = $isOnline ? 'emerald' : 'slate';
                     $statusLabel = $isOnline ? __('messages.online') : __('messages.offline');
                     $hasRustdesk = !empty($asset->rustdesk_id);
+                    
+                    $rustdeskUri = "rustdesk://connection/new/{$asset->rustdesk_id}";
+                    $isCustomServer = filter_var(config('services.rustdesk.custom_server'), FILTER_VALIDATE_BOOLEAN);
+                    if ($isCustomServer && config('services.rustdesk.id_server')) {
+                        $conf = [
+                            'custom-rendezvous-server' => config('services.rustdesk.id_server'),
+                            'key' => config('services.rustdesk.key'),
+                        ];
+                        $rustdeskUri .= '?conf=' . base64_encode(json_encode($conf));
+                    }
                 @endphp
                 <div class="device-card rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 group"
                      data-name="{{ strtolower($asset->name . ' ' . ($asset->hostname ?? '') . ' ' . (optional($asset->user)->name ?? '')) }}">
@@ -87,13 +97,18 @@
 
                     {{-- Connect Remote Button --}}
                     @if($hasRustdesk)
-                        <a
-                            href="rustdesk://connection/new/{{ $asset->rustdesk_id }}"
-                            class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-indigo-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
-                        >
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                            {{ __('messages.connect_remote') }}
-                        </a>
+                        <div class="space-y-2">
+                            <a
+                                href="{{ $rustdeskUri }}"
+                                class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-indigo-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                                {{ __('messages.connect_remote') }}
+                            </a>
+                            @if($isCustomServer)
+                                <p class="text-center text-[10px] text-slate-400 font-medium">🛡️ {{ __('Menggunakan Local Server Config') }}</p>
+                            @endif
+                        </div>
                     @else
                         <button
                             type="button"

@@ -47,4 +47,12 @@ return [
         'webhook_url' => env('N8N_WEBHOOK_URL'),
     ],
 
+    'rustdesk' => [
+        'custom_server' => env('RUSTDESK_CUSTOM_SERVER', false),
+        'id_server' => env('RUSTDESK_ID_SERVER', ''),
+        'relay_server' => env('RUSTDESK_RELAY_SERVER', ''),
+        'api_server' => env('RUSTDESK_API_SERVER', ''),
+        'key' => env('RUSTDESK_KEY', ''),
+    ],
+
 ];

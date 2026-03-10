@@ -4,6 +4,9 @@ param(
     [string]$Department = "IT",
     [string]$ServerUrl = "https://app.it-ticketing.web.id/api/asset-sync",
     [string]$AgentVersion = "1.0.0",
+    [string]$RustdeskIdServer = "",
+    [string]$RustdeskRelayServer = "",
+    [string]$RustdeskKey = "",
     [switch]$SkipRun
 )
 
@@ -52,12 +55,15 @@ Copy-Item -Path $sourceCmd -Destination $installCmd -Force
 $agentHash = (Get-FileHash -Path $installScript -Algorithm SHA256).Hash
 
 $config = [ordered]@{
-    server_url    = $ServerUrl
-    token         = $Token
-    factory       = $Factory
-    department    = $Department
-    agent_version = $AgentVersion
-    agent_sha256  = $agentHash
+    server_url            = $ServerUrl
+    token                 = $Token
+    factory               = $Factory
+    department            = $Department
+    agent_version         = $AgentVersion
+    agent_sha256          = $agentHash
+    rustdesk_id_server    = $RustdeskIdServer
+    rustdesk_relay_server = $RustdeskRelayServer
+    rustdesk_key          = $RustdeskKey
 }
 
 $config | ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
