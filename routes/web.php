@@ -391,6 +391,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     
     Route::get('/admin/notifications/summary', AdminNotificationSummaryController::class)->name('admin.notifications.summary');
 
+    // Reports
+    Route::get('/admin/reports/export', [App\Http\Controllers\ReportController::class, 'export'])->name('reports.export');
+
     // Remote System
     Route::get('/remote-system', function () {
         $assets = \App\Models\Asset::with(['user', 'department'])

@@ -40,6 +40,7 @@ class AssetSyncController extends Controller
             'agent_version' => ['nullable', 'string', 'max:50'],
             'agent_sha256' => ['nullable', 'string'],
             'idempotency_key' => ['nullable', 'string'],
+            'rustdesk_id' => ['nullable', 'string', 'max:100'],
         ]);
 
         if ($validator->fails()) {
@@ -222,6 +223,7 @@ class AssetSyncController extends Controller
                 'storage_detail' => $data['storage_detail'] ?? null,
                 'os_name' => $data['os_name'] ?? null,
                 'ip_address' => $data['ip_address'] ?? null,
+                'rustdesk_id' => $data['rustdesk_id'] ?? null,
                 'status' => $status,
                 'department_id' => $departmentId,
                 'location' => $factory,

@@ -210,10 +210,117 @@
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                     Manage Assets
                 </a>
-                <button type="button" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 transition-all hover:-translate-y-0.5">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Export Report
-                </button>
+                <div x-data="{ showExportModal: false }" class="relative">
+                    <button @click="showExportModal = true" type="button" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 transition-all hover:-translate-y-0.5">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export Report
+                    </button>
+
+                    {{-- Export Report Modal --}}
+                    <div x-show="showExportModal" x-cloak
+                         class="fixed inset-0 z-50 flex items-center justify-center"
+                         @keydown.escape.window="showExportModal = false">
+
+                        {{-- Backdrop --}}
+                        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showExportModal = false"
+                             x-show="showExportModal"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"></div>
+
+                        {{-- Modal Panel --}}
+                        <div class="relative bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden"
+                             x-show="showExportModal"
+                             x-transition:enter="transition ease-out duration-300"
+                             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave="transition ease-in duration-200"
+                             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                             @click.away="showExportModal = false">
+
+                            {{-- Header --}}
+                            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-indigo-50/50">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-violet-300/30">
+                                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                    </span>
+                                    <div>
+                                        <h3 class="text-base font-bold text-slate-800">Export Ticket Report</h3>
+                                        <p class="text-xs text-slate-500">Download CSV with date range filter</p>
+                                    </div>
+                                </div>
+                                <button @click="showExportModal = false" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-100">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            </div>
+
+                            {{-- Body --}}
+                            <form :action="'{{ route('reports.export') }}'" method="GET" class="p-6 space-y-5">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="export_start_date" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Start Date</label>
+                                        <input type="date" id="export_start_date" name="start_date"
+                                               value="{{ now()->subDays(30)->format('Y-m-d') }}"
+                                               max="{{ now()->format('Y-m-d') }}"
+                                               class="w-full rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-slate-700 shadow-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all" required>
+                                    </div>
+                                    <div>
+                                        <label for="export_end_date" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">End Date</label>
+                                        <input type="date" id="export_end_date" name="end_date"
+                                               value="{{ now()->format('Y-m-d') }}"
+                                               max="{{ now()->format('Y-m-d') }}"
+                                               class="w-full rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-slate-700 shadow-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all" required>
+                                    </div>
+                                </div>
+
+                                {{-- Quick Presets --}}
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Quick Select</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button type="button" @click="$refs.startDate = document.getElementById('export_start_date'); $refs.endDate = document.getElementById('export_end_date'); $refs.startDate.value = '{{ now()->subDays(7)->format('Y-m-d') }}'; $refs.endDate.value = '{{ now()->format('Y-m-d') }}';"
+                                                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 transition-all">
+                                            Last 7 days
+                                        </button>
+                                        <button type="button" @click="document.getElementById('export_start_date').value = '{{ now()->subDays(30)->format('Y-m-d') }}'; document.getElementById('export_end_date').value = '{{ now()->format('Y-m-d') }}';"
+                                                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 transition-all">
+                                            Last 30 days
+                                        </button>
+                                        <button type="button" @click="document.getElementById('export_start_date').value = '{{ now()->startOfMonth()->format('Y-m-d') }}'; document.getElementById('export_end_date').value = '{{ now()->format('Y-m-d') }}';"
+                                                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 transition-all">
+                                            This Month
+                                        </button>
+                                        <button type="button" @click="document.getElementById('export_start_date').value = '{{ now()->subMonth()->startOfMonth()->format('Y-m-d') }}'; document.getElementById('export_end_date').value = '{{ now()->subMonth()->endOfMonth()->format('Y-m-d') }}';"
+                                                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 transition-all">
+                                            Last Month
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {{-- Info --}}
+                                <div class="flex items-start gap-2.5 bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                                    <svg class="h-4 w-4 text-slate-400 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                    <p class="text-xs text-slate-500 leading-relaxed">Report includes: Ticket ID, Title, Status, Priority, Category, Department, Reporter, Assigned To, Timestamps, and Resolution Time.</p>
+                                </div>
+
+                                {{-- Actions --}}
+                                <div class="flex items-center justify-end gap-3 pt-1">
+                                    <button type="button" @click="showExportModal = false" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" @click="setTimeout(() => showExportModal = false, 300)"
+                                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold shadow-lg shadow-violet-300/30 hover:shadow-xl hover:shadow-violet-300/40 hover:-translate-y-0.5 transition-all">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        Download CSV
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

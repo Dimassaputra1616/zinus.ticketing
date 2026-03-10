@@ -187,6 +187,32 @@ function Get-CategoryFromChassis {
     return $null
 }
 
+function Get-RustDesktopId {
+    # Check potential RustDesk config locations
+    $configPaths = @(
+        "$env:ProgramData\RustDesk\config\RustDesk.toml",
+        "$env:APPDATA\RustDesk\config\RustDesk.toml",
+        "$env:LOCALAPPDATA\RustDesk\config\RustDesk.toml",
+        "C:\Windows\ServiceProfiles\LocalService\AppData\Roaming\RustDesk\config\RustDesk.toml"
+    )
+
+    foreach ($path in $configPaths) {
+        if (Test-Path $path) {
+            try {
+                $content = Get-Content $path -Raw
+                # Match the id = 'xxxxxxxxx' pattern in the TOML file
+                if ($content -match "(?m)^id\s*=\s*['""]?([^'""]+)['""]?") {
+                    return $matches[1]
+                }
+            } catch {
+                Write-Log "Failed to read RustDesk config at $path: $($_.Exception.Message)" "WARN"
+            }
+        }
+    }
+    
+    return $null
+}
+
 if (-not (Test-Path $configPath)) {
     Write-Log "Config file not found at $configPath." "ERROR"
     exit 1
@@ -263,6 +289,8 @@ if (-not $model -and $baseboard) {
     $model = Normalize-AssetValue -Value $baseboard.Product -Placeholders $commonPlaceholders
 }
 
+$rustdeskId = Get-RustDesktopId
+
 if (-not $serialNumber) {
     Write-Log "Serial number not found. Sync requires serial number." "ERROR"
     exit 1
@@ -300,6 +328,9 @@ $payload = @{
 
 if ($ipAddress) {
     $payload.ip_address = $ipAddress
+}
+if ($rustdeskId) {
+    $payload.rustdesk_id = $rustdeskId
 }
 
 $jsonBody = $payload | ConvertTo-Json -Depth 6
