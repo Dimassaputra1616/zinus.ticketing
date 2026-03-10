@@ -205,7 +205,7 @@ function Get-RustDesktopId {
                     return $matches[1]
                 }
             } catch {
-                Write-Log "Failed to read RustDesk config at $path: $($_.Exception.Message)" "WARN"
+                Write-Log "Failed to read RustDesk config at ${path}: $($_.Exception.Message)" "WARN"
             }
         }
     }

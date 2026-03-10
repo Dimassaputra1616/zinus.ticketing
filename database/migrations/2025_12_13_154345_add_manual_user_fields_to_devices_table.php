@@ -9,10 +9,10 @@ return new class extends Migration {
     {
         Schema::table('devices', function (Blueprint $table) {
             if (! Schema::hasColumn('devices', 'user_name')) {
-                $table->string('user_name', 150)->nullable()->after('assigned_user_id');
+                $table->string('user_name', 150)->nullable();
             }
             if (! Schema::hasColumn('devices', 'user_email')) {
-                $table->string('user_email', 191)->nullable()->after('user_name');
+                $table->string('user_email', 191)->nullable();
             }
         });
     }
