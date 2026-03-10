@@ -19,7 +19,11 @@ return new class extends Migration
         }
 
         Schema::table('tickets', function (Blueprint $table) {
-            $table->string('priority')->default('medium')->change();
+            if (Schema::hasColumn('tickets', 'priority')) {
+                $table->string('priority')->default('medium')->change();
+            } else {
+                $table->string('priority')->default('medium');
+            }
         });
     }
 
