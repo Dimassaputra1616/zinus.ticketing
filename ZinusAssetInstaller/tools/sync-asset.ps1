@@ -191,18 +191,22 @@ function Get-RustDesktopId {
     # Check potential RustDesk config locations
     $configPaths = @(
         "$env:ProgramData\RustDesk\config\RustDesk.toml",
+        "$env:ProgramData\RustDesk\config\RustDesk2.toml",
         "$env:APPDATA\RustDesk\config\RustDesk.toml",
+        "$env:APPDATA\RustDesk\config\RustDesk2.toml",
         "$env:LOCALAPPDATA\RustDesk\config\RustDesk.toml",
-        "C:\Windows\ServiceProfiles\LocalService\AppData\Roaming\RustDesk\config\RustDesk.toml"
+        "$env:LOCALAPPDATA\RustDesk\config\RustDesk2.toml",
+        "C:\Windows\ServiceProfiles\LocalService\AppData\Roaming\RustDesk\config\RustDesk.toml",
+        "C:\Windows\ServiceProfiles\LocalService\AppData\Roaming\RustDesk\config\RustDesk2.toml"
     )
 
     foreach ($path in $configPaths) {
         if (Test-Path $path) {
             try {
                 $content = Get-Content $path -Raw
-                # Match the id = 'xxxxxxxxx' pattern in the TOML file
-                if ($content -match "(?m)^id\s*=\s*['""]?([^'""]+)['""]?") {
-                    return $matches[1]
+                # Match the id = 'xxxxxxxxx' pattern in the TOML file, ensuring we don't capture \r or \n
+                if ($content -match "(?m)^id\s*=\s*['""]?([^'"">\r\n]+)['""]?") {
+                    return $matches[1].Trim()
                 }
             } catch {
                 Write-Log "Failed to read RustDesk config at ${path}: $($_.Exception.Message)" "WARN"
