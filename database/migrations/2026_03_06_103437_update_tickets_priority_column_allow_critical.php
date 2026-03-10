@@ -14,7 +14,9 @@ return new class extends Migration
     {
         // PostgreSQL enforces enum via CHECK constraints under the hood when using enum()
         // Here we drop the implicit constraint and change the column to a string.
-        DB::statement('ALTER TABLE tickets DROP CONSTRAINT IF EXISTS tickets_priority_check');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE tickets DROP CONSTRAINT IF EXISTS tickets_priority_check');
+        }
 
         Schema::table('tickets', function (Blueprint $table) {
             $table->string('priority')->default('medium')->change();
