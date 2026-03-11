@@ -123,37 +123,54 @@ class AssetSyncController extends Controller
 
             // 1. Primary lookup: by serial_number or asset_code matching the serial
             $candidates = Asset::withTrashed()
-                ->where('serial_number', $serialNumber)
-                ->orWhere('asset_code', $serialNumber)
-                ->orderByDesc('last_synced_at')
+                ->where(function ($query) use ($serialNumber) {
+                    $query->where('serial_number', $serialNumber)
+                        ->orWhere('asset_code', $serialNumber);
+                })
+                ->latest('updated_at')
                 ->get();
 
             if ($candidates->isNotEmpty()) {
-                // Pick the best candidate (prefer non-trashed, most recently synced)
-                $existingAsset = $candidates->firstWhere('deleted_at', null) ?? $candidates->first();
+                // Pick the best candidate: prefer non-trashed, then most recently synced
+                $existingAsset = $candidates
+                    ->sortBy(function ($item) {
+                        return [
+                            $item->trashed() ? 1 : 0,                          // non-trashed first
+                            $item->last_synced_at ? 0 : 1,                     // synced recently first
+                            -1 * ($item->last_synced_at?->timestamp ?? 0),     // newest sync first
+                        ];
+                    })
+                    ->first();
 
                 // Soft-delete leftover duplicates
                 foreach ($candidates as $candidate) {
                     if ($candidate->id !== $existingAsset->id && ! $candidate->trashed()) {
-                        $candidate->delete();
-                        Log::info('asset-sync: soft-deleted duplicate asset', [
-                            'deleted_id' => $candidate->id,
-                            'kept_id' => $existingAsset->id,
-                            'serial_number' => $serialNumber,
-                        ]);
+                        try {
+                            $candidate->delete();
+                            Log::info('asset-sync: soft-deleted duplicate asset', [
+                                'deleted_id' => $candidate->id,
+                                'kept_id' => $existingAsset->id,
+                                'serial_number' => $serialNumber,
+                            ]);
+                        } catch (Throwable $e) {
+                            Log::warning('asset-sync: failed to soft-delete duplicate', [
+                                'id' => $candidate->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
                     }
                 }
             }
 
             // 2. Fallback: by hostname (agent-synced assets only)
-            if (! $existingAsset && $hostname !== '') {
+            if (! $existingAsset && $hostname !== '' && $hostname !== null) {
                 $existingAsset = Asset::withTrashed()
                     ->where('sync_source', 'agent')
                     ->where(function ($query) use ($hostname) {
                         $query->where('hostname', $hostname)
                             ->orWhere('name', $hostname);
                     })
-                    ->orderByDesc('last_synced_at')
+                    ->latest('updated_at')
                     ->first();
             }
 
