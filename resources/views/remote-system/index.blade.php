@@ -23,9 +23,6 @@
         <div id="device-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             @forelse($assets as $asset)
                 @php
-                    $isOnline = $asset->status === 'in_use';
-                    $statusColor = $isOnline ? 'emerald' : 'slate';
-                    $statusLabel = $isOnline ? __('messages.online') : __('messages.offline');
                     $hasRustdesk = !empty($asset->rustdesk_id);
                     
                     $rustdeskUri = "rustdesk://connection/new/{$asset->rustdesk_id}";
@@ -59,9 +56,9 @@
                             </div>
                         </div>
                         {{-- Online/Offline Badge --}}
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-{{ $statusColor }}-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-{{ $statusColor }}-600 border border-{{ $statusColor }}-200/60 shrink-0">
-                            <span class="h-1.5 w-1.5 rounded-full bg-{{ $statusColor }}-500 {{ $isOnline ? 'animate-pulse' : '' }}"></span>
-                            {{ $statusLabel }}
+                        <span id="status-badge-{{ $asset->id }}" class="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600 border border-indigo-200/60 shrink-0">
+                            <span id="status-dot-{{ $asset->id }}" class="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                            <span id="status-text-{{ $asset->id }}">Checking...</span>
                         </span>
                     </div>
 
@@ -143,5 +140,43 @@
                 card.style.display = name.includes(q) ? '' : 'none';
             });
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const devices = @json($assets->map(fn($a) => ['id' => $a->id, 'ip' => $a->ip_address])->values());
+            
+            devices.forEach(device => {
+                const badge = document.getElementById('status-badge-' + device.id);
+                const dot = document.getElementById('status-dot-' + device.id);
+                const text = document.getElementById('status-text-' + device.id);
+                
+                if (!badge) return;
+
+                if (!device.ip) {
+                    badge.className = 'inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 border border-slate-200/60 shrink-0';
+                    dot.className = 'h-1.5 w-1.5 rounded-full bg-slate-500';
+                    text.innerText = 'OFFLINE';
+                    return;
+                }
+
+                fetch('{{ route('remote-system.ping') }}?ip=' + encodeURIComponent(device.ip))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'online') {
+                            badge.className = 'inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 border border-emerald-200/60 shrink-0';
+                            dot.className = 'h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+                            text.innerText = 'ONLINE';
+                        } else {
+                            badge.className = 'inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 border border-slate-200/60 shrink-0';
+                            dot.className = 'h-1.5 w-1.5 rounded-full bg-slate-500';
+                            text.innerText = 'OFFLINE';
+                        }
+                    })
+                    .catch(err => {
+                        badge.className = 'inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 border border-slate-200/60 shrink-0';
+                        dot.className = 'h-1.5 w-1.5 rounded-full bg-slate-500';
+                        text.innerText = 'OFFLINE';
+                    });
+            });
+        });
     </script>
 </x-app-layout>

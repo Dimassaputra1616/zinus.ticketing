@@ -400,6 +400,18 @@ Route::middleware(['auth', 'admin'])->group(function () {
             ->get();
         return view('remote-system.index', compact('assets'));
     })->name('remote-system.index');
+
+    Route::get('/remote-system/ping', function (\Illuminate\Http\Request $request) {
+        $ip = $request->get('ip');
+        if (!$ip || !filter_var($ip, FILTER_VALIDATE_IP)) {
+            return response()->json(['status' => 'offline']);
+        }
+        
+        // Timeout 1s, count 1
+        exec(sprintf('ping -c 1 -W 1 %s', escapeshellarg($ip)), $output, $result);
+        
+        return response()->json(['status' => $result === 0 ? 'online' : 'offline']);
+    })->name('remote-system.ping');
 });
 
 require __DIR__.'/auth.php';
