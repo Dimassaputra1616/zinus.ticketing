@@ -155,16 +155,31 @@ class AssetSyncController extends Controller
                     ->first();
             }
 
-            // 3. Clear ALL other records holding this serial_number
-            //    (UNIQUE constraint applies even to soft-deleted rows in PostgreSQL)
-            $conflictQuery = \Illuminate\Support\Facades\DB::table('assets')
-                ->where('serial_number', $serialNumber);
-            if ($existingAsset) {
-                $conflictQuery->where('id', '!=', $existingAsset->id);
+            // 3. Clear ALL conflicting records that would violate UNIQUE constraints
+            //    The assets table has UNIQUE on: serial_number, asset_code, hostname
+            //    Soft-deleted rows still enforce UNIQUE in PostgreSQL
+            $keepId = $existingAsset?->id;
+
+            // Clear serial_number conflicts
+            $q = \Illuminate\Support\Facades\DB::table('assets')->where('serial_number', $serialNumber);
+            if ($keepId) { $q->where('id', '!=', $keepId); }
+            $q->update(['serial_number' => null]);
+
+            // Clear asset_code conflicts (asset_code = serialNumber in our logic)
+            $q2 = \Illuminate\Support\Facades\DB::table('assets')->where('asset_code', $serialNumber);
+            if ($keepId) { $q2->where('id', '!=', $keepId); }
+            $q2->update(['asset_code' => null]);
+
+            // Clear hostname conflicts
+            if ($hostname !== '' && $hostname !== null) {
+                $q3 = \Illuminate\Support\Facades\DB::table('assets')
+                    ->where(function ($query) use ($hostname) {
+                        $query->where('hostname', $hostname)
+                            ->orWhere('name', $hostname);
+                    });
+                if ($keepId) { $q3->where('id', '!=', $keepId); }
+                $q3->update(['hostname' => null, 'name' => null]);
             }
-            $conflictQuery->update([
-                'serial_number' => null,
-            ]);
 
             // 4. Restore if soft-deleted
             if ($existingAsset && $existingAsset->trashed()) {
