@@ -331,6 +331,11 @@ class AssetSyncController extends Controller
                 'success' => false,
                 'message' => 'Asset sync failed',
                 'error_id' => $errorId,
+                'debug' => [
+                    'exception' => get_class($e),
+                    'error' => $e->getMessage(),
+                    'file' => basename($e->getFile()) . ':' . $e->getLine(),
+                ],
             ], 500);
         }
     }
