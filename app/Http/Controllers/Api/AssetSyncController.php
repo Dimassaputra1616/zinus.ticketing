@@ -135,31 +135,12 @@ class AssetSyncController extends Controller
                 $existingAsset = $candidates
                     ->sortBy(function ($item) {
                         return [
-                            $item->trashed() ? 1 : 0,                          // non-trashed first
-                            $item->last_synced_at ? 0 : 1,                     // synced recently first
-                            -1 * ($item->last_synced_at?->timestamp ?? 0),     // newest sync first
+                            $item->trashed() ? 1 : 0,
+                            $item->last_synced_at ? 0 : 1,
+                            -1 * ($item->last_synced_at?->timestamp ?? 0),
                         ];
                     })
                     ->first();
-
-                // Soft-delete leftover duplicates
-                foreach ($candidates as $candidate) {
-                    if ($candidate->id !== $existingAsset->id && ! $candidate->trashed()) {
-                        try {
-                            $candidate->delete();
-                            Log::info('asset-sync: soft-deleted duplicate asset', [
-                                'deleted_id' => $candidate->id,
-                                'kept_id' => $existingAsset->id,
-                                'serial_number' => $serialNumber,
-                            ]);
-                        } catch (Throwable $e) {
-                            Log::warning('asset-sync: failed to soft-delete duplicate', [
-                                'id' => $candidate->id,
-                                'error' => $e->getMessage(),
-                            ]);
-                        }
-                    }
-                }
             }
 
             // 2. Fallback: by hostname (agent-synced assets only)
@@ -174,7 +155,18 @@ class AssetSyncController extends Controller
                     ->first();
             }
 
-            // 3. Restore if soft-deleted
+            // 3. Clear ALL other records holding this serial_number
+            //    (UNIQUE constraint applies even to soft-deleted rows in PostgreSQL)
+            $conflictQuery = \Illuminate\Support\Facades\DB::table('assets')
+                ->where('serial_number', $serialNumber);
+            if ($existingAsset) {
+                $conflictQuery->where('id', '!=', $existingAsset->id);
+            }
+            $conflictQuery->update([
+                'serial_number' => null,
+            ]);
+
+            // 4. Restore if soft-deleted
             if ($existingAsset && $existingAsset->trashed()) {
                 $existingAsset->restore();
                 $restored = true;
