@@ -451,6 +451,21 @@ try {
     $response = Invoke-RestMethod -Uri $serverUrl -Method Post -Headers $headers -Body $jsonBody -ContentType "application/json"
     Write-Log "Sync success."
 } catch {
-    Write-Log "Sync failed: $($_.Exception.Message)" "ERROR"
+    $errMsg = $_.Exception.Message
+    # Try to extract the response body for detailed error info
+    $responseBody = ""
+    try {
+        if ($_.Exception.Response) {
+            $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+            $reader.BaseStream.Position = 0
+            $responseBody = $reader.ReadToEnd()
+            $reader.Close()
+        }
+    } catch {}
+    if ($responseBody) {
+        Write-Log "Sync failed: $errMsg | Server response: $responseBody" "ERROR"
+    } else {
+        Write-Log "Sync failed: $errMsg" "ERROR"
+    }
     exit 1
 }
