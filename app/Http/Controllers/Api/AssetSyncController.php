@@ -157,28 +157,32 @@ class AssetSyncController extends Controller
 
             // 3. Clear ALL conflicting records that would violate UNIQUE constraints
             //    The assets table has UNIQUE on: serial_number, asset_code, hostname
+            //    Note: asset_code & name are NOT nullable; serial_number & hostname are nullable
             //    Soft-deleted rows still enforce UNIQUE in PostgreSQL
             $keepId = $existingAsset?->id;
 
-            // Clear serial_number conflicts
-            $q = \Illuminate\Support\Facades\DB::table('assets')->where('serial_number', $serialNumber);
-            if ($keepId) { $q->where('id', '!=', $keepId); }
-            $q->update(['serial_number' => null]);
+            // Find all conflicting records and update them individually
+            // (need unique placeholder per record for non-nullable unique columns)
+            $conflictIds = \Illuminate\Support\Facades\DB::table('assets')
+                ->where(function ($query) use ($serialNumber, $hostname) {
+                    $query->where('serial_number', $serialNumber)
+                        ->orWhere('asset_code', $serialNumber);
+                    if ($hostname !== '' && $hostname !== null) {
+                        $query->orWhere('hostname', $hostname);
+                    }
+                })
+                ->when($keepId, fn($q) => $q->where('id', '!=', $keepId))
+                ->pluck('id');
 
-            // Clear asset_code conflicts (asset_code = serialNumber in our logic)
-            $q2 = \Illuminate\Support\Facades\DB::table('assets')->where('asset_code', $serialNumber);
-            if ($keepId) { $q2->where('id', '!=', $keepId); }
-            $q2->update(['asset_code' => null]);
-
-            // Clear hostname conflicts
-            if ($hostname !== '' && $hostname !== null) {
-                $q3 = \Illuminate\Support\Facades\DB::table('assets')
-                    ->where(function ($query) use ($hostname) {
-                        $query->where('hostname', $hostname)
-                            ->orWhere('name', $hostname);
-                    });
-                if ($keepId) { $q3->where('id', '!=', $keepId); }
-                $q3->update(['hostname' => null, 'name' => null]);
+            foreach ($conflictIds as $conflictId) {
+                \Illuminate\Support\Facades\DB::table('assets')
+                    ->where('id', $conflictId)
+                    ->update([
+                        'serial_number' => null,
+                        'asset_code'    => '_MERGED_' . $conflictId,
+                        'hostname'      => null,
+                        'name'          => '_merged_' . $conflictId,
+                    ]);
             }
 
             // 4. Restore if soft-deleted
