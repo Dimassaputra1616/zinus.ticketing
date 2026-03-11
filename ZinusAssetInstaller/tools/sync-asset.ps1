@@ -188,6 +188,31 @@ function Get-CategoryFromChassis {
 }
 
 function Get-RustDesktopId {
+    # Try using rustdesk CLI first
+    $exePaths = @(
+        "$env:ProgramFiles\RustDesk\rustdesk.exe",
+        "${env:ProgramFiles(x86)}\RustDesk\rustdesk.exe",
+        "C:\Program Files\RustDesk\rustdesk.exe",
+        "C:\Program Files (x86)\RustDesk\rustdesk.exe"
+    )
+
+    foreach ($exe in $exePaths) {
+        if (Test-Path $exe) {
+            try {
+                $output = & $exe --get-id 2>&1 | Out-String
+                if ($output) {
+                    $id = $output.Trim()
+                    # Custom ID allows alphanumerics, typical IDs are numeric
+                    if ($id -match '^[a-zA-Z0-9\-_]+$') {
+                        return $id
+                    }
+                }
+            } catch {
+                Write-Log "Failed to get ID via rustdesk.exe: $($_.Exception.Message)" "WARN"
+            }
+        }
+    }
+
     # Check potential RustDesk config locations
     $configPaths = @(
         "$env:ProgramData\RustDesk\config\RustDesk.toml",
@@ -204,9 +229,12 @@ function Get-RustDesktopId {
         if (Test-Path $path) {
             try {
                 $content = Get-Content $path -Raw
-                # Match the id = 'xxxxxxxxx' pattern in the TOML file, ensuring we don't capture \r or \n
-                if ($content -match "(?m)^id\s*=\s*['""]?([^'"">\r\n]+)['""]?") {
-                    return $matches[1].Trim()
+                # Match the id = 'xxxxxxxxx' pattern in the TOML file with more flexibility
+                if ($content -match "(?m)^\s*id\s*=\s*['""]?([^'"">\r\n]+)['""]?") {
+                    $id = $matches[1].Trim()
+                    if ($id -match '^[a-zA-Z0-9\-_]+$') {
+                        return $id
+                    }
                 }
             } catch {
                 Write-Log "Failed to read RustDesk config at ${path}: $($_.Exception.Message)" "WARN"
@@ -277,6 +305,7 @@ function Set-RustDeskConfig {
                 $service = Get-Service -Name "RustDesk" -ErrorAction SilentlyContinue
                 if ($service -and $service.Status -eq 'Running') {
                     Restart-Service -Name "RustDesk" -Force -ErrorAction SilentlyContinue
+                    Start-Sleep -Seconds 3 # Allow time for service to generate ID to config
                 }
             } catch {
                 Write-Log "Failed to write RustDesk config at ${path}: $($_.Exception.Message)" "WARN"
