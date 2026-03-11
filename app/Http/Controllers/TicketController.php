@@ -493,9 +493,15 @@ class TicketController extends Controller
         $actorName = $actor?->name ?? 'System';
         $actorEmail = $actor?->email;
 
-        $ticket->update([
+        $updateData = [
             'status' => $request->status,
-        ]);
+        ];
+
+        if (is_null($ticket->assigned_admin_id) && $actor && ($actor->isAdmin() || $actor->isTechnician())) {
+            $updateData['assigned_admin_id'] = $actor->id;
+        }
+
+        $ticket->update($updateData);
 
         TicketLog::create([
             'ticket_id' => $ticket->id,
