@@ -117,63 +117,50 @@ class AssetSyncController extends Controller
 
             $status = $this->normalizeStatus($data['status'] ?? null);
 
-            $existingAsset = Asset::withTrashed()
+            // --- Resolve existing asset (upsert: find best match, merge duplicates) ---
+            $existingAsset = null;
+            $restored = false;
+
+            // 1. Primary lookup: by serial_number or asset_code matching the serial
+            $candidates = Asset::withTrashed()
                 ->where('serial_number', $serialNumber)
                 ->orWhere('asset_code', $serialNumber)
-                ->first();
-            $restored = false;
-            if ($existingAsset && $existingAsset->trashed()) {
-                $existingAsset->restore();
-                $restored = true;
+                ->orderByDesc('last_synced_at')
+                ->get();
+
+            if ($candidates->isNotEmpty()) {
+                // Pick the best candidate (prefer non-trashed, most recently synced)
+                $existingAsset = $candidates->firstWhere('deleted_at', null) ?? $candidates->first();
+
+                // Soft-delete leftover duplicates
+                foreach ($candidates as $candidate) {
+                    if ($candidate->id !== $existingAsset->id && ! $candidate->trashed()) {
+                        $candidate->delete();
+                        Log::info('asset-sync: soft-deleted duplicate asset', [
+                            'deleted_id' => $candidate->id,
+                            'kept_id' => $existingAsset->id,
+                            'serial_number' => $serialNumber,
+                        ]);
+                    }
+                }
             }
 
-            $conflictingAssetCode = Asset::withTrashed()
-                ->where('asset_code', $serialNumber)
-                ->when($existingAsset, function ($query) use ($existingAsset) {
-                    $query->where('id', '!=', $existingAsset->id);
-                })
-                ->where(function ($query) use ($serialNumber) {
-                    $query->whereNull('serial_number')
-                        ->orWhere('serial_number', '!=', $serialNumber);
-                })
-                ->exists();
-            if ($conflictingAssetCode) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Serial number already bound to a different asset.',
-                ], 409);
-            }
-
-            $serialDuplicates = Asset::withTrashed()
-                ->where('serial_number', $serialNumber)
-                ->when($existingAsset, function ($query) use ($existingAsset) {
-                    $query->where('id', '!=', $existingAsset->id);
-                })
-                ->count();
-            if ($serialDuplicates > 1) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Duplicate serial number detected.',
-                ], 409);
-            }
-
-            if ($hostname !== '') {
-                $hostnameConflict = Asset::withTrashed()
+            // 2. Fallback: by hostname (agent-synced assets only)
+            if (! $existingAsset && $hostname !== '') {
+                $existingAsset = Asset::withTrashed()
                     ->where('sync_source', 'agent')
                     ->where(function ($query) use ($hostname) {
                         $query->where('hostname', $hostname)
                             ->orWhere('name', $hostname);
                     })
-                    ->when($existingAsset, function ($query) use ($existingAsset) {
-                        $query->where('id', '!=', $existingAsset->id);
-                    })
-                    ->exists();
-                if ($hostnameConflict) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Hostname already used by another asset.',
-                    ], 409);
-                }
+                    ->orderByDesc('last_synced_at')
+                    ->first();
+            }
+
+            // 3. Restore if soft-deleted
+            if ($existingAsset && $existingAsset->trashed()) {
+                $existingAsset->restore();
+                $restored = true;
             }
 
             $departmentId = null;
