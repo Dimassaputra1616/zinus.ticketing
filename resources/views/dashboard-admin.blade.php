@@ -486,24 +486,19 @@
                                 <tr>
                                     <th class="px-6 py-4 font-semibold w-16 text-center">Rank</th>
                                     <th class="px-6 py-4 font-semibold">Technician</th>
-                                    <th class="px-6 py-4 font-semibold w-64">Resolution Progress</th>
-                                    <th class="px-6 py-4 font-semibold text-center">Open</th>
+                                    <th class="px-6 py-4 font-semibold w-64 text-center">Assigned</th>
                                     <th class="px-6 py-4 font-semibold text-right">Avg Res Time</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 @forelse($technicians as $index => $tech)
-                                    @php
-                                        $totalAssigned = $tech['open'] + $tech['resolved'];
-                                        $resolveRate = $totalAssigned > 0 ? ($tech['resolved'] / $totalAssigned) * 100 : 0;
-                                    @endphp
                                     <tr class="hover:bg-slate-50/50 transition-colors group">
                                         <td class="px-6 py-4 text-center">
-                                            @if($index === 0 && $tech['resolved'] > 0)
+                                            @if($index === 0 && $tech['total_assigned'] > 0)
                                                 <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-600 font-bold text-xs ring-2 ring-amber-50">1</span>
-                                            @elseif($index === 1 && $tech['resolved'] > 0)
+                                            @elseif($index === 1 && $tech['total_assigned'] > 0)
                                                 <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-600 font-bold text-xs ring-2 ring-slate-100">2</span>
-                                            @elseif($index === 2 && $tech['resolved'] > 0)
+                                            @elseif($index === 2 && $tech['total_assigned'] > 0)
                                                 <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 font-bold text-xs ring-2 ring-orange-50">3</span>
                                             @else
                                                 <span class="text-slate-400 font-semibold">{{ $index + 1 }}</span>
@@ -520,20 +515,10 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center gap-3">
-                                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out" style="width: {{ $resolveRate }}%"></div>
-                                                </div>
-                                                <div class="w-12 text-right">
-                                                    <span class="text-xs font-bold text-slate-700">{{ $tech['resolved'] }}</span>
-                                                    <span class="text-[9px] text-slate-400 block -mt-1">resolved</span>
-                                                </div>
-                                            </div>
-                                        </td>
                                         <td class="px-6 py-4 text-center">
-                                            <span class="inline-flex items-center justify-center min-w-[2.5rem] rounded-md {{ $tech['open'] > 5 ? 'bg-amber-100 text-amber-700 ring-1 ring-amber-200' : 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' }} px-2 py-1 text-xs font-bold">
-                                                {{ $tech['open'] }}
+                                            <span class="inline-flex items-center justify-center min-w-[3rem] py-1.5 px-3 rounded-lg {{ $tech['total_assigned'] > 0 ? 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200' : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200' }} shadow-sm transition-all hover:-translate-y-0.5">
+                                                <span class="text-sm font-bold">{{ $tech['total_assigned'] }}</span>
+                                                <span class="text-[10px] font-semibold uppercase tracking-wider ml-1.5 opacity-80 mt-0.5">Tickets</span>
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 text-right">

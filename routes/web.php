@@ -204,11 +204,10 @@ Route::get('/dashboard', function (Request $request) {
                     'id' => $tech->id,
                     'name' => $tech->name,
                     'email' => $tech->email,
-                    'open' => $openCount,
-                    'resolved' => $resolvedCount,
+                    'total_assigned' => $openCount + $resolvedCount,
                     'avg_res_time' => $avgResTime,
                 ];
-            })->sortByDesc('resolved')->values();
+            })->sortByDesc('total_assigned')->values();
 
         // SLA Breach (Naive calculation based on creation date vs priority thresholds)
         // High: 2h, Medium: 24h, Low: 48h
