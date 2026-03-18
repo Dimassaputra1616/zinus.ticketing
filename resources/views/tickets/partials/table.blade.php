@@ -123,126 +123,17 @@
                     x-show="open"
                     x-transition
                     x-cloak
-                    x-data="{
-                    suggestionsLoading: false,
-                    suggestionsOpen: false,
-                    suggestions: [],
-                    searchTerm: @js($searchTerm ?? ''),
-                    hasResults: {{ ($tickets && $tickets->count() > 0) ? 'true' : 'false' }},
-                    endpoint: '{{ route('tickets.index') }}',
-                    status: @js($statusFilter ?? ''),
-                    department: @js($departmentFilter ?? ''),
-                    priority: @js($priorityFilter ?? ''),
-                    startDate: @js($startDate ?? null),
-                    endDate: @js($endDate ?? null),
-                    timer: null,
-                    searchTimer: null,
-                    init() {
-                        this.$watch('searchTerm', () => {
-                            this.queueFetch();
-                            this.queueSearch();
-                        });
-                    },
-                    queueFetch() {
-                        clearTimeout(this.timer);
-                        this.suggestionsOpen = true;
-                        this.timer = setTimeout(() => this.fetchSuggestions(), 250);
-                    },
-                    queueSearch() {
-                        clearTimeout(this.searchTimer);
-                        this.searchTimer = setTimeout(() => this.submitSearch(), 300);
-                    },
-                    clearSearch() {
-                        this.searchTerm = '';
-                        this.suggestions = [];
-                        this.suggestionsOpen = false;
-                        this.$nextTick(() => this.submitSearch());
-                    },
-                    async fetchSuggestions() {
-                        const term = (this.searchTerm || '').trim();
-                        if (!term) {
-                            this.suggestions = [];
-                            this.suggestionsLoading = false;
-                            return;
-                        }
-                        this.suggestionsLoading = true;
-                        try {
-                            const url = new URL(this.endpoint);
-                            url.searchParams.set('autocomplete', '1');
-                            url.searchParams.set('search', term);
-                            if (this.status) url.searchParams.set('status', this.status);
-                            if (this.department) url.searchParams.set('department', this.department);
-                            if (this.priority) url.searchParams.set('priority', this.priority);
-                            if (this.startDate) url.searchParams.set('start_date', this.startDate);
-                            if (this.endDate) url.searchParams.set('end_date', this.endDate);
-                            const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
-                            const data = await res.json();
-                            this.suggestions = data.suggestions || [];
-                        } catch (e) {
-                            this.suggestions = [];
-                        } finally {
-                            this.suggestionsLoading = false;
-                        }
-                    },
-                    async submitSearch() {
-                        const form = this.$root;
-                        const target = new URL(form.action, window.location.origin);
-                        const formData = new FormData(form);
-                        target.searchParams.delete('page');
-                        formData.forEach((value, key) => {
-                            if (value !== null && value !== '') {
-                                target.searchParams.set(key, value);
-                            } else {
-                                target.searchParams.delete(key);
-                            }
-                        });
-                        target.searchParams.set('refresh', '1');
-
-                        try {
-                            const res = await fetch(target.toString(), {
-                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                            });
-                            if (!res.ok) return;
-                            const data = await res.json();
-                            const tableContainer = document.querySelector('[data-live-slot=\"ticket-table\"]');
-                            const summaryContainer = document.querySelector('[data-live-slot=\"ticket-summary\"]');
-                            if (data.fragments?.['ticket-table'] && tableContainer) {
-                                const parser = new DOMParser();
-                                const doc = parser.parseFromString(data.fragments['ticket-table'], 'text/html');
-                                const incomingResults = doc.querySelector('[data-ticket-results]');
-                                const currentResults = document.querySelector('[data-ticket-results]');
-                                if (incomingResults && currentResults) {
-                                    currentResults.innerHTML = incomingResults.innerHTML;
-                                    if (window.Alpine?.initTree) window.Alpine.initTree(currentResults);
-                                } else {
-                                    tableContainer.innerHTML = data.fragments['ticket-table'];
-                                    if (window.Alpine?.initTree) window.Alpine.initTree(tableContainer);
-                                }
-                            }
-                            if (data.fragments?.['ticket-summary'] && summaryContainer) {
-                                summaryContainer.innerHTML = data.fragments['ticket-summary'];
-                                if (window.Alpine?.initTree) window.Alpine.initTree(summaryContainer);
-                            }
-                            if (typeof data.hasResults !== 'undefined') {
-                                this.hasResults = !!data.hasResults;
-                            }
-                            if (data.checksum) {
-                                const container = document.querySelector('[data-live-refresh]');
-                                if (container) {
-                                    const cleanUrl = new URL(target.toString());
-                                    cleanUrl.searchParams.delete('refresh');
-                                    container.dataset.liveUrl = cleanUrl.toString();
-                                    container.dataset.liveQuery = cleanUrl.searchParams.toString();
-                                    container.dataset.liveChecksum = data.checksum;
-                                    window.history.replaceState({}, '', cleanUrl.toString());
-                                }
-                            }
-                        } catch (e) {
-                            console.error(e);
-                        }
-                    },
-                }"
-                >
+                    x-data="ticketTable({
+                        endpoint: @js(route('tickets.index')),
+                        searchTerm: @js($searchTerm ?? ''),
+                        status: @js($statusFilter ?? ''),
+                        department: @js($departmentFilter ?? ''),
+                        priority: @js($priorityFilter ?? ''),
+                        startDate: @js($startDate ?? null),
+                        endDate: @js($endDate ?? null),
+                        hasResults: {{ ($tickets && $tickets->count() > 0) ? 'true' : 'false' }}
+                    })"
+                                >
                     @if ($statusFilter)
                         <input type="hidden" name="status" value="{{ $statusFilter }}">
                     @endif
@@ -757,3 +648,128 @@
                 @endif
             </div>
 </x-ui.panel>
+
+<script>
+    if (typeof window.ticketTable !== 'function') {
+        window.ticketTable = function(config) {
+            return {
+                suggestionsLoading: false,
+                suggestionsOpen: false,
+                suggestions: [],
+                searchTerm: config.searchTerm || '',
+                hasResults: config.hasResults || false,
+                endpoint: config.endpoint || '',
+                status: config.status || '',
+                department: config.department || '',
+                priority: config.priority || '',
+                startDate: config.startDate || null,
+                endDate: config.endDate || null,
+                timer: null,
+                searchTimer: null,
+                init() {
+                    this.$watch('searchTerm', () => {
+                        this.queueFetch();
+                        this.queueSearch();
+                    });
+                },
+                queueFetch() {
+                    clearTimeout(this.timer);
+                    this.suggestionsOpen = true;
+                    this.timer = setTimeout(() => this.fetchSuggestions(), 250);
+                },
+                queueSearch() {
+                    clearTimeout(this.searchTimer);
+                    this.searchTimer = setTimeout(() => this.submitSearch(), 300);
+                },
+                clearSearch() {
+                    this.searchTerm = '';
+                    this.suggestions = [];
+                    this.suggestionsOpen = false;
+                    this.$nextTick(() => this.submitSearch());
+                },
+                async fetchSuggestions() {
+                    const term = (this.searchTerm || '').trim();
+                    if (!term) {
+                        this.suggestions = [];
+                        this.suggestionsLoading = false;
+                        return;
+                    }
+                    this.suggestionsLoading = true;
+                    try {
+                        const url = new URL(this.endpoint);
+                        url.searchParams.set('autocomplete', '1');
+                        url.searchParams.set('search', term);
+                        if (this.status) url.searchParams.set('status', this.status);
+                        if (this.department) url.searchParams.set('department', this.department);
+                        if (this.priority) url.searchParams.set('priority', this.priority);
+                        if (this.startDate) url.searchParams.set('start_date', this.startDate);
+                        if (this.endDate) url.searchParams.set('end_date', this.endDate);
+                        const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        this.suggestions = data.suggestions || [];
+                    } catch (e) {
+                        this.suggestions = [];
+                    } finally {
+                        this.suggestionsLoading = false;
+                    }
+                },
+                async submitSearch() {
+                    const form = this.$root;
+                    const target = new URL(form.action, window.location.origin);
+                    const formData = new FormData(form);
+                    target.searchParams.delete('page');
+                    formData.forEach((value, key) => {
+                        if (value !== null && value !== '') {
+                            target.searchParams.set(key, value);
+                        } else {
+                            target.searchParams.delete(key);
+                        }
+                    });
+                    target.searchParams.set('refresh', '1');
+
+                    try {
+                        const res = await fetch(target.toString(), {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        });
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        const tableContainer = document.querySelector('[data-live-slot="ticket-table"]');
+                        const summaryContainer = document.querySelector('[data-live-slot="ticket-summary"]');
+                        if (data.fragments?.['ticket-table'] && tableContainer) {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(data.fragments['ticket-table'], 'text/html');
+                            const incomingResults = doc.querySelector('[data-ticket-results]');
+                            const currentResults = document.querySelector('[data-ticket-results]');
+                            if (incomingResults && currentResults) {
+                                currentResults.innerHTML = incomingResults.innerHTML;
+                                if (window.Alpine?.initTree) window.Alpine.initTree(currentResults);
+                            } else {
+                                tableContainer.innerHTML = data.fragments['ticket-table'];
+                                if (window.Alpine?.initTree) window.Alpine.initTree(tableContainer);
+                            }
+                        }
+                        if (data.fragments?.['ticket-summary'] && summaryContainer) {
+                            summaryContainer.innerHTML = data.fragments['ticket-summary'];
+                            if (window.Alpine?.initTree) window.Alpine.initTree(summaryContainer);
+                        }
+                        if (typeof data.hasResults !== 'undefined') {
+                            this.hasResults = !!data.hasResults;
+                        }
+                        if (data.checksum) {
+                            const container = document.querySelector('[data-live-refresh]');
+                            if (container) {
+                                const cleanUrl = new URL(target.toString());
+                                cleanUrl.searchParams.delete('refresh');
+                                container.dataset.liveUrl = cleanUrl.toString();
+                                container.dataset.liveQuery = cleanUrl.searchParams.toString();
+                                container.dataset.liveChecksum = data.checksum;
+                                window.history.replaceState({}, '', cleanUrl.toString());
+                            }
+                        }
+                    } catch (e) {
+                    }
+                }
+            };
+        };
+    }
+</script>
