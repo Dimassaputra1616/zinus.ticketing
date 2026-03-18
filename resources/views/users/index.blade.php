@@ -2,9 +2,9 @@
     <div
         class="w-full pt-4 sm:pt-6 pb-10 space-y-8"
         x-data="userPage({
-            csrf: '{{ csrf_token() }}',
+            csrf: @js(csrf_token()),
             initialSearch: @js($search ?? ''),
-            authId: {{ Auth::id() ?? 'null' }}
+            authId: @js(Auth::id())
         })"
         x-init="initPage()"
     >
@@ -532,8 +532,8 @@
 
         function userPage(config) {
             return {
-                csrf: config.csrf,
-                authId: config.authId,
+                csrf: config.csrf || '',
+                authId: config.authId || null,
                 searchTerm: config.initialSearch || '',
                 showReset: false,
                 showAdd: false,
@@ -558,7 +558,7 @@
                 addToast(message, type = 'success', title = type === 'error' ? 'Gagal' : 'Berhasil') {
                     const id = this.generateToastId();
                     this.toasts.push({ id, message, type, title });
-                    setTimeout(() => {
+
                         this.toasts = this.toasts.filter(t => t.id !== id);
                     }, 3200);
                 },

@@ -124,19 +124,19 @@
                     x-transition
                     x-cloak
                     x-data="{
-                    endpoint: '{{ route('tickets.index') }}',
-                    searchTerm: @js($searchTerm),
-                    status: @js($statusFilter),
-                    department: @js($departmentFilter),
-                    priority: @js($priorityFilter ?? ''),
-                    startDate: @js($startDate),
-                    endDate: @js($endDate),
-                    suggestions: [],
-                    suggestionsOpen: false,
                     suggestionsLoading: false,
+                    suggestionsOpen: false,
+                    suggestions: [],
+                    searchTerm: @js($searchTerm ?? ''),
+                    hasResults: {{ ($tickets && $tickets->count() > 0) ? 'true' : 'false' }},
+                    endpoint: '{{ route('tickets.index') }}',
+                    status: @js($statusFilter ?? ''),
+                    department: @js($departmentFilter ?? ''),
+                    priority: @js($priorityFilter ?? ''),
+                    startDate: @js($startDate ?? null),
+                    endDate: @js($endDate ?? null),
                     timer: null,
                     searchTimer: null,
-                    hasResults: {{ $tickets->count() > 0 ? 'true' : 'false' }},
                     init() {
                         this.$watch('searchTerm', () => {
                             this.queueFetch();
