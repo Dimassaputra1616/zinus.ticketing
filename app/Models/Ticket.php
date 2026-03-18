@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Jobs\SendTicketToN8n;
 
 class Ticket extends Model
 {
@@ -71,5 +72,16 @@ class Ticket extends Model
     public function logs(): HasMany
     {
         return $this->ticketLogs();
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (self $ticket) {
+            SendTicketToN8n::dispatch($ticket, 'created');
+        });
+
+        static::updated(function (self $ticket) {
+            SendTicketToN8n::dispatch($ticket, 'updated');
+        });
     }
 }

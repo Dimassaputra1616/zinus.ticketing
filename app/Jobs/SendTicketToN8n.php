@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Models\Ticket;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class SendTicketToN8n implements ShouldQueue
+{
+    use Queueable;
+
+    protected $ticket;
+    protected $action;
+
+    /**
+     * Create a new job instance.
+     */
+    public function __construct(Ticket $ticket, string $action = 'created')
+    {
+        $this->ticket = $ticket;
+        $this->action = $action;
+    }
+
+    /**
+     * Execute the job.
+     */
+    public function handle(): void
+    {
+        $webhookUrl = env('N8N_WEBHOOK_URL');
+
+        if (empty($webhookUrl)) {
+            Log::warning('N8N_WEBHOOK_URL is not configured. Skipping webhook dispatch.');
+            return;
+        }
+
+        try {
+            // Load necessary relationships
+            $this->ticket->loadMissing(['user', 'category', 'department', 'assignedAdmin']);
+
+            $payload = [
+                'action' => $this->action,
+                'ticket_id' => $this->ticket->id,
+                'title' => $this->ticket->title,
+                'description' => strip_tags($this->ticket->description),
+                'status' => strtoupper($this->ticket->status),
+                'priority' => strtoupper($this->ticket->priority),
+                'category' => $this->ticket->category ? $this->ticket->category->name : '-',
+                'department' => $this->ticket->department ? $this->ticket->department->name : '-',
+                'created_by' => $this->ticket->user ? $this->ticket->user->name : 'Unknown User',
+                'assigned_admin' => $this->ticket->assignedAdmin ? $this->ticket->assignedAdmin->name : 'Unassigned',
+                'created_at' => $this->ticket->created_at ? $this->ticket->created_at->format('Y-m-d H:i:s') : null,
+                'updated_at' => $this->ticket->updated_at ? $this->ticket->updated_at->format('Y-m-d H:i:s') : null,
+                'resolved_at' => $this->ticket->resolved_at ? $this->ticket->resolved_at->format('Y-m-d H:i:s') : null,
+            ];
+
+            $response = Http::timeout(10)->post($webhookUrl, $payload);
+
+            if (!$response->successful()) {
+                Log::error("Failed to send ticket #{$this->ticket->id} to n8n. Status: {$response->status()}", [
+                    'response' => $response->body()
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error("Exception while sending ticket #{$this->ticket->id} to n8n.", [
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+}

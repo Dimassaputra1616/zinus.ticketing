@@ -50,7 +50,8 @@
 
         <section class="space-y-3 mt-0">
             <div class="space-y-3 w-full">
-                <x-ui.stats-panel
+                <div id="tour-stats">
+                    <x-ui.stats-panel
                     title="{{ __('messages.stats_title') }}"
                     subtitle="{{ __('messages.stats_subtitle') }}"
                 >
@@ -63,10 +64,11 @@
                         ])
                     </div>
                 </x-ui.stats-panel>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-7 items-start px-0">
                     <div class="space-y-6 h-full">
-                        <div class="rounded-2xl border border-[#CFEADF] px-7 py-7 surface-card reveal-on-scroll reveal-delay-200 bg-gradient-to-br from-[#F6F9F8] via-white to-[#EDF3F2] space-y-4 h-full">
+                        <div id="tour-create-ticket" class="rounded-2xl border border-[#CFEADF] px-7 py-7 surface-card reveal-on-scroll reveal-delay-200 bg-gradient-to-br from-[#F6F9F8] via-white to-[#EDF3F2] space-y-4 h-full">
                             <div class="flex flex-wrap items-start justify-between gap-4">
                                 <div class="space-y-2">
                                     <p class="heading-font text-xs font-semibold uppercase tracking-[0.45em] text-[#23455D]/70 flex items-center gap-2">
@@ -240,7 +242,7 @@
                             </form>
                         </div>
                     </div>
-                    <aside class="w-full reveal-on-scroll reveal-delay-100 h-full" data-live-slot="dashboard-history">
+                    <aside id="tour-history" class="w-full reveal-on-scroll reveal-delay-100 h-full" data-live-slot="dashboard-history">
                         @include('dashboard.partials.history', [
                             'recentTickets' => $recentTickets,
                             'totalTickets' => $totalTickets,
@@ -249,7 +251,78 @@
                     </aside>
                 </div>
             </div>
-        </section>
     </div>
-</x-app-layout>
 
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('zinus_tour_completed')) {
+                const driverObj = window.driver.js.driver({
+                    showProgress: true,
+                    nextBtnText: 'Lanjut ›',
+                    prevBtnText: '‹ Kembali',
+                    doneBtnText: 'Selesai',
+                    showButtons: ['next', 'previous', 'close'],
+                    steps: [
+                        {
+                            element: '#tour-sidebar',
+                            popover: {
+                                title: 'Halo! Kenali Navigasi Utama 👋',
+                                description: 'Di sebelah kiri ini rumah navigasi kamu. Kamu bisa mondar-mandir buat ngecek Dashboard, daftar Tiket yang udah kamu buat, atau ngurus pinjaman alat IT.',
+                                side: "right",
+                                align: 'start'
+                            }
+                        },
+                        {
+                            element: '#tour-stats',
+                            popover: {
+                                title: 'Pantau Progres Tiketmu 📊',
+                                description: 'Nah, di sini kamu bisa pantau seberapa cepet IT nanganin laporanmu. Dari yang baru masuk (Open), lagi dikerjain (In Progress), sampe yang udah beres (Resolved).',
+                                side: "bottom",
+                                align: 'start'
+                            }
+                        },
+                        {
+                            element: '#tour-create-ticket',
+                            popover: {
+                                title: 'Ada Masalah IT? Lapor Sini Aja! 🛠️',
+                                description: 'Punya PC lemot atau email nyangkut? Langsung tulis keluhan kamu di form ini sedetail mungkin, biar tim IT bisa langsung turun tangan ngebantu.',
+                                side: "top",
+                                align: 'start'
+                            }
+                        },
+                        {
+                            element: '#tour-history',
+                            popover: {
+                                title: 'Jejak Tiket Kamu 🕒',
+                                description: 'Kalo penasaran sama riwayat atau detail dari semua tiket yang pernah kamu bikin sebelumnya, bisa langsung ditengok di panel sebelah kanan ini ya.',
+                                side: "left",
+                                align: 'start'
+                            }
+                        },
+                        {
+                            element: '#tour-chat-widget',
+                            popover: {
+                                title: 'Butuh Bantuan Mendesak? 🚀',
+                                description: 'Kalo emang darurat banget dan nggak bisa nunggu tiket, klik tombol hijau di pojok kanan bawah ini buat langsung Ngobrol (Live Chat) bareng staf IT yang lagi online!',
+                                side: "top",
+                                align: 'end'
+                            }
+                        }
+                    ],
+                    onDestroyStarted: () => {
+                        if (!driverObj.hasNextStep() || confirm("Yakin nih mau lewatin tur panduannya dulu?")) {
+                            localStorage.setItem('zinus_tour_completed', 'true');
+                            driverObj.destroy();
+                        }
+                    },
+                });
+                
+                setTimeout(() => {
+                    driverObj.drive();
+                }, 800);
+            }
+        });
+    </script>
+    @endpush
+</x-app-layout>

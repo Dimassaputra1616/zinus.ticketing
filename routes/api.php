@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AssetSyncController;
 use App\Http\Controllers\Api\ConversationApiController;
+use App\Http\Controllers\Api\ReportController;
 
 // Asset sync endpoint (existing)
 Route::post('/asset-sync', [AssetSyncController::class, 'store'])
@@ -35,4 +36,8 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/conversations/{id}/handoff', [ConversationApiController::class, 'handoff'])
         ->name('api.v1.conversations.handoff');
+        
+    // Reports
+    Route::get('/reports/daily', [ReportController::class, 'daily'])
+        ->name('api.v1.reports.daily');
 });

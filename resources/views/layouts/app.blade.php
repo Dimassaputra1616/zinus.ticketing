@@ -42,6 +42,8 @@
             })();
         </script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+        <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
             html { scroll-behavior: smooth; }
@@ -518,7 +520,7 @@
                     <div class="h-px w-full bg-white/20" x-show="!sidebarCollapsed" x-transition></div>
                 </div>
 
-                <nav class="flex-1 space-y-1.5 sidebar-nav text-[14px] transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
+                <nav id="tour-sidebar" class="flex-1 space-y-1.5 sidebar-nav text-[14px] transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
                     @foreach ($navItems as $item)
                         @continue(! $item['visible'])
                         @php
@@ -1170,6 +1172,7 @@
                 });
             });
         </script>
+        @stack('scripts')
         @livewireScripts
     </body>
 </html>

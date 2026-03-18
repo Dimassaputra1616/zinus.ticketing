@@ -1,12 +1,79 @@
-<div x-data="{ open: @entangle('isOpen') }" class="fixed bottom-6 right-6 z-50" wire:poll.2s>
-    <!-- Floating Action Button -->
+<div
+    x-data="{
+        open: @entangle('isOpen'),
+        fabOpen: false,
+        get isNewUser() { return !localStorage.getItem('zinus_tour_seen'); }
+    }"
+    class="fixed bottom-6 right-6 z-50"
+    wire:poll.2s
+>
+    <!-- FAB Speed Dial Sub-actions -->
+    <div class="flex flex-col items-end gap-3 mb-3">
+
+        <!-- Sub-button: Panduan Ulang (Guide/Tour) -->
+        <div
+            x-show="fabOpen && !open"
+            x-transition:enter="transition ease-out duration-300 transform"
+            x-transition:enter-start="opacity-0 translate-y-8 scale-50"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-200 transform"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-8 scale-50"
+            class="flex items-center gap-3 origin-bottom"
+            style="display:none"
+        >
+            <span class="bg-white text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md border border-slate-100 whitespace-nowrap">Panduan Penggunaan</span>
+            <button
+                @click="localStorage.removeItem('zinus_tour_completed'); window.location.href = '{{ route('dashboard') }}';"
+                class="relative flex items-center justify-center w-12 h-12 bg-[#23455D] hover:bg-[#1a3447] text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110"
+                title="Mulai Ulang Panduan Tour"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </button>
+        </div>
+
+        <!-- Sub-button: Live Chat -->
+        <div
+            x-show="fabOpen && !open"
+            x-transition:enter="transition ease-out duration-200 delay-75 transform"
+            x-transition:enter-start="opacity-0 translate-y-8 scale-50"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-150 transform"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-8 scale-50"
+            class="flex items-center gap-3 origin-bottom"
+            style="display:none"
+        >
+            <span class="bg-white text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md border border-slate-100 whitespace-nowrap">Live Chat</span>
+            <button
+                @click="open = !open; fabOpen = false"
+                class="relative flex items-center justify-center w-12 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110"
+                title="Live Chat"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                @if($totalUnreadCount > 0)
+                    <span class="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-md ring-2 ring-white z-10">
+                        {{ $totalUnreadCount }}
+                    </span>
+                @endif
+            </button>
+        </div>
+    </div>
+
+    <!-- Main FAB Toggle Button -->
     <button
-        @click="open = !open"
-        class="relative flex items-center justify-center w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110"
-        :class="{ 'scale-0': open }"
+        id="tour-chat-widget"
+        @click="fabOpen = !fabOpen; if(open) { open = false; }"
+        x-show="!open"
+        class="flex items-center justify-center w-14 h-14 bg-[#12824C] hover:bg-[#0f6d3f] text-white rounded-full shadow-xl shadow-emerald-600/30 transition-all duration-300 hover:scale-110"
+        :style="fabOpen ? 'transform: rotate(45deg)' : 'transform: rotate(0deg)'"
+        style="transition: transform 0.3s ease, background-color 0.2s ease;"
+        title="Menu"
     >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
         </svg>
         @if($totalUnreadCount > 0)
             <span class="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-md ring-2 ring-white z-10">
@@ -14,6 +81,21 @@
             </span>
         @endif
     </button>
+
+    <!-- Close button when chat is open -->
+    <button
+        @click="open = false; fabOpen = false"
+        x-show="open"
+        x-transition.opacity
+        class="flex items-center justify-center w-14 h-14 bg-slate-700 hover:bg-slate-800 text-white rounded-full shadow-xl transition-all duration-300 hover:scale-110"
+        style="display:none"
+        title="Tutup"
+    >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </button>
+
 
     <!-- Chat Box -->
     <div
