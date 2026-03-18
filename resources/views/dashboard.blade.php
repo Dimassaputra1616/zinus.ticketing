@@ -46,6 +46,17 @@
             <x-slot:icon>
                 <svg class="h-7 w-7 text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></svg>
             </x-slot:icon>
+            <x-slot:side>
+                <button
+                    onclick="window.startZinusTour()"
+                    class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:bg-emerald-50"
+                >
+                    <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    Bantuan Tutorial
+                </button>
+            </x-slot:side>
         </x-ui.section-hero>
 
         <section class="space-y-3 mt-0">
@@ -255,72 +266,81 @@
 
     @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!localStorage.getItem('zinus_tour_completed')) {
-                const driverObj = window.driver.js.driver({
-                    showProgress: true,
-                    nextBtnText: 'Lanjut ›',
-                    prevBtnText: '‹ Kembali',
-                    doneBtnText: 'Selesai',
-                    showButtons: ['next', 'previous', 'close'],
-                    steps: [
-                        {
-                            element: '#tour-sidebar',
-                            popover: {
-                                title: 'Halo! Kenali Navigasi Utama 👋',
-                                description: 'Di sebelah kiri ini rumah navigasi kamu. Kamu bisa mondar-mandir buat ngecek Dashboard, daftar Tiket yang udah kamu buat, atau ngurus pinjaman alat IT.',
-                                side: "right",
-                                align: 'start'
-                            }
-                        },
-                        {
-                            element: '#tour-stats',
-                            popover: {
-                                title: 'Pantau Progres Tiketmu 📊',
-                                description: 'Nah, di sini kamu bisa pantau seberapa cepet IT nanganin laporanmu. Dari yang baru masuk (Open), lagi dikerjain (In Progress), sampe yang udah beres (Resolved).',
-                                side: "bottom",
-                                align: 'start'
-                            }
-                        },
-                        {
-                            element: '#tour-create-ticket',
-                            popover: {
-                                title: 'Ada Masalah IT? Lapor Sini Aja! 🛠️',
-                                description: 'Punya PC lemot atau email nyangkut? Langsung tulis keluhan kamu di form ini sedetail mungkin, biar tim IT bisa langsung turun tangan ngebantu.',
-                                side: "top",
-                                align: 'start'
-                            }
-                        },
-                        {
-                            element: '#tour-history',
-                            popover: {
-                                title: 'Jejak Tiket Kamu 🕒',
-                                description: 'Kalo penasaran sama riwayat atau detail dari semua tiket yang pernah kamu bikin sebelumnya, bisa langsung ditengok di panel sebelah kanan ini ya.',
-                                side: "left",
-                                align: 'start'
-                            }
-                        },
-                        {
-                            element: '#tour-chat-widget',
-                            popover: {
-                                title: 'Butuh Bantuan Mendesak? 🚀',
-                                description: 'Kalo emang darurat banget dan nggak bisa nunggu tiket, klik tombol hijau di pojok kanan bawah ini buat langsung Ngobrol (Live Chat) bareng staf IT yang lagi online!',
-                                side: "top",
-                                align: 'end'
-                            }
-                        }
-                    ],
-                    onDestroyStarted: () => {
-                        if (!driverObj.hasNextStep() || confirm("Yakin nih mau lewatin tur panduannya dulu?")) {
-                            localStorage.setItem('zinus_tour_completed', 'true');
-                            driverObj.destroy();
+        window.startZinusTour = function() {
+            if (typeof window.driver === 'undefined' || !window.driver.js) {
+                console.warn('Driver.js is not loaded yet.');
+                return;
+            }
+
+            const driverObj = window.driver.js.driver({
+                showProgress: true,
+                nextBtnText: 'Lanjut ›',
+                prevBtnText: '‹ Kembali',
+                doneBtnText: 'Selesai',
+                showButtons: ['next', 'previous', 'close'],
+                steps: [
+                    {
+                        element: '#tour-sidebar',
+                        popover: {
+                            title: 'Halo! Kenali Navigasi Utama 👋',
+                            description: 'Di sebelah kiri ini rumah navigasi kamu. Kamu bisa mondar-mandir buat ngecek Dashboard, daftar Tiket yang udah kamu buat, atau ngurus pinjaman alat IT.',
+                            side: "right",
+                            align: 'start'
                         }
                     },
-                });
-                
+                    {
+                        element: '#tour-stats',
+                        popover: {
+                            title: 'Pantau Progres Tiketmu 📊',
+                            description: 'Nah, di sini kamu bisa pantau seberapa cepet IT nanganin laporanmu. Dari yang baru masuk (Open), lagi dikerjain (In Progress), sampe yang udah beres (Resolved).',
+                            side: "bottom",
+                            align: 'start'
+                        }
+                    },
+                    {
+                        element: '#tour-create-ticket',
+                        popover: {
+                            title: 'Ada Masalah IT? Lapor Sini Aja! 🛠️',
+                            description: 'Punya PC lemot atau email nyangkut? Langsung tulis keluhan kamu di form ini sedetail mungkin, biar tim IT bisa langsung turun tangan ngebantu.',
+                            side: "top",
+                            align: 'start'
+                        }
+                    },
+                    {
+                        element: '#tour-history',
+                        popover: {
+                            title: 'Jejak Tiket Kamu 🕒',
+                            description: 'Kalo penasaran sama riwayat atau detail dari semua tiket yang pernah kamu bikin sebelumnya, bisa langsung ditengok di panel sebelah kanan ini ya.',
+                            side: "left",
+                            align: 'start'
+                        }
+                    },
+                    {
+                        element: '#tour-chat-widget',
+                        popover: {
+                            title: 'Butuh Bantuan Mendesak? 🚀',
+                            description: 'Kalo emang darurat banget dan nggak bisa nunggu tiket, klik tombol hijau di pojok kanan bawah ini buat langsung Ngobrol (Live Chat) bareng staf IT yang lagi online!',
+                            side: "top",
+                            align: 'end'
+                        }
+                    }
+                ],
+                onDestroyStarted: () => {
+                    if (!driverObj.hasNextStep() || confirm("Yakin nih mau lewatin tur panduannya dulu?")) {
+                        localStorage.setItem('zinus_tour_completed', 'true');
+                        driverObj.destroy();
+                    }
+                },
+            });
+
+            driverObj.drive();
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('zinus_tour_completed')) {
                 setTimeout(() => {
-                    driverObj.drive();
-                }, 800);
+                    window.startZinusTour();
+                }, 1000);
             }
         });
     </script>
