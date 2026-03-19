@@ -365,6 +365,23 @@
                 border-radius: inherit;
                 animation: preloaderProgress 1.5s ease-in-out infinite;
             }
+
+            /* Global Wire Loading */
+            [wire\:loading] {
+                pointer-events: none;
+            }
+            .loading-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 9998;
+                background: rgba(255, 255, 255, 0.4);
+                backdrop-filter: blur(2px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                transition: opacity 0.3s ease;
+            }
+
             @keyframes preloaderPulse {
                 0%, 100% { transform: scale(1); opacity: 1; }
                 50% { transform: scale(1.05); opacity: 0.8; }
@@ -405,7 +422,18 @@
             </div>
         </div>
 
-        <div class="loading-bar" aria-hidden="true"></div>
+        <div class="loading-bar" wire:loading style="display: none;" aria-hidden="true"></div>
+        
+        <!-- Global Processing Overlay (Shows on long requests) -->
+        <div wire:loading.delay.longest class="loading-overlay" style="display: none;" aria-hidden="true">
+            <div class="flex items-center gap-3 rounded-full bg-white/90 px-5 py-2.5 shadow-xl ring-1 ring-black/5">
+                <svg class="h-4 w-4 animate-spin text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                <span class="text-xs font-bold uppercase tracking-widest text-emerald-900/80">Memproses...</span>
+            </div>
+        </div>
+
         @if (session('success') || session('error'))
             <div class="fixed top-6 right-6 z-[60] space-y-3" id="toast-stack">
                 @if (session('success'))
