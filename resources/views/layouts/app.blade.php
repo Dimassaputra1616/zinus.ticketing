@@ -324,17 +324,87 @@
                 0% { background-position: 0% 0; }
                 100% { background-position: 100% 0; }
             }
+
+            /* Preloader Styles */
+            .preloader {
+                position: fixed;
+                inset: 0;
+                z-index: 9999;
+                background: #F6F9F8;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+            }
+            .preloader.hidden {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .preloader-logo {
+                width: 120px;
+                height: auto;
+                animation: preloaderPulse 2s ease-in-out infinite;
+                filter: drop-shadow(0 10px 20px rgba(18, 130, 76, 0.15));
+            }
+            .preloader-bar {
+                width: 140px;
+                height: 2px;
+                background: rgba(18, 130, 76, 0.1);
+                border-radius: 4px;
+                margin-top: 24px;
+                position: relative;
+                overflow: hidden;
+            }
+            .preloader-bar-fill {
+                position: absolute;
+                inset: 0 auto 0 0;
+                width: 40%;
+                background: linear-gradient(90deg, var(--zinus-green), var(--zinus-mint));
+                border-radius: inherit;
+                animation: preloaderProgress 1.5s ease-in-out infinite;
+            }
+            @keyframes preloaderPulse {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.05); opacity: 0.8; }
+            }
+            @keyframes preloaderProgress {
+                0% { left: -40%; }
+                100% { left: 100%; }
+            }
         </style>
     </head>
     @php $authUser = Auth::user(); @endphp
     <body
-        x-init="setTimeout(() => { document.body.classList.remove('page-preload'); document.body.classList.add('page-loaded'); }, 10)"
-        x-data="{ sidebarOpen: false, sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true' }"
+        x-data="{ 
+            sidebarOpen: false, 
+            sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
+            pageLoaded: false 
+        }"
+        x-init="
+            setTimeout(() => { 
+                pageLoaded = true;
+                document.body.classList.remove('page-preload'); 
+                document.body.classList.add('page-loaded'); 
+            }, 500);
+        "
         x-effect="localStorage.setItem('sidebarCollapsed', sidebarCollapsed)"
         :class="sidebarOpen ? 'overflow-hidden max-h-screen' : ''"
         class="page-preload font-sans bg-white text-slate-800 antialiased min-h-screen overflow-x-hidden lg:flex"
         @if($authUser?->isAdmin()) data-notifications-endpoint="{{ route('admin.notifications.summary') }}" @endif
     >
+        <!-- Preloader Overlay -->
+        <div class="preloader" :class="{ 'hidden': pageLoaded }" aria-hidden="true">
+            <div class="flex flex-col items-center">
+                <img src="/images/logo-email.png" alt="Zinus Logo" class="preloader-logo">
+                <div class="preloader-bar">
+                    <div class="preloader-bar-fill"></div>
+                </div>
+                <p class="mt-4 text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-800/60">Zinus Support Center</p>
+            </div>
+        </div>
+
         <div class="loading-bar" aria-hidden="true"></div>
         @if (session('success') || session('error'))
             <div class="fixed top-6 right-6 z-[60] space-y-3" id="toast-stack">
@@ -1169,6 +1239,27 @@
 
                 document.querySelectorAll('[data-status-tooltip]').forEach(chip => {
                     chip.setAttribute('title', chip.textContent.trim());
+                });
+
+                // Livewire Navigation Support
+                document.addEventListener('livewire:navigating', () => {
+                    const preloader = document.querySelector('.preloader');
+                    if (preloader) {
+                        preloader.classList.remove('hidden');
+                        document.body.classList.add('page-preload');
+                        document.body.classList.remove('page-loaded');
+                    }
+                });
+
+                document.addEventListener('livewire:navigated', () => {
+                    const preloader = document.querySelector('.preloader');
+                    if (preloader) {
+                        setTimeout(() => {
+                            preloader.classList.add('hidden');
+                            document.body.classList.remove('page-preload');
+                            document.body.classList.add('page-loaded');
+                        }, 300);
+                    }
                 });
             });
         </script>
