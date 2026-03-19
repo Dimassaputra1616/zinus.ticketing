@@ -5,7 +5,7 @@
         get isNewUser() { return !localStorage.getItem('zinus_tour_seen'); }
     }"
     class="fixed bottom-6 right-6 z-50"
-    wire:poll.2s
+    wire:poll.visible.10s
 >
     <!-- FAB Speed Dial Sub-actions -->
     <div class="flex flex-col items-end gap-3 mb-3">
