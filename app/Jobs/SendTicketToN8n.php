@@ -14,14 +14,16 @@ class SendTicketToN8n implements ShouldQueue
 
     protected $ticket;
     protected $action;
+    protected $extraData;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(Ticket $ticket, string $action = 'created')
+    public function __construct(Ticket $ticket, string $action = 'created', array $extraData = [])
     {
         $this->ticket = $ticket;
         $this->action = $action;
+        $this->extraData = $extraData;
     }
 
     /**
@@ -29,7 +31,7 @@ class SendTicketToN8n implements ShouldQueue
      */
     public function handle(): void
     {
-        $webhookUrl = env('N8N_WEBHOOK_URL');
+        $webhookUrl = config('services.n8n.webhook_url');
 
         if (empty($webhookUrl)) {
             Log::warning('N8N_WEBHOOK_URL is not configured. Skipping webhook dispatch.');
@@ -55,6 +57,10 @@ class SendTicketToN8n implements ShouldQueue
                 'updated_at' => $this->ticket->updated_at ? $this->ticket->updated_at->format('Y-m-d H:i:s') : null,
                 'resolved_at' => $this->ticket->resolved_at ? $this->ticket->resolved_at->format('Y-m-d H:i:s') : null,
             ];
+
+            if (!empty($this->extraData)) {
+                $payload = array_merge($payload, $this->extraData);
+            }
 
             $response = Http::timeout(10)->post($webhookUrl, $payload);
 
