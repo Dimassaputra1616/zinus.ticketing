@@ -53,9 +53,10 @@ class SendTicketToN8n implements ShouldQueue
                 'department' => $this->ticket->department ? $this->ticket->department->name : '-',
                 'created_by' => $this->ticket->user ? $this->ticket->user->name : 'Unknown User',
                 'assigned_admin' => $this->ticket->assignedAdmin ? $this->ticket->assignedAdmin->name : 'Unassigned',
-                'created_at' => $this->ticket->created_at ? $this->ticket->created_at->format('Y-m-d H:i:s') : null,
-                'updated_at' => $this->ticket->updated_at ? $this->ticket->updated_at->format('Y-m-d H:i:s') : null,
-                'resolved_at' => $this->ticket->resolved_at ? $this->ticket->resolved_at->format('Y-m-d H:i:s') : null,
+                'created_at' => $this->ticket->created_at ? $this->ticket->created_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'updated_at' => $this->ticket->updated_at ? $this->ticket->updated_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'resolved_at' => $this->ticket->resolved_at ? $this->ticket->resolved_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'spreadsheet_id' => config('services.n8n.google_spreadsheet_id'),
             ];
 
             if (!empty($this->extraData)) {

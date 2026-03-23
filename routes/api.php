@@ -40,4 +40,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     // Reports
     Route::get('/reports/daily', [ReportController::class, 'daily'])
         ->name('api.v1.reports.daily');
+
+    Route::get('/tickets/sync', [ReportController::class, 'syncToN8n'])
+        ->name('api.v1.tickets.sync');
 });

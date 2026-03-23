@@ -31,4 +31,39 @@ class ReportController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Get all tickets for n8n sync.
+     *
+     * @return JsonResponse
+     */
+    public function syncToN8n(): JsonResponse
+    {
+        $tickets = Ticket::with(['user', 'category', 'department', 'assignedAdmin'])->get();
+        
+        $data = $tickets->map(function ($ticket) {
+            return [
+                'action' => 'sync',
+                'ticket_id' => $ticket->id,
+                'title' => $ticket->title,
+                'description' => strip_tags($ticket->description),
+                'status' => strtoupper($ticket->status),
+                'priority' => strtoupper($ticket->priority),
+                'category' => $ticket->category ? $ticket->category->name : '-',
+                'department' => $ticket->department ? $ticket->department->name : '-',
+                'created_by' => $ticket->user ? $ticket->user->name : 'Unknown User',
+                'assigned_admin' => $ticket->assignedAdmin ? $ticket->assignedAdmin->name : 'Unassigned',
+                'created_at' => $ticket->created_at ? $ticket->created_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'updated_at' => $ticket->updated_at ? $ticket->updated_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'resolved_at' => $ticket->resolved_at ? $ticket->resolved_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'spreadsheet_id' => config('services.n8n.google_spreadsheet_id'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'count' => $data->count(),
+            'data' => $data
+        ]);
+    }
 }

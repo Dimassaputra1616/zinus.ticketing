@@ -45,6 +45,7 @@ return [
 
     'n8n' => [
         'webhook_url' => env('N8N_WEBHOOK_URL'),
+        'google_spreadsheet_id' => env('GOOGLE_SPREADSHEET_ID'),
     ],
 
     'rustdesk' => [
