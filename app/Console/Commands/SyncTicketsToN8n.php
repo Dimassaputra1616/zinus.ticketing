@@ -56,6 +56,9 @@ class SyncTicketsToN8n extends Command
         foreach ($tickets as $ticket) {
             SendTicketToN8n::dispatch($ticket, 'sync');
             $bar->advance();
+            
+            // Add a small delay (0.5 seconds) to avoid Google Sheets API rate limiting
+            usleep(500000); 
         }
 
         $bar->finish();
