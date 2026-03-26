@@ -28,6 +28,7 @@ class Ticket extends Model
         'status',
         'priority',
         'assigned_admin_id',
+        'resolution',
     ];
 
     protected $withCount = [

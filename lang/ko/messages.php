@@ -90,6 +90,10 @@ return [
     'ticket_created_by' => '생성자: :name',
     'status_updated' => '상태 업데이트됨',
     'status_now' => '현재 :status',
+    'resolution' => '해결 방법',
+    'resolution_description' => '해결 내용 설명',
+    'resolution_placeholder' => '이 문제가 어떻게 해결되었는지 설명하세요...',
+    'save_resolution' => '해결 내용 저장',
 
     /* my tickets */
     'ticket_summary_sub' => '작성한 티켓의 빠른 통계.',
@@ -144,6 +148,29 @@ return [
     'delete_user_title' => '사용자를 삭제하시겠습니까?',
     'delete_user_confirmation' => ':name 님을 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다.',
     'yes_delete' => '예, 삭제합니다',
+
+    /* loans module */
+    'loan_log_subtitle' => 'IT 기기 대여 기록',
+    'apply_loan' => '대여 신청',
+    'loan_status_notice' => '상태는 관리자가 업데이트합니다.',
+    'search_user_asset' => '사용자 또는 자산 검색...',
+    'search_asset_notes' => '자산 메모 검색...',
+    'start_date' => '시작일',
+    'end_date' => '종료일',
+    'apply_button' => '신청',
+    'apply_loan_title' => '새 대여 신청',
+    'loan_form_title' => '기기 대여 양식',
+    'select_department' => '부서 선택',
+    'select_device' => '기기 선택',
+    'no_spare_device' => '사용 가능한 여분 기기 없음',
+    'spare_out_of_stock' => '사용 가능한 자산의 여분 재고가 없습니다.',
+    'loan_date' => '대여일',
+    'return_date' => '반납일',
+    'loan_reason' => '대여 사유',
+    'loan_reason_placeholder' => '대여 요구사항을 작성하세요',
+    'submit_request' => '요청 제출',
+    'confirm_action' => '작업 확인',
+    'continue_button' => '계속',
 
     /* assets module */
     'asset_inventory' => '자산 및 재고',
@@ -229,7 +256,6 @@ return [
     'device_name_placeholder' => '예: Dell XPS 13 노트북',
     'select_factory' => '공장 선택',
     'location_placeholder' => '예: 창고 2',
-    'select_department' => '부서 선택',
     'select_category' => '카테고리 선택',
     'none' => '없음',
     'hardware_lifecycle' => '하드웨어 및 수명 주기',
@@ -357,7 +383,7 @@ return [
     'create_ticket_title' => 'IT 팀이 더 빨리 도울 수 있도록 새로운 문제를 보고하세요.',
     'create_ticket_btn_fast' => '빠른 응답',
     'create_ticket_label_title' => '티켓 제목',
-    'create_ticket_placeholder_title' => '대: Outlook 이메일을 열 수 없습니다.',
+    'create_ticket_placeholder_title' => '예: Outlook 이메일을 열 수 없습니다.',
     'create_ticket_label_category' => '카테고리',
     'create_ticket_placeholder_category' => '티켓 카테고리 선택',
     'create_ticket_label_department' => '부서',
@@ -439,4 +465,22 @@ return [
     'loan_status_approved' => '승인됨',
     'loan_status_returned' => '반납됨',
     'loan_status_rejected' => '거부됨',
+
+    // Priorities
+    'priority' => '우선순위',
+    'priority_low' => '낮음',
+    'priority_medium' => '보통',
+    'priority_high' => '높음',
+    'priority_critical' => '긴급',
+
+    // Remote System
+    'remote_system' => '원격 시스템',
+    'title_remote_system' => '원격 시스템',
+    'desc_remote_system' => '등록된 장치를 모니터링하고 원격 데스크톱 연결을 시작하세요.',
+    'connect_remote' => '원격 연결',
+    'online' => '온라인',
+    'offline' => '오프라인',
+    'rustdesk_id' => 'RustDesk ID',
+    'no_rustdesk_id' => 'RustDesk ID가 설정되지 않음',
 ];
+

@@ -129,6 +129,14 @@
                         {!! nl2br(e($ticket->description)) !!}
                     </div>
                 </x-ui.panel>
+
+                @if ($ticket->resolution)
+                    <x-ui.panel title="{{ __('messages.resolution') }}" subtitle="{{ __('messages.resolution_description') }}">
+                        <div class="rounded-2xl border border-brand-100 bg-brand-50/50 p-5 text-sm leading-relaxed text-brand-900">
+                            {!! nl2br(e($ticket->resolution)) !!}
+                        </div>
+                    </x-ui.panel>
+                @endif
             </div>
 
             <div class="space-y-6">
@@ -142,26 +150,163 @@
                         </div>
 
                         @if ($isAdmin)
-                            <form class="space-y-3" method="POST" action="{{ route('tickets.updateStatus', $ticket) }}">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="redirect_to" value="{{ route('tickets.show', $ticket) }}">
-                                <label class="block text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500" for="status">
-                                    {{ __('messages.change_ticket_status') }}
-                                </label>
-                                <select
-                                    id="status"
-                                    name="status"
-                                    class="w-full rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm font-medium text-ink-700 focus:border-brand-300 focus:ring focus:ring-brand-200/50"
+                            <div x-data="{ 
+                                status: @js($ticket->status),
+                                resolution: @js(old('resolution', '')),
+                                showModal: false,
+                                lockScroll() { document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden'; },
+                                unlockScroll() { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; },
+                                init() {
+                                    console.log('Alpine init: status=' + this.status);
+                                }
+                            }">
+                                <form 
+                                    x-ref="statusForm"
+                                    class="space-y-3" 
+                                    method="POST" 
+                                    action="{{ route('tickets.updateStatus', $ticket) }}"
                                 >
-                                    @foreach ($statuses as $value => $label)
-                                        <option value="{{ $value }}" @selected($ticket->status === $value)>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                                <x-ui.button type="submit" size="lg" class="w-full">
-                                    {{ __('messages.save_changes') }}
-                                </x-ui.button>
-                            </form>
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="redirect_to" value="{{ route('tickets.show', $ticket) }}">
+                                    <input type="hidden" name="resolution" x-model="resolution">
+                                    
+                                    <label class="block text-2xs font-semibold uppercase tracking-[0.22em] text-ink-500" for="status">
+                                        {{ __('messages.change_ticket_status') }}
+                                    </label>
+                                    <select
+                                        id="status"
+                                        name="status"
+                                        x-model="status"
+                                        class="w-full rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm font-medium text-ink-700 focus:border-brand-300 focus:ring focus:ring-brand-200/50"
+                                    >
+                                        @foreach ($statuses as $value => $label)
+                                            <option value="{{ $value }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                    
+                                    <x-ui.button 
+                                        type="button" 
+                                        size="lg" 
+                                        class="w-full" 
+                                        @click="
+                                            if (status === 'resolved' && !resolution) {
+                                                showModal = true;
+                                                lockScroll();
+                                                $nextTick(() => { const ta = document.getElementById('show_resolution'); if(ta) ta.focus(); });
+                                            } else {
+                                                $refs.statusForm.submit();
+                                            }
+                                        "
+                                    >
+                                        {{ __('messages.save_changes') }}
+                                    </x-ui.button>
+                                </form>
+
+                                {{-- Resolution Modal - teleported to body to escape parent transforms --}}
+                                <div
+                                    x-show="showModal"
+                                    x-cloak
+                                    x-transition:enter="ease-out duration-300"
+                                    x-transition:enter-start="opacity-0"
+                                    x-transition:enter-end="opacity-100"
+                                    x-transition:leave="ease-in duration-200"
+                                    x-transition:leave-start="opacity-100"
+                                    x-transition:leave-end="opacity-0"
+                                    class="fixed inset-0 z-[9998] bg-gradient-to-br from-slate-900/60 via-black/50 to-emerald-950/40 backdrop-blur-md"
+                                    @click="showModal = false; unlockScroll(); status = @js($ticket->status)"
+                                    x-init="$nextTick(() => document.body.appendChild($el))"
+                                ></div>
+
+                                <div
+                                    x-show="showModal"
+                                    x-cloak
+                                    class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+                                    @keydown.escape.window="showModal = false; unlockScroll(); status = @js($ticket->status)"
+                                    x-init="$nextTick(() => document.body.appendChild($el))"
+                                >
+                                    <div
+                                        class="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-3xl bg-white shadow-[0_32px_80px_-12px_rgba(0,0,0,0.25),0_0_0_1px_rgba(0,0,0,0.05)]"
+                                        x-show="showModal"
+                                        x-transition:enter="ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-[400ms]"
+                                        x-transition:enter-start="opacity-0 scale-90"
+                                        x-transition:enter-end="opacity-100 scale-100"
+                                        x-transition:leave="ease-in duration-200"
+                                        x-transition:leave-start="opacity-100 scale-100"
+                                        x-transition:leave-end="opacity-0 scale-95"
+                                        @click.stop
+                                    >
+                                        <div class="h-1.5 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500"></div>
+
+                                        <div class="relative px-7 pt-7 pb-1">
+                                            <button @click="showModal = false; unlockScroll(); status = @js($ticket->status)" class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-600 hover:rotate-90">
+                                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/></svg>
+                                            </button>
+
+                                            <div class="flex items-start gap-4">
+                                                <div class="relative flex h-12 w-12 shrink-0 items-center justify-center">
+                                                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 opacity-20 blur-sm"></div>
+                                                    <div class="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25">
+                                                        <svg class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">{{ __('messages.resolution') }}</h2>
+                                                    <p class="mt-1 text-[13px] leading-relaxed text-slate-500">{{ __('messages.resolution_description') }}</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                <span class="text-xs font-semibold text-emerald-700">Tiket #{{ $ticket->id }}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="px-7 py-5">
+                                            <label for="show_resolution" class="mb-2 flex items-center justify-between">
+                                                <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Detail Penyelesaian</span>
+                                                <span
+                                                    class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-300"
+                                                    :class="resolution.length >= 10 ? 'bg-emerald-100 text-emerald-700' : resolution.length > 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'"
+                                                    x-text="resolution.length + '/10'"
+                                                ></span>
+                                            </label>
+                                            <textarea
+                                                id="show_resolution"
+                                                x-model="resolution"
+                                                class="w-full resize-none rounded-2xl border-2 border-slate-200 bg-slate-50/80 p-4 text-sm leading-relaxed text-slate-800 placeholder-slate-400 transition-all duration-300 focus:border-emerald-400 focus:bg-white focus:shadow-[0_0_0_4px_rgba(16,185,129,0.1)] focus:outline-none"
+                                                rows="3"
+                                                placeholder="{{ __('messages.resolution_placeholder') }}"
+                                            ></textarea>
+
+                                            <div class="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
+                                                <div
+                                                    class="h-full rounded-full transition-all duration-500 ease-out"
+                                                    :class="resolution.length >= 10 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' : 'bg-gradient-to-r from-amber-400 to-orange-400'"
+                                                    :style="'width: ' + Math.min(100, (resolution.length / 10) * 100) + '%'"
+                                                ></div>
+                                            </div>
+                                            <p x-show="resolution.length > 0 && resolution.length < 10" x-transition class="mt-2 text-xs font-medium text-amber-600">
+                                                ⚠️ Masih butuh <span x-text="10 - resolution.length" class="font-bold"></span> karakter lagi.
+                                            </p>
+                                        </div>
+
+                                        <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-gradient-to-r from-slate-50 to-emerald-50/30 px-7 py-4">
+                                            <button type="button" @click="showModal = false; unlockScroll(); status = @js($ticket->status)" class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md active:translate-y-0">
+                                                {{ __('messages.cancel') }}
+                                            </button>
+                                            <button type="button" @click="if(resolution && resolution.length >= 10) { showModal = false; unlockScroll(); $nextTick(() => $refs.statusForm.submit()); }" :disabled="!resolution || resolution.length < 10" class="group relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30 active:translate-y-0 disabled:opacity-40 disabled:shadow-none disabled:hover:translate-y-0">
+                                                <span class="relative z-10 flex items-center gap-2">
+                                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
+                                                    {{ __('messages.save_resolution') }}
+                                                </span>
+                                                <div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"></div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             <p class="text-xs {{ $statusTone }}">{{ __('messages.notify_status_update') }}</p>
                         @else
                             <p class="text-sm text-ink-500">

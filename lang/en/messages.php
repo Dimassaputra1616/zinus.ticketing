@@ -90,6 +90,10 @@ return [
     'ticket_created_by' => 'Ticket created by :name',
     'status_updated' => 'Status updated',
     'status_now' => 'now :status',
+    'resolution' => 'Resolution',
+    'resolution_description' => 'Resolution Description',
+    'resolution_placeholder' => 'Describe how this issue was resolved...',
+    'save_resolution' => 'Save Resolution',
 
     /* my tickets */
     'ticket_summary_sub' => 'Quick statistics of tickets you created.',

@@ -57,6 +57,11 @@ class ReportController extends Controller
                 'updated_at' => $ticket->updated_at ? $ticket->updated_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
                 'resolved_at' => $ticket->resolved_at ? $ticket->resolved_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
                 'spreadsheet_id' => config('services.n8n.google_spreadsheet_id'),
+
+                // Add keys that match Google Sheets headers exactly
+                'Ticket' => $ticket->title ?: strip_tags($ticket->description),
+                'Catagory' => $ticket->category ? $ticket->category->name : '-', // Matching typo in sheet "Catagory"
+                'Assigned To' => $ticket->assignedAdmin ? $ticket->assignedAdmin->name : 'Unassigned',
             ];
         });
 

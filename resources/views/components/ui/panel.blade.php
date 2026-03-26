@@ -42,11 +42,11 @@
                                 {!! $icon !!}
                             </span>
                         @endif
-                        <span>{{ $title }}</span>
+                        <span>{!! $title !!}</span>
                     </h3>
                 @endif
                 @if ($subtitle)
-                    <p class="text-sm font-medium text-ink-600">{{ $subtitle }}</p>
+                    <p class="text-sm font-medium text-ink-600">{!! $subtitle !!}</p>
                 @endif
             </div>
             @if ($actions)

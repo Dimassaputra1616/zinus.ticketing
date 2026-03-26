@@ -11,7 +11,7 @@
                 @isset($pillIcon)
                     {{ $pillIcon }}
                 @endisset
-                {{ $pill }}
+                {!! $pill !!}
             </span>
             <div class="space-y-1.5">
                 <p class="heading-font text-2xl font-semibold text-[#0C1F2C] tracking-tight flex items-center gap-2.5">
@@ -20,11 +20,11 @@
                             {{ $icon }}
                         </span>
                     @endisset
-                    {{ $title }}
+                    {!! $title !!}
                 </p>
                 @if ($description)
                     <p class="text-sm max-w-2xl text-[#1f5948]" style="background-image: linear-gradient(90deg, #23455D 0%, #12824C 45%, #53B77A 100%); -webkit-background-clip: text; color: transparent;">
-                        {{ $description }}
+                        {!! $description !!}
                     </p>
                 @endif
             </div>

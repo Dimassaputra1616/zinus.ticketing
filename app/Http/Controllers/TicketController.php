@@ -473,7 +473,7 @@ class TicketController extends Controller
         return view('tickets.show', [
             'ticket' => $ticket,
             'statuses' => $statuses,
-            'isAdmin' => $user->isAdmin(),
+            'isAdmin' => $user->isAdmin() || $user->isTechnician(),
             'logs' => $logs,
             'statusLogs' => $statusLogs,
         ]);
@@ -486,6 +486,7 @@ class TicketController extends Controller
     {
         $request->validate([
             'status' => 'required|in:open,assigned,in_progress,waiting_user,resolved,closed',
+            'resolution' => 'nullable|string',
         ]);
 
         $previousStatus = $ticket->status;
@@ -496,6 +497,10 @@ class TicketController extends Controller
         $updateData = [
             'status' => $request->status,
         ];
+
+        if ($request->has('resolution')) {
+            $updateData['resolution'] = $request->resolution;
+        }
 
         if (is_null($ticket->assigned_admin_id) && $actor && ($actor->isAdmin() || $actor->isTechnician())) {
             $updateData['assigned_admin_id'] = $actor->id;
