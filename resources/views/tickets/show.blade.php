@@ -154,10 +154,12 @@
                                 status: @js($ticket->status),
                                 resolution: @js(old('resolution', '')),
                                 showModal: false,
+                                _formEl: null,
                                 lockScroll() { document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden'; },
                                 unlockScroll() { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; },
+                                submitForm() { if (this._formEl) this._formEl.submit(); },
                                 init() {
-                                    console.log('Alpine init: status=' + this.status);
+                                    this._formEl = this.$refs.statusForm;
                                 }
                             }">
                                 <form 
@@ -195,7 +197,7 @@
                                                 lockScroll();
                                                 $nextTick(() => { const ta = document.getElementById('show_resolution'); if(ta) ta.focus(); });
                                             } else {
-                                                $refs.statusForm.submit();
+                                                submitForm();
                                             }
                                         "
                                     >
@@ -297,7 +299,7 @@
                                             <button type="button" @click="showModal = false; unlockScroll(); status = @js($ticket->status)" class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md active:translate-y-0">
                                                 {{ __('messages.cancel') }}
                                             </button>
-                                            <button type="button" @click="if(resolution && resolution.length >= 10) { showModal = false; unlockScroll(); $nextTick(() => $refs.statusForm.submit()); }" :disabled="!resolution || resolution.length < 10" class="group relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30 active:translate-y-0 disabled:opacity-40 disabled:shadow-none disabled:hover:translate-y-0">
+                                            <button type="button" @click="if(resolution && resolution.length >= 10) { showModal = false; unlockScroll(); $nextTick(() => submitForm()); }" :disabled="!resolution || resolution.length < 10" class="group relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30 active:translate-y-0 disabled:opacity-40 disabled:shadow-none disabled:hover:translate-y-0">
                                                 <span class="relative z-10 flex items-center gap-2">
                                                     <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
                                                     {{ __('messages.save_resolution') }}
