@@ -413,22 +413,26 @@ class TicketController extends Controller
         $admins = $this->adminUsers($actor);
         $emailRecipients = $this->adminEmailRecipients($actor, $admins);
 
-        // Kirim notifikasi ke semua admin (termasuk pembuat tiket jika admin)
-        User::query()
-            ->where(function ($query) {
-                $query->where('role', 'admin')
-                    ->orWhere('role', 'Admin')
-                    ->orWhere('is_admin', true);
-            })
-            ->get()
-            ->each(fn (User $admin) => $admin->notify(new TicketCreatedNotification($ticket, $actor)));
+        try {
+            // Send database notifications to admins
+            User::query()
+                ->where(function ($query) {
+                    $query->where('role', 'admin')
+                        ->orWhere('role', 'Admin')
+                        ->orWhere('is_admin', true);
+                })
+                ->get()
+                ->each(fn (User $admin) => $admin->notify(new TicketCreatedNotification($ticket, $actor)));
 
-        if ($emailRecipients->isNotEmpty()) {
-            logger()->info('ticket.created.mail.recipients', [
+            // Send emails to admins and extra recipients
+            if ($emailRecipients->isNotEmpty()) {
+                Mail::to($emailRecipients->all())->send(new TicketCreatedMail($ticket, $actor));
+            }
+        } catch (\Exception $e) {
+            logger()->error('Failed to send ticket creation notifications/emails', [
                 'ticket_id' => $ticket->id,
-                'recipients' => $emailRecipients->all(),
+                'error' => $e->getMessage()
             ]);
-            Mail::to($emailRecipients->all())->send(new TicketCreatedMail($ticket, $actor));
         }
 
         return redirect()->route('dashboard')->with('success', '✅ Tiket berhasil dikirim! Tim IT akan segera menindaklanjuti.');
@@ -637,7 +641,7 @@ class TicketController extends Controller
             'admin@znus.com',
         ]);
 
-        $extraAdminEmails = collect(preg_split('/[;,]+/', (string) env('MAIL_EXTRA_ADMINS', '')))
+        $extraAdminEmails = collect(preg_split('/[;,]+/', (string) config('mail.extra_admins', '')))
             ->map(fn ($email) => trim((string) $email))
             ->filter();
 

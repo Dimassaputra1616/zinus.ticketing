@@ -115,4 +115,6 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    'extra_admins' => env('MAIL_EXTRA_ADMINS', ''),
+
 ];
