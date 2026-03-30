@@ -13,8 +13,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-
-        if (! $user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             abort(403, 'Akses ditolak - hanya untuk admin IT');
         }
 

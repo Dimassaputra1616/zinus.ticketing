@@ -29,7 +29,7 @@ class ChatWidget extends Component
 
     public function mount()
     {
-        if (Auth::user()->isAdmin()) {
+        if (Auth::check() && Auth::user()->isAdmin()) {
             // Admin sees user list
             $this->viewMode = 'list';
             $this->loadUserList();
@@ -179,11 +179,11 @@ class ChatWidget extends Component
     public function loadConversation()
     {
         // Skip loading conversation if admin is in list view
-        if (Auth::user()->isAdmin() && $this->viewMode === 'list') {
+        if (Auth::check() && Auth::user()->isAdmin() && $this->viewMode === 'list') {
             return;
         }
 
-        if (Auth::user()->isAdmin() && $this->selectedUserId) {
+        if (Auth::check() && Auth::user()->isAdmin() && $this->selectedUserId) {
             // Admin viewing specific user's conversation
             $conversation = Conversation::where('user_id', $this->selectedUserId)
                 ->where('is_open', true)
@@ -206,7 +206,7 @@ class ChatWidget extends Component
             $this->conversationId = $conversation->id;
             
             // For regular users, calculate total unread count before loading messages (which might mark as read)
-            if (!Auth::user()->isAdmin()) {
+            if (Auth::check() && !Auth::user()->isAdmin()) {
                 $this->totalUnreadCount = Message::where('conversation_id', $this->conversationId)
                     ->where('user_id', '!=', Auth::id()) // Messages from admin/others
                     ->where('is_read', false)
@@ -243,9 +243,9 @@ class ChatWidget extends Component
                     'body' => $message->body,
                     'user_id' => $message->user_id,
                     'user_name' => $message->user->name ?? $adminName,
-                    'is_mine' => \Illuminate\Support\Facades\Auth::user()->isAdmin() 
+                    'is_mine' => Auth::check() && Auth::user()->isAdmin() 
                         ? is_null($message->user_id) 
-                        : $message->user_id === \Illuminate\Support\Facades\Auth::id(),
+                        : (Auth::check() && $message->user_id === Auth::id()),
                     'created_at' => $message->created_at->format('H:i'),
                     'date_group' => $message->created_at->isToday() ? 'Hari Ini' : ($message->created_at->isYesterday() ? 'Kemarin' : $message->created_at->format('d M Y')),
                     'is_read' => $message->is_read, // Add is_read for status ticks
@@ -256,7 +256,7 @@ class ChatWidget extends Component
 
         // Mark unread messages as read ONLY when user is viewing chat AND widget is open
         // Don't mark as read when admin is in list view (viewMode='list')
-        $shouldMarkAsRead = Auth::user()->isAdmin()
+        $shouldMarkAsRead = (Auth::check() && Auth::user()->isAdmin())
             ? $this->viewMode === 'chat' // Admin: only when viewing specific chat
             : true; // Regular user: always mark as read IF open
 
@@ -268,7 +268,7 @@ class ChatWidget extends Component
                 ->update(['is_read' => true]);
                 
             // Update counts immediately after reading
-            if (Auth::user()->isAdmin()) {
+            if (Auth::check() && Auth::user()->isAdmin()) {
                 // Admin in chat view: we don't recalculate total list count here efficiently, 
                 // but since we are in chat view, total count should decrease by the number of messages read?
                 // Actually, if admin is in chat view, the list is hidden.
@@ -282,7 +282,7 @@ class ChatWidget extends Component
 
     public function sendMessage()
     {
-        $isAdminSender = Auth::user()->isAdmin();
+        $isAdminSender = Auth::check() && Auth::user()->isAdmin();
 
         // Atomic lock to prevent double submission race conditions
         $lockKey = 'chat_send_message_' . Auth::id();

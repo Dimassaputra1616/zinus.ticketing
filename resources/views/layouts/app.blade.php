@@ -985,7 +985,9 @@
         </footer>
         </main>
         
-        <livewire:chat-widget />
+        @auth
+            <livewire:chat-widget />
+        @endauth
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {

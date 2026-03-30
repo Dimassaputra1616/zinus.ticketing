@@ -128,7 +128,7 @@
             });
         "
     >
-        @if(auth()->user()->isAdmin() && $viewMode === 'list')
+        @if(auth()->user()?->isAdmin() && $viewMode === 'list')
             <!-- ADMIN - USER LIST VIEW -->
             <div class="h-full flex flex-col">
                 <!-- Header -->
@@ -198,7 +198,7 @@
         @else
             <!-- CHAT VIEW (Admin with selected user OR Regular user) -->
             <div class="h-full flex flex-col relative bg-gray-50 rounded-lg overflow-hidden">
-                @if(!auth()->user()->isAdmin() && $showAdminSelection)
+                @if(!(auth()->user()?->isAdmin()) && $showAdminSelection)
                     <!-- USER - ADMIN SELECTION CARD -->
                     <div class="flex flex-col h-full bg-white">
                         <!-- Header -->
@@ -251,7 +251,7 @@
                     <div class="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-500 opacity-90"></div>
                     
                     <div class="relative flex items-center justify-between w-full">
-                        @if(auth()->user()->isAdmin() && $selectedUserId)
+                        @if(auth()->user()?->isAdmin() && $selectedUserId)
                             <!-- Admin - Show back button and selected user info -->
                             <div class="flex items-center gap-3 flex-1 overflow-hidden">
                                 <button 
@@ -335,7 +335,7 @@
                                 </svg>
                             </div>
                             <p class="text-sm font-medium text-gray-600">Belum ada pesan</p>
-                            <p class="text-xs mt-1 text-gray-400">Mulai percakapan{{ auth()->user()->isAdmin() ? '' : ' dengan support' }} sekarang</p>
+                            <p class="text-xs mt-1 text-gray-400">Mulai percakapan{{ auth()->user()?->isAdmin() ? '' : ' dengan support' }} sekarang</p>
                         </div>
                     @else
                         @foreach($messages as $date => $dateMessages)
