@@ -2,12 +2,19 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ config('app.name', 'IT Ticketing') }}</title>
         <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
         <link rel="shortcut icon" href="{{ asset('favicon.png') }}">
+
+        <!-- PWA Meta Tags -->
+        <meta name="theme-color" content="#12824C">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <link rel="apple-touch-icon" href="{{ asset('favicon.png') }}">
+        <link rel="manifest" href="/build/manifest.webmanifest">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -695,120 +702,87 @@
             </div>
         </aside>
 
-        <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:flex-1">
-                <!-- Mobile top bar -->
-                <div class="sticky top-0 z-50 flex items-center justify-between bg-white/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden">
+        <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:flex-1 pb-24 lg:pb-0" style="padding-top: env(safe-area-inset-top); padding-bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5rem))">
+                {{-- Compact PWA mobile header with profile dropdown --}}
+                <div x-data="{ mobileProfileOpen: false }" class="sticky top-0 z-50 flex items-center justify-between bg-[#0F2F22] px-4 py-2 lg:hidden" style="padding-top: max(0.5rem, env(safe-area-inset-top))">
                     <div class="flex items-center gap-2">
-                        <button
-                            type="button"
-                            @click="sidebarOpen = true"
-                            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                            aria-label="Buka menu navigasi"
-                        >
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 7h16M4 12h16M4 17h16" />
-                            </svg>
-                        </button>
+                        <img src="{{ asset('favicon.png') }}" alt="Zinus" class="h-7 w-7 rounded-lg shadow-md">
                         <div class="leading-tight">
-                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Zinus Dream</p>
-                            <p class="text-sm font-semibold text-ink-900">IT Ticketing</p>
+                            <p class="text-[9px] font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Zinus Dream</p>
+                            <p class="text-xs font-bold text-white">IT Ticketing</p>
                         </div>
                     </div>
                     @if ($user)
-                        <div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 shadow-sm">
-                            <span class="h-9 w-9 rounded-full bg-[#004F3B] text-white flex items-center justify-center font-semibold shadow-inner shadow-emerald-100">
-                                {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
-                            </span>
-                            <span class="max-w-[120px] truncate text-left leading-tight">
-                                <span class="block">{{ $user->name }}</span>
-                                <span class="block text-[11px] font-normal text-emerald-700/80">{{ $user->email }}</span>
-                            </span>
+                        <div class="relative">
+                            <button 
+                                @click="mobileProfileOpen = !mobileProfileOpen" 
+                                class="flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-1 transition-colors hover:bg-white/20"
+                            >
+                                <span class="h-7 w-7 rounded-full bg-emerald-600 text-white text-[11px] flex items-center justify-center font-bold ring-1 ring-emerald-400/30">
+                                    {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
+                                </span>
+                                <svg class="h-3 w-3 text-white/60 transition-transform" :class="mobileProfileOpen && 'rotate-180'" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.25a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                            {{-- Mobile Profile Dropdown --}}
+                            <div
+                                x-show="mobileProfileOpen"
+                                @click.away="mobileProfileOpen = false"
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+                                class="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl border border-white/10 bg-[#0d1f1a]/95 p-3 shadow-2xl shadow-black/50 backdrop-blur-xl"
+                                style="display:none"
+                            >
+                                {{-- User Info --}}
+                                <div class="mb-3 flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+                                    <span class="h-9 w-9 flex-shrink-0 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold ring-2 ring-emerald-400/30">
+                                        {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
+                                    </span>
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-semibold text-white truncate">{{ $user->name }}</p>
+                                        <p class="text-[10px] text-emerald-300/60 truncate">{{ $user->email }}</p>
+                                    </div>
+                                </div>
+
+                                {{-- Language Switcher --}}
+                                <div class="mb-2">
+                                    <p class="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-white/30">Language</p>
+                                    <div class="flex gap-1">
+                                        @foreach (['en' => 'EN', 'id' => 'ID', 'ko' => 'KO'] as $locale => $label)
+                                            <a 
+                                                href="{{ route('lang.switch', $locale) }}"
+                                                class="flex-1 rounded-lg py-1.5 text-center text-[10px] font-bold transition-all {{ app()->getLocale() === $locale ? 'bg-emerald-500/30 text-emerald-300 ring-1 ring-emerald-400/30' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80' }}"
+                                            >{{ $label }}</a>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Logout --}}
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="flex w-full items-center gap-2 rounded-xl bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 transition-colors hover:bg-rose-500/20">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                            <polyline points="16 17 21 12 16 7" />
+                                            <line x1="21" y1="12" x2="9" y2="12" />
+                                        </svg>
+                                        {{ __('messages.logout') }}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     @endif
                 </div>
 
-                <!-- Mobile nav drawer -->
-                <div
-                    x-show="sidebarOpen"
-                    x-transition.opacity
-                    class="fixed inset-0 bg-black/40 lg:hidden z-40"
-                    @click="sidebarOpen = false"
-                ></div>
-                <div
-                    x-show="sidebarOpen"
-                    x-transition:enter="transition ease-out duration-200"
-                    x-transition:enter-start="translate-x-[-100%]"
-                    x-transition:enter-end="translate-x-0"
-                    x-transition:leave="transition ease-in duration-150"
-                    x-transition:leave-start="translate-x-0"
-                    x-transition:leave-end="translate-x-[-100%]"
-                    class="fixed inset-y-0 left-0 z-50 w-full lg:hidden"
-                >
-                    <div
-                        class="h-full w-full bg-[#0F2F22] text-emerald-50 shadow-2xl ring-1 ring-emerald-900/30 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.06)]"
-                        style="background:linear-gradient(180deg,#0f2f22,#0d241b);"
-                    >
-                        <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
-                            <div>
-                                <p class="text-[0.65rem] uppercase tracking-[0.5em] text-emerald-200/70">Zinus Dream</p>
-                                <p class="text-lg font-semibold text-white">IT Ticketing</p>
-                            </div>
-                            <button
-                                type="button"
-                                @click="sidebarOpen = false"
-                                class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-emerald-50 transition hover:bg-white/10"
-                                aria-label="Tutup menu navigasi"
-                            >
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M6 6l12 12M6 18L18 6" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="space-y-1 px-3 py-4 sidebar-nav text-[14px]">
-                            @foreach ($navItems as $item)
-                                @continue(! $item['visible'])
-                                @php
-                                    $isActive = request()->routeIs($item['route']);
-                                    $badgeCount = (int) ($item['badgeCount'] ?? 0);
-                                    $badgeType = $item['badgeType'] ?? null;
-                                @endphp
-                                <a
-                                    href="{{ route($item['route']) }}"
-                                    @click="sidebarOpen = false"
-                                    @class([
-                                        'group flex items-center gap-3 rounded-lg px-5 py-3 text-[14px] font-medium transition-all duration-200 hover:text-white border-l-[3px] border-transparent',
-                                        'text-emerald-100/80' => ! $isActive,
-                                        'is-active text-white border-[#53B77A]' => $isActive,
-                                    ])
-                                >
-                                    <svg
-                                        class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="1.8"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        {!! $item['icon'] !!}
-                                    </svg>
-                                    <span class="flex-1">{{ $item['label'] }}</span>
-                                    @if ($badgeType)
-                                        <span
-                                            class="ml-auto inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-rose-600"
-                                            data-notification-badge="{{ $badgeType }}"
-                                            @if ($badgeCount === 0) hidden @endif
-                                        >
-                                            <span>New</span>
-                                            <span class="tracking-normal" data-notification-count="{{ $badgeType }}">{{ $badgeCount > 9 ? '9+' : $badgeCount }}</span>
-                                        </span>
-                                    @endif
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
+                {{-- Mobile top bar removed to save space, redundant with PWA & title headers --}}
+
+                {{-- Mobile nav drawer removed since we use Bottom Nav now --}}
 
                 @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*') || request()->routeIs('remote-system.*'))
                     @php
@@ -843,7 +817,7 @@
                         :hide-user-on-mobile="request()->routeIs('dashboard')"
                     />
                 @else
-                    <header class="sticky-header sticky top-[64px] lg:top-0 z-40 relative bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
+                    <header class="sticky-header sticky top-0 z-40 relative bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
                         <div class="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                             <div class="flex flex-col gap-2">
                                 <div class="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#23455D]/70">
@@ -864,7 +838,7 @@
                             @if ($user)
                                 <div class="flex items-center gap-2.5">
                                     <!-- Language Switcher -->
-                                    <div x-data="{ langOpen: false }" class="relative">
+                                    <div x-data="{ langOpen: false }" class="relative hidden lg:block">
                                         <button
                                             type="button"
                                             @click="langOpen = !langOpen"
@@ -909,7 +883,7 @@
                                         </div>
                                     </div>
 
-                                    <div x-data="{ open: false }" class="relative">
+                                    <div x-data="{ open: false }" class="relative hidden lg:block">
                                         <button
                                             type="button"
                                         @click="open = !open"
@@ -983,7 +957,130 @@
                 </div>
             </div>
         </footer>
-        </main>
+
+                <!-- ═══════ Ultra Premium Floating Bottom Navigation ═══════ -->
+                <style>
+                    @keyframes navGlow { 0%,100%{ box-shadow:0 0 8px rgba(52,211,153,.3) } 50%{ box-shadow:0 0 20px rgba(52,211,153,.5) } }
+                    @keyframes badgePulse { 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.15) } }
+                    @keyframes fabPulse { 0%,100%{ box-shadow:0 4px 20px rgba(18,130,76,.4) } 50%{ box-shadow:0 4px 30px rgba(18,130,76,.7) } }
+                    .mobile-nav-pill { transition: all .35s cubic-bezier(.4,0,.2,1); }
+                    .mobile-nav-pill.is-active { animation: navGlow 2.5s ease-in-out infinite; }
+                    .mobile-nav-badge { animation: badgePulse 2s ease-in-out infinite; }
+                    .center-fab { animation: fabPulse 3s ease-in-out infinite; }
+                </style>
+                <div class="fixed left-1/2 z-50 w-[92vw] max-w-[420px] -translate-x-1/2 lg:hidden" style="bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem))">
+                    <nav class="relative flex items-stretch justify-around gap-0.5 rounded-2xl border border-white/20 bg-[#0d1f1a]/85 p-1 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.08)]">
+                        {{-- Decorative top shine line --}}
+                        <div class="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent"></div>
+
+                        @php
+                            $mobileNavItems = collect($navItems)->where('visible', true)->values();
+                            $totalMobileItems = min($mobileNavItems->count(), 4);
+                            $leftItems = $mobileNavItems->take(intdiv($totalMobileItems, 2));
+                            $rightItems = $mobileNavItems->slice(intdiv($totalMobileItems, 2))->take($totalMobileItems - intdiv($totalMobileItems, 2));
+                        @endphp
+
+                        {{-- Left nav items --}}
+                        @foreach ($leftItems as $item)
+                            @php
+                                $isActive = request()->routeIs($item['route']);
+                                $badgeCount = (int) ($item['badgeCount'] ?? 0);
+                            @endphp
+                            <a 
+                                href="{{ route($item['route']) }}" 
+                                class="mobile-nav-pill relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2 {{ $isActive ? 'is-active bg-emerald-500/20' : 'hover:bg-white/5' }}"
+                            >
+                                <div class="relative flex items-center justify-center">
+                                    <svg class="h-[22px] w-[22px] transition-all duration-300 {{ $isActive ? 'text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'text-white/50' }}" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="{{ $isActive ? '2.2' : '1.8' }}" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                        {!! $item['icon'] !!}
+                                    </svg>
+                                    @if ($badgeCount > 0)
+                                        <span class="mobile-nav-badge absolute -right-2.5 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white ring-2 ring-[#0d1f1a]">
+                                            {{ $badgeCount > 9 ? '9+' : $badgeCount }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <span class="text-[9px] font-semibold tracking-wide {{ $isActive ? 'text-emerald-300' : 'text-white/40' }}">{{ Str::limit($item['label'], 10) }}</span>
+                                @if ($isActive)
+                                    <span class="absolute -bottom-0 left-1/2 h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></span>
+                                @endif
+                            </a>
+                        @endforeach
+
+                        {{-- ══ Center FAB Button (Chat/Actions) ══ --}}
+                        <div class="relative flex items-center justify-center px-1" style="margin-top:-14px">
+                            <button
+                                @click="$dispatch('toggle-chat')"
+                                class="center-fab relative flex h-[52px] w-[52px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white ring-4 ring-[#0d1f1a]/90 transition-all duration-300 active:scale-90 hover:from-emerald-400 hover:to-emerald-600"
+                                title="Support & Menu"
+                            >
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
+                                </svg>
+                                {{-- Badge (synced from chat widget via JS) --}}
+                                <span id="mobile-nav-chat-badge" class="mobile-nav-badge absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-[#0d1f1a]">
+                                    0
+                                </span>
+                            </button>
+                        </div>
+
+                        {{-- Right nav items --}}
+                        @foreach ($rightItems as $item)
+                            @php
+                                $isActive = request()->routeIs($item['route']);
+                                $badgeCount = (int) ($item['badgeCount'] ?? 0);
+                            @endphp
+                            <a 
+                                href="{{ route($item['route']) }}" 
+                                class="mobile-nav-pill relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2 {{ $isActive ? 'is-active bg-emerald-500/20' : 'hover:bg-white/5' }}"
+                            >
+                                <div class="relative flex items-center justify-center">
+                                    <svg class="h-[22px] w-[22px] transition-all duration-300 {{ $isActive ? 'text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'text-white/50' }}" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="{{ $isActive ? '2.2' : '1.8' }}" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                        {!! $item['icon'] !!}
+                                    </svg>
+                                    @if ($badgeCount > 0)
+                                        <span class="mobile-nav-badge absolute -right-2.5 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white ring-2 ring-[#0d1f1a]">
+                                            {{ $badgeCount > 9 ? '9+' : $badgeCount }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <span class="text-[9px] font-semibold tracking-wide {{ $isActive ? 'text-emerald-300' : 'text-white/40' }}">{{ Str::limit($item['label'], 10) }}</span>
+                                @if ($isActive)
+                                    <span class="absolute -bottom-0 left-1/2 h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></span>
+                                @endif
+                            </a>
+                        @endforeach
+                    </nav>
+                </div>
+
+                {{-- Script: sync unread badge from chat widget to bottom nav --}}
+                <script>
+                    (function() {
+                        function syncBadge() {
+                            const bridge = document.getElementById('chat-unread-bridge');
+                            const badge = document.getElementById('mobile-nav-chat-badge');
+                            if (!bridge || !badge) return;
+                            const count = parseInt(bridge.dataset.count || '0', 10);
+                            if (count > 0) {
+                                badge.textContent = count > 9 ? '9+' : count;
+                                badge.classList.remove('hidden');
+                                badge.classList.add('flex');
+                            } else {
+                                badge.classList.add('hidden');
+                                badge.classList.remove('flex');
+                            }
+                        }
+                        // Initial sync
+                        document.addEventListener('DOMContentLoaded', syncBadge);
+                        // Watch for Livewire updates
+                        const observer = new MutationObserver(syncBadge);
+                        const interval = setInterval(() => {
+                            const bridge = document.getElementById('chat-unread-bridge');
+                            if (bridge) { observer.observe(bridge, { attributes: true }); clearInterval(interval); syncBadge(); }
+                        }, 500);
+                    })();
+                </script>
+            </main>
         
         @auth
             <livewire:chat-widget />

@@ -237,6 +237,15 @@ function initStickyHeader() {
 // window.Alpine = Alpine;
 // Alpine.start();
 
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/build/sw.js').catch(error => {
+            console.error('Service Worker registration failed:', error);
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initLiveUpdates();
     initFilePreviews();

@@ -4,9 +4,15 @@
         fabOpen: false,
         get isNewUser() { return !localStorage.getItem('zinus_tour_seen'); }
     }"
+    @toggle-chat.window="open = !open; fabOpen = false"
     class="fixed bottom-6 right-6 z-50"
     wire:poll.visible.10s
 >
+    {{-- Hidden bridge element: broadcasts unread count to bottom nav --}}
+    <div id="chat-unread-bridge" data-count="{{ $totalUnreadCount }}" class="hidden"></div>
+
+    {{-- Desktop-only FAB area --}}
+    <div class="hidden lg:block">
     <!-- FAB Speed Dial Sub-actions -->
     <div class="flex flex-col items-end gap-3 mb-3">
 
@@ -96,6 +102,7 @@
         </svg>
     </button>
 
+    </div>{{-- end desktop-only FAB --}}
 
     <!-- Chat Box -->
     <div
@@ -107,9 +114,9 @@
         x-transition:leave-start="opacity-100 transform scale-100"
         x-transition:leave-end="opacity-0 transform scale-95"
         @click.away="open = false"
-        class="absolute bottom-0 right-0 mb-20 w-80 sm:w-96 bg-white rounded-lg shadow-2xl flex flex-col"
-        style="height: 500px; display: none;"
-        style="height: 500px; display: none;"
+        class="fixed inset-x-0 bottom-0 z-[60] sm:absolute sm:inset-auto sm:bottom-0 sm:right-0 sm:mb-20 sm:w-96 bg-white sm:rounded-lg shadow-2xl flex flex-col lg:absolute lg:bottom-0 lg:right-0 lg:mb-20 lg:w-96"
+        style="height: 100vh; display: none;"
+        x-bind:style="window.innerWidth >= 640 ? 'height: 500px; display: none;' : 'height: 100vh; display: none;'"
         x-init="
             $watch('open', value => {
                 if (value) {
