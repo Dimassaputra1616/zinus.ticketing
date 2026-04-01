@@ -985,8 +985,8 @@
                     .mobile-nav-badge { animation: badgePulse 2s ease-in-out infinite; }
                     .center-fab { animation: fabPulse 3s ease-in-out infinite; }
                 </style>
-                <div class="fixed bottom-0 left-0 right-0 z-50 lg:hidden" style="padding-bottom: env(safe-area-inset-bottom, 0px)">
-                    <nav class="relative flex items-stretch justify-around gap-0.5 border-t border-white/15 bg-[#0d1f1a] p-1 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]">
+                <div class="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[#0d1f1a]" style="padding-bottom: env(safe-area-inset-bottom, 0px)">
+                    <nav class="relative flex items-stretch justify-around gap-0.5 border-t border-white/15 bg-[#0d1f1a] px-1 py-2 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]">
                         {{-- Decorative top shine line --}}
                         <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent"></div>
 
