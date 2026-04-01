@@ -496,6 +496,7 @@
             $navItems = [
                 [
                     'label' => __('messages.dashboard'),
+                    'mobileLabel' => 'Home',
                     'route' => 'dashboard',
                     'icon' => '
                         <path d="M3 10.5 12 4l9 6.5" />
@@ -503,11 +504,13 @@
                         <path d="M9 21V13h6v8" />
                     ',
                     'visible' => true,
+                    'mobileVisible' => true,
                     'badgeCount' => 0,
                     'badgeType' => null,
                 ],
                 [
                     'label' => __('messages.my_tickets'),
+                    'mobileLabel' => 'Tiket',
                     'route' => 'tickets.mine',
                     'icon' => '
                         <path d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z" />
@@ -516,11 +519,13 @@
                         <path d="M7 15h4" />
                     ',
                     'visible' => !$isAdmin,
+                    'mobileVisible' => !$isAdmin,
                     'badgeCount' => 0,
                     'badgeType' => null,
                 ],
                 [
                     'label' => __('messages.remote_system'),
+                    'mobileLabel' => 'Remote',
                     'route' => 'remote-system.index',
                     'icon' => '
                         <path d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6Z" />
@@ -531,11 +536,13 @@
                         <path d="M7.05 5.05a7 7 0 0 1 9.9 0" />
                     ',
                     'visible' => $isAdmin,
+                    'mobileVisible' => false,
                     'badgeCount' => 0,
                     'badgeType' => null,
                 ],
                 [
                     'label' => __('messages.ticket_list'),
+                    'mobileLabel' => 'Tiket',
                     'route' => 'tickets.index',
                     'icon' => '
                         <path d="M8 6h13" />
@@ -546,21 +553,25 @@
                         <path d="M3 18h.01" />
                     ',
                     'visible' => $user?->isAdmin(),
+                    'mobileVisible' => $user?->isAdmin(),
                     'badgeCount' => (int) ($notificationCounts[$ticketNotificationType] ?? 0),
                     'badgeType' => 'tickets',
                 ],
                 [
                     'label' => __('messages.loan_log'),
+                    'mobileLabel' => 'Loan',
                     'route' => 'loans.index',
                     'icon' => '
                         <path d="M7 7h10M7 12h4m1 8 3-3h4a2 2 0 0 0 2-2V5c0-1.1-.9-2-2-2H6a2 2 0 0 0-2 2v15l3-3h5" />
                     ',
                     'visible' => true,
+                    'mobileVisible' => true,
                     'badgeCount' => 0,
                     'badgeType' => null,
                 ],
                 [
                     'label' => __('messages.manage_asset'),
+                    'mobileLabel' => 'Aset',
                     'route' => 'assets.index',
                     'icon' => '
                         <path d="M3 4h18v8H3z" />
@@ -568,21 +579,25 @@
                         <path d="M5 20h14" />
                     ',
                     'visible' => $isAdmin,
+                    'mobileVisible' => $isAdmin,
                     'badgeCount' => 0,
                     'badgeType' => null,
                 ],
                 [
                     'label' => __('messages.live_chat'),
+                    'mobileLabel' => 'Live Chat',
                     'route' => 'admin.conversations.index',
                     'icon' => '
                         <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     ',
                     'visible' => $isAdmin,
+                    'mobileVisible' => false,
                     'badgeCount' => $isAdmin ? \App\Models\Conversation::where('is_open', true)->withUnreadCount()->get()->sum('unread_count') : 0,
                     'badgeType' => 'conversations',
                 ],
                 [
                     'label' => __('messages.manage_user'),
+                    'mobileLabel' => 'User',
                     'route' => 'users.index',
                     'icon' => '
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -591,6 +606,7 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     ',
                     'visible' => $user?->isAdmin(),
+                    'mobileVisible' => false,
                     'badgeCount' => (int) ($notificationCounts[$userNotificationType] ?? 0),
                     'badgeType' => 'users',
                 ],
@@ -975,7 +991,7 @@
                         <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent"></div>
 
                         @php
-                            $mobileNavItems = collect($navItems)->where('visible', true)->values()->take(5);
+                            $mobileNavItems = collect($navItems)->where('mobileVisible', true)->values();
                         @endphp
 
                         {{-- All nav items --}}
@@ -998,7 +1014,7 @@
                                         </span>
                                     @endif
                                 </div>
-                                <span class="text-[9px] font-semibold tracking-wide {{ $isActive ? 'text-emerald-300' : 'text-white/40' }}">{{ Str::limit($item['label'], 10) }}</span>
+                                <span class="text-[9px] font-semibold tracking-wide {{ $isActive ? 'text-emerald-300' : 'text-white/40' }}">{{ $item['mobileLabel'] }}</span>
                                 @if ($isActive)
                                     <span class="absolute -bottom-0 left-1/2 h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></span>
                                 @endif
