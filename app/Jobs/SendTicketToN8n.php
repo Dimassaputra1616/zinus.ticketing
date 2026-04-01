@@ -54,10 +54,13 @@ class SendTicketToN8n implements ShouldQueue
                 'created_by' => $this->ticket->user ? $this->ticket->user->name : 'Unknown User',
                 'assigned_admin' => $this->ticket->assignedAdmin ? $this->ticket->assignedAdmin->name : 'Unassigned',
                 
-                // Add keys that match Google Sheets headers exactly
+                // Add keys that match Google Sheets headers exactly (as seen in screenshot)
+                'Ticket ID' => $this->ticket->id,
                 'Ticket' => $this->ticket->title ?: strip_tags($this->ticket->description),
-                'Catagory' => $this->ticket->category ? $this->ticket->category->name : '-', // Matching typo in sheet "Catagory"
+                'Catagory' => $this->ticket->category ? $this->ticket->category->name : '-',
                 'Assigned To' => $this->ticket->assignedAdmin ? $this->ticket->assignedAdmin->name : 'Unassigned',
+                'Created Ticket' => $this->ticket->created_at ? $this->ticket->created_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'Status' => strtoupper($this->ticket->status),
 
                 'created_at' => $this->ticket->created_at ? $this->ticket->created_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
                 'updated_at' => $this->ticket->updated_at ? $this->ticket->updated_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
