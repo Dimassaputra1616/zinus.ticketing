@@ -43,7 +43,7 @@
     </style>
 @endonce
 
-<header class="sticky-header sticky top-0 z-40 relative bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
+<header class="relative z-40 bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
     <div class="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
         <div class="space-y-2 w-full lg:w-auto mt-1">
             <div class="flex flex-wrap items-center gap-2 mb-1">

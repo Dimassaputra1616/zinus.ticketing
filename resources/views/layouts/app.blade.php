@@ -705,7 +705,7 @@
 
         <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:flex-1 pb-24 lg:pb-0" style="padding-top: env(safe-area-inset-top); padding-bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5rem))">
                 {{-- Compact PWA mobile header with profile dropdown --}}
-                <div x-data="{ mobileProfileOpen: false }" class="sticky top-0 z-50 flex items-center justify-between bg-[#0F2F22] px-4 py-2 lg:hidden" style="padding-top: max(0.5rem, env(safe-area-inset-top))">
+                <div x-data="{ mobileProfileOpen: false }" class="sticky top-0 z-50 flex items-center justify-between bg-[#0F2F22] px-5 py-3 lg:hidden" style="padding-top: max(0.75rem, env(safe-area-inset-top))">
                     <div class="flex items-center gap-2">
                         <img src="{{ asset('favicon.png') }}" alt="Zinus" class="h-7 w-7 rounded-lg shadow-md">
                         <div class="leading-tight">
@@ -818,7 +818,7 @@
                         :hide-user-on-mobile="request()->routeIs('dashboard')"
                     />
                 @else
-                    <header class="sticky-header sticky top-0 z-40 relative bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
+                    <header class="relative z-40 bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
                         <div class="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                             <div class="flex flex-col gap-2">
                                 <div class="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#23455D]/70">
@@ -969,20 +969,17 @@
                     .mobile-nav-badge { animation: badgePulse 2s ease-in-out infinite; }
                     .center-fab { animation: fabPulse 3s ease-in-out infinite; }
                 </style>
-                <div class="fixed left-1/2 z-50 w-[92vw] max-w-[420px] -translate-x-1/2 lg:hidden" style="bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem))">
-                    <nav class="relative flex items-stretch justify-around gap-0.5 rounded-2xl border border-white/20 bg-[#0d1f1a]/85 p-1 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.08)]">
+                <div class="fixed bottom-0 left-0 right-0 z-50 lg:hidden" style="padding-bottom: env(safe-area-inset-bottom, 0px)">
+                    <nav class="relative flex items-stretch justify-around gap-0.5 border-t border-white/15 bg-[#0d1f1a] p-1 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]">
                         {{-- Decorative top shine line --}}
-                        <div class="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent"></div>
+                        <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent"></div>
 
                         @php
-                            $mobileNavItems = collect($navItems)->where('visible', true)->values();
-                            $totalMobileItems = min($mobileNavItems->count(), 4);
-                            $leftItems = $mobileNavItems->take(intdiv($totalMobileItems, 2));
-                            $rightItems = $mobileNavItems->slice(intdiv($totalMobileItems, 2))->take($totalMobileItems - intdiv($totalMobileItems, 2));
+                            $mobileNavItems = collect($navItems)->where('visible', true)->values()->take(5);
                         @endphp
 
-                        {{-- Left nav items --}}
-                        @foreach ($leftItems as $item)
+                        {{-- All nav items --}}
+                        @foreach ($mobileNavItems as $item)
                             @php
                                 $isActive = request()->routeIs($item['route']);
                                 $badgeCount = (int) ($item['badgeCount'] ?? 0);
@@ -1008,49 +1005,21 @@
                             </a>
                         @endforeach
 
-                        {{-- ══ Center FAB Button (Chat/Actions) ══ --}}
-                        <div class="relative flex items-center justify-center px-1" style="margin-top:-14px">
-                            <button
-                                @click="$dispatch('toggle-chat')"
-                                class="center-fab relative flex h-[52px] w-[52px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white ring-4 ring-[#0d1f1a]/90 transition-all duration-300 active:scale-90 hover:from-emerald-400 hover:to-emerald-600"
-                                title="Support & Menu"
-                            >
-                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
+                        {{-- Chat nav item --}}
+                        <button 
+                            @click="$dispatch('toggle-chat')"
+                            class="mobile-nav-pill relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2 hover:bg-white/5"
+                        >
+                            <div class="relative flex items-center justify-center">
+                                <svg class="h-[22px] w-[22px] transition-all duration-300 text-white/50" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                 </svg>
-                                {{-- Badge (synced from chat widget via JS) --}}
-                                <span id="mobile-nav-chat-badge" class="mobile-nav-badge absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-[#0d1f1a]">
+                                <span id="mobile-nav-chat-badge" class="mobile-nav-badge absolute -right-2.5 -top-2 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white ring-2 ring-[#0d1f1a]">
                                     0
                                 </span>
-                            </button>
-                        </div>
-
-                        {{-- Right nav items --}}
-                        @foreach ($rightItems as $item)
-                            @php
-                                $isActive = request()->routeIs($item['route']);
-                                $badgeCount = (int) ($item['badgeCount'] ?? 0);
-                            @endphp
-                            <a 
-                                href="{{ route($item['route']) }}" 
-                                class="mobile-nav-pill relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2 {{ $isActive ? 'is-active bg-emerald-500/20' : 'hover:bg-white/5' }}"
-                            >
-                                <div class="relative flex items-center justify-center">
-                                    <svg class="h-[22px] w-[22px] transition-all duration-300 {{ $isActive ? 'text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'text-white/50' }}" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="{{ $isActive ? '2.2' : '1.8' }}" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                        {!! $item['icon'] !!}
-                                    </svg>
-                                    @if ($badgeCount > 0)
-                                        <span class="mobile-nav-badge absolute -right-2.5 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white ring-2 ring-[#0d1f1a]">
-                                            {{ $badgeCount > 9 ? '9+' : $badgeCount }}
-                                        </span>
-                                    @endif
-                                </div>
-                                <span class="text-[9px] font-semibold tracking-wide {{ $isActive ? 'text-emerald-300' : 'text-white/40' }}">{{ Str::limit($item['label'], 10) }}</span>
-                                @if ($isActive)
-                                    <span class="absolute -bottom-0 left-1/2 h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></span>
-                                @endif
-                            </a>
-                        @endforeach
+                            </div>
+                            <span class="text-[9px] font-semibold tracking-wide text-white/40">Chat</span>
+                        </button>
                     </nav>
                 </div>
 
