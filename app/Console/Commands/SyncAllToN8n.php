@@ -39,18 +39,8 @@ class SyncAllToN8n extends Command
         $this->info("Dispatched " . $tickets->count() . " tickets to n8n...");
         foreach ($tickets as $ticket) {
             SendTicketToN8n::dispatch($ticket, 'sync');
-            sleep(1); // Small delay to avoid hitting rate limits
-        }
-
-        // Sync Assets
-        $assetQuery = Asset::query();
-        if ($limit) $assetQuery->limit($limit);
-        $assets = $assetQuery->get();
-
-        $this->info("Dispatched " . $assets->count() . " assets to n8n...");
-        foreach ($assets as $asset) {
-            SendAssetToN8n::dispatch($asset, 'sync');
-            sleep(1);
+            // Small delay to prevent hitting Google API rate limits too fast
+            usleep(500000); // 0.5 seconds
         }
 
         $this->info('All sync jobs dispatched successfully.');
