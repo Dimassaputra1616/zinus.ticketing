@@ -62,6 +62,7 @@ class SendTicketToN8n implements ShouldQueue
                 'Created Ticket' => $this->ticket->created_at ? $this->ticket->created_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
                 'month_name' => $this->ticket->created_at ? $this->ticket->created_at->timezone('Asia/Jakarta')->format('F') : null,
                 'year' => $this->ticket->created_at ? $this->ticket->created_at->timezone('Asia/Jakarta')->format('Y') : null,
+                'target_tab' => $this->ticket->created_at ? $this->ticket->created_at->timezone('Asia/Jakarta')->format('F Y') : 'Sheet1',
                 'sheet_name' => $this->ticket->created_at ? 'Tickets - ' . $this->ticket->created_at->timezone('Asia/Jakarta')->format('F Y') : 'Tickets - Unknown',
 
                 'created_at' => $this->ticket->created_at ? $this->ticket->created_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
