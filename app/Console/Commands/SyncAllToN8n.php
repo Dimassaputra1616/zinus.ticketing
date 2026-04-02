@@ -32,7 +32,7 @@ class SyncAllToN8n extends Command
         $limit = $this->option('limit');
 
         // Sync Tickets
-        $ticketQuery = Ticket::query();
+        $ticketQuery = Ticket::query()->orderBy('id', 'asc');
         if ($limit) $ticketQuery->limit($limit);
         $tickets = $ticketQuery->get();
         
@@ -44,7 +44,7 @@ class SyncAllToN8n extends Command
         }
 
         // Sync Assets
-        $assetQuery = Asset::query();
+        $assetQuery = Asset::query()->orderBy('id', 'asc');
         if ($limit) $assetQuery->limit($limit);
         $assets = $assetQuery->get();
 
