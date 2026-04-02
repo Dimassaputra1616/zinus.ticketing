@@ -39,8 +39,8 @@ class SyncAllToN8n extends Command
         $this->info("Dispatched " . $tickets->count() . " tickets to n8n...");
         foreach ($tickets as $ticket) {
             SendTicketToN8n::dispatch($ticket, 'create');
-            // Small delay to prevent hitting Google API rate limits too fast
-            usleep(500000); // 0.5 seconds
+            // Increase delay to 2 seconds to prevent hitting Google API rate limits
+            usleep(2000000); 
         }
 
         // Sync Assets
@@ -51,7 +51,7 @@ class SyncAllToN8n extends Command
         $this->info("Dispatched " . $assets->count() . " assets to n8n...");
         foreach ($assets as $asset) {
             SendAssetToN8n::dispatch($asset, 'create');
-            usleep(500000); // 0.5 seconds
+            usleep(2000000); // 2 seconds
         }
 
         $this->info('All sync jobs dispatched successfully.');
