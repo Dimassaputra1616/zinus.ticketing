@@ -30,7 +30,7 @@ class TicketComment extends Model
     protected static function booted(): void
     {
         static::created(function (self $comment) {
-            SendTicketToN8n::dispatch($comment->ticket, 'comment_added', [
+            SendTicketToN8n::dispatch($comment->ticket, 'comment', [
                 'comment_body' => strip_tags($comment->comment),
                 'commented_by' => $comment->user ? $comment->user->name : 'Unknown User',
             ]);

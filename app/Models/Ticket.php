@@ -78,7 +78,7 @@ class Ticket extends Model
     protected static function booted(): void
     {
         static::created(function (self $ticket) {
-            SendTicketToN8n::dispatch($ticket, 'created');
+            SendTicketToN8n::dispatch($ticket, 'create');
         });
 
         static::updated(function (self $ticket) {
@@ -87,7 +87,7 @@ class Ticket extends Model
             $changedFields = array_keys($ticket->getChanges());
             
             if (count(array_intersect($importantFields, $changedFields)) > 0) {
-                SendTicketToN8n::dispatch($ticket, 'updated');
+                SendTicketToN8n::dispatch($ticket, 'update');
             }
         });
     }

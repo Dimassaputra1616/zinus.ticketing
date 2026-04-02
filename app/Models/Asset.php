@@ -90,7 +90,7 @@ class Asset extends Model
     protected static function booted(): void
     {
         static::created(function (self $asset) {
-            \App\Jobs\SendAssetToN8n::dispatch($asset, 'created');
+            \App\Jobs\SendAssetToN8n::dispatch($asset, 'create');
         });
 
         static::updated(function (self $asset) {
@@ -103,7 +103,7 @@ class Asset extends Model
             $changedFields = array_keys($asset->getChanges());
             
             if (count(array_intersect($importantFields, $changedFields)) > 0) {
-                \App\Jobs\SendAssetToN8n::dispatch($asset, 'updated');
+                \App\Jobs\SendAssetToN8n::dispatch($asset, 'update');
             }
         });
     }
