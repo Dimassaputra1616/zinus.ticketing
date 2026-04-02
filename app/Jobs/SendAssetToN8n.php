@@ -60,8 +60,14 @@ class SendAssetToN8n implements ShouldQueue
                 'Status' => strtoupper($this->asset->status),
                 'User' => $this->asset->user ? $this->asset->user->name : 'Unassigned',
                 
+                'month_name' => $this->asset->created_at ? $this->asset->created_at->timezone('Asia/Jakarta')->format('F') : now()->timezone('Asia/Jakarta')->format('F'),
+                'year' => $this->asset->created_at ? $this->asset->created_at->timezone('Asia/Jakarta')->format('Y') : now()->timezone('Asia/Jakarta')->format('Y'),
+                'sheet_name' => $this->asset->created_at ? 'Assets - ' . $this->asset->created_at->timezone('Asia/Jakarta')->format('F Y') : 'Assets - ' . now()->timezone('Asia/Jakarta')->format('F Y'),
+
                 'spreadsheet_id' => config('services.n8n.google_spreadsheet_id'),
                 'timestamp' => now()->timezone('Asia/Jakarta')->format('Y-m-d H:i:s'),
+                'created_at' => $this->asset->created_at ? $this->asset->created_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'updated_at' => $this->asset->updated_at ? $this->asset->updated_at->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
             ];
 
             $response = Http::timeout(10)->post($webhookUrl, $payload);

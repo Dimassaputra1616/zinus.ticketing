@@ -86,4 +86,25 @@ class Asset extends Model
     {
         return $this->hasMany(AssetLog::class);
     }
+
+    protected static function booted(): void
+    {
+        static::created(function (self $asset) {
+            \App\Jobs\SendAssetToN8n::dispatch($asset, 'created');
+        });
+
+        static::updated(function (self $asset) {
+            // Only sync if certain fields changed to avoid infinite loops or excessive syncs
+            $importantFields = [
+                'name', 'hostname', 'status', 'department_id', 'user_id', 
+                'category_id', 'brand', 'model', 'serial_number', 'location'
+            ];
+            
+            $changedFields = array_keys($asset->getChanges());
+            
+            if (count(array_intersect($importantFields, $changedFields)) > 0) {
+                \App\Jobs\SendAssetToN8n::dispatch($asset, 'updated');
+            }
+        });
+    }
 }

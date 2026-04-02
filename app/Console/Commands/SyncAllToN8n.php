@@ -43,6 +43,17 @@ class SyncAllToN8n extends Command
             usleep(500000); // 0.5 seconds
         }
 
+        // Sync Assets
+        $assetQuery = Asset::query();
+        if ($limit) $assetQuery->limit($limit);
+        $assets = $assetQuery->get();
+
+        $this->info("Dispatched " . $assets->count() . " assets to n8n...");
+        foreach ($assets as $asset) {
+            SendAssetToN8n::dispatch($asset, 'sync');
+            usleep(500000); // 0.5 seconds
+        }
+
         $this->info('All sync jobs dispatched successfully.');
         $this->warn('Make sure N8N_WEBHOOK_URL and GOOGLE_SPREADSHEET_ID are set in .env on the server.');
     }

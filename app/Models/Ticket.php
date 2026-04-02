@@ -82,7 +82,13 @@ class Ticket extends Model
         });
 
         static::updated(function (self $ticket) {
-            SendTicketToN8n::dispatch($ticket, 'updated');
+            // Check if important fields changed to avoid spamming n8n
+            $importantFields = ['status', 'priority', 'title', 'description', 'assigned_admin_id', 'resolution'];
+            $changedFields = array_keys($ticket->getChanges());
+            
+            if (count(array_intersect($importantFields, $changedFields)) > 0) {
+                SendTicketToN8n::dispatch($ticket, 'updated');
+            }
         });
     }
 }

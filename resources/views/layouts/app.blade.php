@@ -719,7 +719,7 @@
             </div>
         </aside>
 
-        <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:flex-1 pb-24 lg:pb-0" style="padding-top: env(safe-area-inset-top); padding-bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5rem))">
+        <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:flex-1" style="padding-top: env(safe-area-inset-top)">
                 {{-- Compact PWA mobile header with profile dropdown --}}
                 <div x-data="{ mobileProfileOpen: false }" class="sticky top-0 z-50 flex items-center justify-between bg-[#0F2F22] px-5 py-3 lg:hidden" style="padding-top: max(0.75rem, env(safe-area-inset-top))">
                     <div class="flex items-center gap-2">
@@ -961,7 +961,9 @@
                         </div>
                     </div>
         </section>
-        <footer class="mt-auto bg-white/90 border-t border-slate-200 py-4">
+        {{-- Mobile spacer for bottom nav --}}
+        <div class="h-28 lg:hidden"></div>
+        <footer class="mt-auto bg-white/90 border-t border-slate-200 py-4 hidden lg:block">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-500">
                 <span>&copy; {{ now()->year }} Zinus Dream IT Support. Need help? hubungi support@zinusdream.com</span>
                 <div class="flex items-center gap-3 text-slate-400">
