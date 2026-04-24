@@ -16,7 +16,7 @@
                 autofocus
                 autocomplete="username"
                 placeholder="{{ __('messages.email_placeholder') }}"
-                class="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-[#0B2F26] placeholder-emerald-400/80 shadow-sm focus:border-[#0B2F26] focus:ring focus:ring-emerald-200/60 transition"
+                class="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-[#0B2F26] placeholder-emerald-400/80 shadow-sm focus:border-[var(--zinus-green)] focus:ring focus:ring-emerald-200/60 transition"
             >
             <x-input-error :messages="$errors->get('email')" class="text-xs text-rose-500" />
         </div>
@@ -32,7 +32,7 @@
                     required
                     autocomplete="current-password"
                     placeholder="{{ __('messages.enter_password') }}"
-                    class="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 pr-12 text-sm text-[#0B2F26] placeholder-emerald-400/80 shadow-sm focus:border-[#0B2F26] focus:ring focus:ring-emerald-200/60 transition"
+                    class="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 pr-12 text-sm text-[#0B2F26] placeholder-emerald-400/80 shadow-sm focus:border-[var(--zinus-green)] focus:ring focus:ring-emerald-200/60 transition"
                 >
                 <button
                     type="button"
@@ -68,7 +68,7 @@
             @endif
         </div>
 
-        <button type="submit" class="w-full rounded-2xl bg-[#004F3B] py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-emerald-900/30 transition hover:bg-[#006348]">
+        <button type="submit" class="w-full rounded-2xl py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-emerald-900/30 transition transition hover:opacity-90" style="background: linear-gradient(135deg, var(--zinus-green), var(--zinus-green-strong))">
             {{ __('messages.login_btn') }}
         </button>
 

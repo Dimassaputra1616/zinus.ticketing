@@ -37,14 +37,14 @@
 
         <x-ui.section-hero
             pill="{{ __('messages.dashboard') }}"
-            title="{{ __('messages.dashboard_title') }}"
+            title="{{ setting('welcome_message') ?: __('messages.dashboard_title') }}"
             description="{{ __('messages.dashboard_desc') }}"
         >
             <x-slot:pillIcon>
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6" /><path d="M6 20v-4" /><path d="M18 20v-8" /><path d="M3 13h18" /></svg>
             </x-slot:pillIcon>
             <x-slot:icon>
-                <svg class="h-7 w-7 text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></svg>
+                <svg class="h-7 w-7" style="color: var(--zinus-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></svg>
             </x-slot:icon>
         </x-ui.section-hero>
 
@@ -72,13 +72,13 @@
                             <div class="flex flex-wrap items-start justify-between gap-4">
                                 <div class="space-y-2">
                                     <p class="heading-font text-xs font-semibold uppercase tracking-[0.45em] text-[#23455D]/70 flex items-center gap-2">
-                                        <svg class="h-5 w-5 text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+                                        <svg class="h-5 w-5" style="color: var(--zinus-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
                                         {{ __('messages.create_ticket_badge') }}
                                     </p>
                                     <p class="text-2xl font-semibold text-[#0C1F2C] leading-tight">{{ __('messages.create_ticket_title') }}</p>
                                 </div>
-                                <span class="badge-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#12824C] border border-[#C5E5D0] bg-gradient-to-r from-[#E9F7F0] to-[#F6FFFB] shadow-inner shadow-white/60 transition hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(18,130,76,0.18)]">
-                                    <svg class="h-4 w-4 text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+                                <span class="badge-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] shadow-inner shadow-white/60 transition hover:-translate-y-0.5" style="color: var(--zinus-green); border-color: var(--zinus-mint); background: linear-gradient(to right, color-mix(in srgb, var(--zinus-green), transparent 95%), color-mix(in srgb, var(--zinus-mint), transparent 95%));">
+                                    <svg class="h-4 w-4" style="color: var(--zinus-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
                                         <path d="M13 2 3 14h9l-1 8 10-12h-9z" />
                                     </svg>
                                     {{ __('messages.create_ticket_btn_fast') }}
@@ -212,7 +212,8 @@
                                             type="file"
                                             name="attachments[]"
                                             multiple
-                                            class="block w-full rounded-[12px] border border-slate-200 bg-white px-5 py-3 text-sm text-slate-800 placeholder:text-slate-400 transition file:mr-3 file:rounded-full file:border-0 file:bg-emerald-600 file:px-4 file:py-2 file:text-[0.65rem] file:font-semibold file:uppercase file:tracking-[0.28em] file:text-white hover:file:bg-emerald-500 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
+                                            class="block w-full rounded-[12px] border border-slate-200 bg-white px-5 py-3 text-sm text-slate-800 placeholder:text-slate-400 transition"
+                                            style="--tw-ring-color: var(--zinus-mint);"
                                             data-file-preview-input
                                         >
                                         <p class="text-xs text-slate-500">{{ __('messages.create_ticket_attachment_desc') }}</p>
@@ -231,7 +232,8 @@
                                 <div class="md:col-span-2 flex justify-end pt-2">
                                     <button
                                         type="submit"
-                                        class="btn-primary inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:shadow-emerald-500/30"
+                                        class="inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5"
+                                        style="background: linear-gradient(135deg, var(--zinus-green), var(--zinus-green-strong));"
                                         data-submit-btn
                                     >
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>

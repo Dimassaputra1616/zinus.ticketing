@@ -43,7 +43,7 @@
     </style>
 @endonce
 
-<header class="relative z-40 bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
+<header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#d0e4de]">
     <div class="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
         <div class="space-y-2 w-full lg:w-auto mt-1">
             <div class="flex flex-wrap items-center gap-2 mb-1">
@@ -56,8 +56,8 @@
             <div class="space-y-1">
                 <h2 class="text-2xl font-semibold text-[#0C1F2C] leading-tight tracking-tight mb-0.5">{{ $title }}</h2>
                 <div class="inline-flex flex-wrap items-center gap-2">
-                    <span class="inline-flex items-center rounded-full bg-[#e5f8ef] text-[#118A58] px-2.5 py-0.5 text-sm font-semibold shadow-sm transition-all duration-200 hover:bg-[#d3f3e5]">
-                        <svg class="h-4 w-4 text-[#118A58] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-semibold shadow-sm transition-all duration-200" style="background-color: color-mix(in srgb, var(--zinus-green), transparent 90%); color: var(--zinus-green);">
+                        <svg class="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--zinus-green);">
                             <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z" />
                             <path d="M9 12l2 2 4-4" />
                         </svg>
@@ -77,7 +77,7 @@
                         class="flex items-center justify-center gap-1.5 rounded-full border border-[#c5e5d0] bg-white px-3 py-1.5 shadow-[0_10px_20px_rgba(35,69,93,0.05)] transition hover:border-[#53B77A] focus:outline-none"
                         title="Change Language"
                     >
-                        <svg class="h-[18px] w-[18px] text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: var(--zinus-green);">
                             <circle cx="12" cy="12" r="10" />
                             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                             <path d="M2 12h20" />
@@ -100,18 +100,16 @@
                         style="display: none;"
                     >
                         <p class="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Language</p>
-                        <a href="{{ route('lang.switch', 'en') }}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'en' ? 'text-[#12824C] font-semibold bg-emerald-50/50' : '' }}">
+                        <a href="{{ route('lang.switch', 'en') }}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2]" style="{{ app()->getLocale() == 'en' ? 'color: var(--zinus-green); font-weight: 600; background-color: color-mix(in srgb, var(--zinus-green), transparent 95%);' : '' }}">
                             EN - English
-                            @if(app()->getLocale() == 'en')<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>@endif
                         </a>
-                        <a href="{{ route('lang.switch', 'id') }}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'id' ? 'text-[#12824C] font-semibold bg-emerald-50/50' : '' }}">
+                        <a href="{{ route('lang.switch', 'id') }}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2]" style="{{ app()->getLocale() == 'id' ? 'color: var(--zinus-green); font-weight: 600; background-color: color-mix(in srgb, var(--zinus-green), transparent 95%);' : '' }}">
                             ID - Indonesia
-                            @if(app()->getLocale() == 'id')<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>@endif
                         </a>
-                        <a href="{{ route('lang.switch', 'ko') }}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2] {{ app()->getLocale() == 'ko' ? 'text-[#12824C] font-semibold bg-emerald-50/50' : '' }}">
+                        <a href="{{ route('lang.switch', 'ko') }}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#EDF3F2]" style="{{ app()->getLocale() == 'ko' ? 'color: var(--zinus-green); font-weight: 600; background-color: color-mix(in srgb, var(--zinus-green), transparent 95%);' : '' }}">
                             KO - Korean
-                            @if(app()->getLocale() == 'ko')<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>@endif
                         </a>
+
                     </div>
                 </div>
 
@@ -121,7 +119,7 @@
                         @click="open = !open"
                         class="flex items-center gap-2.5 rounded-full border border-[#c5e5d0] bg-white px-3.5 py-2 text-left shadow-[0_10px_20px_rgba(35,69,93,0.1)] transition hover:border-[#53B77A] focus:outline-none"
                     >
-                        <span class="h-8 w-8 rounded-full bg-gradient-to-br from-[#12824C] to-[#0F6D3F] text-white flex items-center justify-center text-sm font-semibold shadow-inner shadow-emerald-200/50 ring-2 ring-[#C5E5D0]">
+                        <span class="h-8 w-8 rounded-full text-white flex items-center justify-center text-sm font-semibold shadow-inner shadow-emerald-200/50 ring-2 ring-[#C5E5D0]" style="background: linear-gradient(135deg, var(--zinus-green), var(--zinus-green-strong));">
                             {{ $initial }}
                         </span>
                         <span class="leading-tight pr-2">
@@ -149,7 +147,8 @@
                             @csrf
                             <button
                                 type="submit"
-                                class="flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold text-[#12824C] transition hover:bg-[#EDF3F2]"
+                                class="flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold transition hover:bg-[#EDF3F2]"
+                                style="color: var(--zinus-green);"
                             >
                                 <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M13 16l4-4-4-4" />

@@ -8,6 +8,7 @@ return [
     'manage_asset' => '자산 관리',
     'live_chat' => '실시간 채팅',
     'manage_user' => '사용자 관리',
+    'tutorials' => '가이드라인',
     'logout' => '로그아웃',
     'title_ticket_management' => '더 체계적인 티켓 관리',
     'title_ticket_detail' => '티켓 세부 정보',

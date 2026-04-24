@@ -25,6 +25,13 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
+        <style>
+            :root {
+                --zinus-green: {{ setting('theme_color', '#12824C') }};
+                --zinus-green-strong: {{ setting('theme_color_strong', '#0F6D3F') }};
+                --zinus-mint: {{ setting('theme_color_secondary', '#53B77A') }};
+            }
+        </style>
     </head>
     <body class="font-sans antialiased text-slate-900" style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);">
         <div class="relative min-h-screen overflow-hidden bg-[#021711]">

@@ -356,10 +356,16 @@ Route::middleware('auth')->group(function () {
 
         return redirect()->route('login');
     })->name('logout.fallback');
+
+    Route::get('/tutorials', [App\Http\Controllers\TutorialController::class, 'index'])->name('tutorials.index');
+    Route::get('/tutorials/{slug}', [App\Http\Controllers\TutorialController::class, 'show'])->name('tutorials.show');
 });
 
 // ✅ ROUTE UNTUK ADMIN (login / dashboard)
 Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/settings', App\Livewire\Admin\Settings\Index::class)
+        ->middleware('super_admin')
+        ->name('admin.settings.index');
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
     Route::patch('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.updateStatus');
     Route::get('/admin/users', [UserController::class, 'index'])->name('users.index');
@@ -385,6 +391,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/conversations', [App\Http\Controllers\Admin\ConversationController::class, 'index'])->name('admin.conversations.index');
     Route::get('/admin/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'show'])->name('admin.conversations.show');
     Route::post('/admin/conversations/{conversation}/reply', [App\Http\Controllers\Admin\ConversationController::class, 'reply'])->name('admin.conversations.reply');
+    
+    // Admin Tutorials
+    Route::resource('admin/tutorials', App\Http\Controllers\Admin\TutorialController::class, ['as' => 'admin']);
     Route::post('/admin/conversations/{conversation}/close', [App\Http\Controllers\Admin\ConversationController::class, 'close'])->name('admin.conversations.close');
     Route::post('/admin/conversations/{conversation}/reopen', [App\Http\Controllers\Admin\ConversationController::class, 'reopen'])->name('admin.conversations.reopen');
     

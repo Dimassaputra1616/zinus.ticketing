@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'IT Ticketing') }}</title>
+        <title>{{ setting('app_name', config('app.name', 'IT Ticketing')) }}</title>
         <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
         <link rel="shortcut icon" href="{{ asset('favicon.png') }}">
 
@@ -57,9 +57,11 @@
             html { scroll-behavior: smooth; }
             html, body { min-height: 100vh; }
             :root {
-                --zinus-green: #12824C;
-                --zinus-green-strong: #0F6D3F;
-                --zinus-mint: #53B77A;
+                --zinus-green: {{ setting('theme_color', '#12824C') }};
+                --zinus-green-strong: {{ setting('theme_color_strong', '#0F6D3F') }};
+                --zinus-mint: {{ setting('theme_color_secondary', '#53B77A') }};
+                --zinus-sidebar-bg: {{ setting('sidebar_color', '#0E1F1B') }};
+                --zinus-sidebar-text: {{ setting('sidebar_text_color', '#ffffff') }};
                 --zinus-blue: #23455D;
                 --zinus-gold: #FFD966;
                 --zinus-soft: #EDF3F2;
@@ -422,11 +424,15 @@
         <!-- Preloader Overlay -->
         <div class="preloader" :class="{ 'hidden': pageLoaded }" aria-hidden="true">
             <div class="flex flex-col items-center">
-                <img src="/images/logo-email.png" alt="Zinus Logo" class="preloader-logo">
+                @if(setting('app_logo'))
+                    <img src="{{ Storage::disk('public')->url(setting('app_logo')) }}" alt="{{ setting('app_name') }}" class="preloader-logo rounded-xl">
+                @else
+                    <img src="/images/logo-email.png" alt="Zinus Logo" class="preloader-logo">
+                @endif
                 <div class="preloader-bar">
                     <div class="preloader-bar-fill"></div>
                 </div>
-                <p class="mt-4 text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-800/60">Zinus Support Center</p>
+                <p class="mt-4 text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-800/60">{{ setting('app_name', 'Zinus Support Center') }}</p>
             </div>
         </div>
 
@@ -570,6 +576,20 @@
                     'badgeType' => null,
                 ],
                 [
+                    'label' => __('messages.tutorials'),
+                    'mobileLabel' => 'Tutorial',
+                    'route' => 'tutorials.index',
+                    'icon' => '
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-0-5H20" />
+                        <path d="M8 7h6" />
+                        <path d="M8 11h8" />
+                    ',
+                    'visible' => true,
+                    'mobileVisible' => true,
+                    'badgeCount' => 0,
+                    'badgeType' => null,
+                ],
+                [
                     'label' => __('messages.manage_asset'),
                     'mobileLabel' => 'Aset',
                     'route' => 'assets.index',
@@ -577,6 +597,19 @@
                         <path d="M3 4h18v8H3z" />
                         <path d="M7 4v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4" />
                         <path d="M5 20h14" />
+                    ',
+                    'visible' => $isAdmin,
+                    'mobileVisible' => $isAdmin,
+                    'badgeCount' => 0,
+                    'badgeType' => null,
+                ],
+                [
+                    'label' => 'Manajemen Tutorial',
+                    'mobileLabel' => 'Edit Tutorial',
+                    'route' => 'admin.tutorials.index',
+                    'icon' => '
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                     ',
                     'visible' => $isAdmin,
                     'mobileVisible' => $isAdmin,
@@ -610,20 +643,38 @@
                     'badgeCount' => (int) ($notificationCounts[$userNotificationType] ?? 0),
                     'badgeType' => 'users',
                 ],
+                [
+                    'label' => __('messages.master_config'),
+                    'mobileLabel' => 'Config',
+                    'route' => 'admin.settings.index',
+                    'icon' => '
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    ',
+                    'visible' => $isAdmin && ($user?->isSuperAdmin() || $user?->email === 'dimassputra1616@gmail.com'),
+                    'mobileVisible' => false,
+                    'badgeCount' => 0,
+                    'badgeType' => null,
+                ],
             ];
         @endphp
 
         <aside
-            class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen z-50 lg:shrink-0 flex-col justify-between bg-[#0E1F1B] text-emerald-50 shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out"
+            class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen z-50 lg:shrink-0 flex-col justify-between shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out"
+            style="background-color: var(--zinus-sidebar-bg); color: var(--zinus-sidebar-text);"
             :class="sidebarCollapsed ? 'w-[72px]' : 'w-[260px]'"
         >
             <div class="flex flex-col w-full h-full">
                 <div class="px-6 pt-10 pb-6 space-y-5 transition-all duration-300" :class="sidebarCollapsed ? 'px-3 pt-5 pb-3' : 'px-6 pt-10 pb-6'">
                         <div class="flex flex-col items-center text-center space-y-3">
-                            <img src="/images/logo-email.png" alt="Zinus Dream" class="object-contain select-none transition-all duration-300" :class="sidebarCollapsed ? 'h-10 w-10' : 'h-32 w-auto max-h-32'">
+                            @if(setting('app_logo'))
+                                <img src="{{ Storage::disk('public')->url(setting('app_logo')) }}" alt="{{ setting('app_name') }}" class="object-contain select-none transition-all duration-300 rounded-xl" :class="sidebarCollapsed ? 'h-10 w-10' : 'h-32 w-auto max-h-32'">
+                            @else
+                                <img src="/images/logo-email.png" alt="Zinus Dream" class="object-contain select-none transition-all duration-300" :class="sidebarCollapsed ? 'h-10 w-10' : 'h-32 w-auto max-h-32'">
+                            @endif
                             <div class="space-y-1.5 overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'h-0 opacity-0' : 'h-auto opacity-100'">
-                                <p class="text-[12px] font-semibold uppercase tracking-[0.24em] text-emerald-50 whitespace-nowrap">Zinus Dream</p>
-                                <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#cfe9dd] whitespace-nowrap">IT Support Center</p>
+                                <p class="text-[12px] font-semibold uppercase tracking-[0.24em] whitespace-nowrap" style="color: var(--zinus-sidebar-text);">{{ setting('app_name', 'Zinus Dream') }}</p>
+                                <p class="text-[10px] font-semibold uppercase tracking-[0.22em] whitespace-nowrap opacity-80" style="color: var(--zinus-sidebar-text);">IT Support Center</p>
                             </div>
                         </div>
                     @if ($user)
@@ -639,7 +690,7 @@
                             </span>
                         </div>
                     @endif
-                    <div class="h-px w-full bg-white/20" x-show="!sidebarCollapsed" x-transition></div>
+                    <div class="h-px w-full opacity-20" x-show="!sidebarCollapsed" x-transition style="background-color: var(--zinus-sidebar-text);"></div>
                 </div>
 
                 <nav id="tour-sidebar" class="flex-1 space-y-1.5 sidebar-nav text-[14px] transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
@@ -653,12 +704,13 @@
                         <a
                             href="{{ route($item['route']) }}"
                             @class([
-                                'group flex items-center gap-3 rounded-lg py-3 text-[14px] font-medium transition-all duration-150 hover:text-white border-l-[3px] border-transparent',
-                                'text-emerald-100/80' => ! $isActive,
-                                'is-active text-white border-[#53B77A]' => $isActive,
+                                'group flex items-center rounded-lg py-3 text-[14px] font-medium transition-all duration-150 border-l-[3px] border-transparent',
+                                'opacity-80' => ! $isActive,
+                                'is-active text-white' => $isActive,
+                                'hover:text-white' => ! $isActive,
                             ])
-                            :class="sidebarCollapsed ? 'justify-center px-3' : 'px-5'"
-                            :title="sidebarCollapsed ? '{{ $item['label'] }}' : ''"
+                            :class="sidebarCollapsed ? 'justify-center px-0' : 'px-4 gap-3'"
+                            style="{{ $isActive ? 'background: linear-gradient(135deg, var(--zinus-green), var(--zinus-green-strong)); border-left-color: var(--zinus-mint); box-shadow: 0 20px 40px rgba(0,0,0,0.35);' : 'color: var(--zinus-sidebar-text);' }}"
                         >
                             <svg
                                 class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
@@ -708,7 +760,7 @@
                 <div class="px-3 pb-4 transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-6'">
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:from-emerald-600 hover:to-emerald-500" :title="sidebarCollapsed ? '{{ __('messages.logout') }}' : ''">
+                        <button type="submit" class="w-full flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:from-emerald-600 hover:to-emerald-500" :class="sidebarCollapsed ? 'px-0' : 'px-4 gap-2'" :title="sidebarCollapsed ? '{{ __('messages.logout') }}' : ''">
                             <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
                             </svg>
@@ -721,11 +773,15 @@
 
         <main class="min-h-screen flex flex-col min-w-0 relative z-10 w-full lg:flex-1" style="padding-top: env(safe-area-inset-top)">
                 {{-- Compact PWA mobile header with profile dropdown --}}
-                <div x-data="{ mobileProfileOpen: false }" class="sticky top-0 z-50 flex items-center justify-between bg-[#0F2F22] px-5 py-3 lg:hidden" style="padding-top: max(0.75rem, env(safe-area-inset-top))">
+                <div x-data="{ mobileProfileOpen: false }" class="sticky top-0 z-50 flex items-center justify-between px-5 py-3 lg:hidden" style="background-color: var(--zinus-sidebar-bg); padding-top: max(0.75rem, env(safe-area-inset-top))">
                     <div class="flex items-center gap-2">
-                        <img src="{{ asset('favicon.png') }}" alt="Zinus" class="h-7 w-7 rounded-lg shadow-md">
+                        @if(setting('app_logo'))
+                            <img src="{{ Storage::disk('public')->url(setting('app_logo')) }}" alt="{{ setting('app_name') }}" class="h-7 w-7 rounded-lg shadow-md">
+                        @else
+                            <img src="{{ asset('favicon.png') }}" alt="Zinus" class="h-7 w-7 rounded-lg shadow-md">
+                        @endif
                         <div class="leading-tight">
-                            <p class="text-[9px] font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Zinus Dream</p>
+                            <p class="text-[9px] font-semibold uppercase tracking-[0.2em] text-emerald-300/70">{{ setting('app_name', 'Zinus Dream') }}</p>
                             <p class="text-xs font-bold text-white">IT Ticketing</p>
                         </div>
                     </div>
@@ -801,7 +857,7 @@
 
                 {{-- Mobile nav drawer removed since we use Bottom Nav now --}}
 
-                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*') || request()->routeIs('remote-system.*'))
+                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*') || request()->routeIs('remote-system.*') || request()->routeIs('admin.settings.index'))
                     @php
                         $topbarTitle = match (true) {
                             request()->routeIs('tickets.show') => __('messages.title_ticket_detail'),
@@ -813,6 +869,7 @@
                             request()->routeIs('admin.conversations.index') => __('messages.title_live_chat'),
                             request()->routeIs('admin.conversations.show') => 'Detail Percakapan',
                             request()->routeIs('remote-system.*') => __('messages.title_remote_system'),
+                            request()->routeIs('admin.settings.index') => __('messages.title_master_config'),
                             default => __('messages.dashboard'),
                         };
                         $topbarDescription = match (true) {
@@ -824,6 +881,7 @@
                             request()->routeIs('assets.*') => __('messages.desc_manage_assets'),
                             request()->routeIs('admin.conversations.*') => __('messages.desc_live_chat'),
                             request()->routeIs('remote-system.*') => __('messages.desc_remote_system'),
+                            request()->routeIs('admin.settings.index') => __('messages.desc_master_config'),
                             default => __('messages.desc_ticket_management'),
                         };
                     @endphp
@@ -834,7 +892,7 @@
                         :hide-user-on-mobile="request()->routeIs('dashboard')"
                     />
                 @else
-                    <header class="relative z-40 bg-gradient-to-b from-white via-[#F6F9F8] to-[#EDF3F2] border-b border-[#d0e4de]">
+                    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#d0e4de]">
                         <div class="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                             <div class="flex flex-col gap-2">
                                 <div class="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#23455D]/70">
