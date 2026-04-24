@@ -20,6 +20,20 @@
                 
                 <form wire:submit="save" class="space-y-8">
                     
+                    <!-- General Settings Section -->
+                    <div class="space-y-6">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">General Configuration</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Application Name</label>
+                                <input type="text" wire:model="app_name" class="w-full rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 transition-all px-4 py-3 shadow-sm text-sm" placeholder="Contoh: Zinus Dream">
+                                @error('app_name') <span class="text-rose-500 text-xs font-semibold">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100"></div>
+
                     <!-- Theme Branding Section -->
                     <div class="space-y-6">
                         <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">{{ __('messages.theme_branding') }}</h3>

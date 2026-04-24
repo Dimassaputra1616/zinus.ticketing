@@ -21,7 +21,7 @@ class Index extends Component
 
     public function mount()
     {
-        $this->app_name = setting('app_name', 'Asset Management');
+        $this->app_name = setting('app_name', 'Zinus Dream');
         $this->theme_color = setting('theme_color', '#12824C');
         $this->theme_color_strong = setting('theme_color_strong', '#0F6D3F');
         $this->theme_color_secondary = setting('theme_color_secondary', '#53B77A');
