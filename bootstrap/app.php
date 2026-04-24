@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ✅ daftar alias middleware admin di sini
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'super_admin' => \App\Http\Middleware\SuperAdminMiddleware::class,
             'asset.sync' => VerifyAssetSyncToken::class,
         ]);
 
