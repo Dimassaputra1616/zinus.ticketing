@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ setting('app_name', config('app.name', 'IT Ticketing')) }}</title>
+        <title>{{ setting('app_name', config('app.name', 'Zinus Dream')) }}</title>
         <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
         <link rel="shortcut icon" href="{{ asset('favicon.png') }}">
 
@@ -782,7 +782,7 @@
                         @endif
                         <div class="leading-tight">
                             <p class="text-[9px] font-semibold uppercase tracking-[0.2em] text-emerald-300/70">{{ setting('app_name', 'Zinus Dream') }}</p>
-                            <p class="text-xs font-bold text-white">IT Ticketing</p>
+                            <p class="text-xs font-bold text-white">Zinus Dream</p>
                         </div>
                     </div>
                     @if ($user)

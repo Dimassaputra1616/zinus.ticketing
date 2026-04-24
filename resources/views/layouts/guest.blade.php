@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'IT Ticketing') }}</title>
+        <title>{{ config('app.name', 'Zinus Dream') }}</title>
         <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
         <link rel="shortcut icon" href="{{ asset('favicon.png') }}">
 
@@ -78,7 +78,7 @@
                             <img src="{{ asset('favicon.png') }}" alt="Zinus" class="h-10 w-10 rounded-xl shadow-lg">
                             <div class="leading-tight">
                                 <p class="text-[9px] font-bold uppercase tracking-[0.3em] text-emerald-600/70">Zinus Dream</p>
-                                <p class="text-base font-bold text-[#0B2F26]">IT Ticketing</p>
+                                <p class="text-base font-bold text-[#0B2F26]">Zinus Dream</p>
                             </div>
                         </div>
 

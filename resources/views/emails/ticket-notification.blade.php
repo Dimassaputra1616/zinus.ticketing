@@ -32,6 +32,6 @@
     </p>
 
     <hr>
-    <small>Pesan otomatis dari sistem IT Ticketing Zinus Dream Tangerang</small>
+    <small>Pesan otomatis dari sistem Zinus Dream Zinus Dream Tangerang</small>
 </body>
 </html>

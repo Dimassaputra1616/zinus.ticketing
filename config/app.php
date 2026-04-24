@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'IT Ticketing'),
+    'name' => env('APP_NAME', 'Zinus Dream'),
 
     /*
     |--------------------------------------------------------------------------
