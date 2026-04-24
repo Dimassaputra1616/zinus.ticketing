@@ -857,7 +857,7 @@
 
                 {{-- Mobile nav drawer removed since we use Bottom Nav now --}}
 
-                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*') || request()->routeIs('remote-system.*') || request()->routeIs('admin.settings.index'))
+                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*') || request()->routeIs('remote-system.*') || request()->routeIs('admin.settings.index') || request()->routeIs('tutorials.*') || request()->routeIs('admin.tutorials.*'))
                     @php
                         $topbarTitle = match (true) {
                             request()->routeIs('tickets.show') => __('messages.title_ticket_detail'),
@@ -870,6 +870,11 @@
                             request()->routeIs('admin.conversations.show') => 'Detail Percakapan',
                             request()->routeIs('remote-system.*') => __('messages.title_remote_system'),
                             request()->routeIs('admin.settings.index') => __('messages.title_master_config'),
+                            request()->routeIs('tutorials.index') => 'Pusat Panduan Mandiri',
+                            request()->routeIs('tutorials.show') => 'Detail Panduan',
+                            request()->routeIs('admin.tutorials.index') => 'Manajemen Tutorial',
+                            request()->routeIs('admin.tutorials.create') => 'Tambah Tutorial',
+                            request()->routeIs('admin.tutorials.edit') => 'Edit Tutorial',
                             default => __('messages.dashboard'),
                         };
                         $topbarDescription = match (true) {
@@ -882,6 +887,8 @@
                             request()->routeIs('admin.conversations.*') => __('messages.desc_live_chat'),
                             request()->routeIs('remote-system.*') => __('messages.desc_remote_system'),
                             request()->routeIs('admin.settings.index') => __('messages.desc_master_config'),
+                            request()->routeIs('tutorials.*') => 'Kelola edukasi IT mandiri untuk mempermudah operasional.',
+                            request()->routeIs('admin.tutorials.*') => 'Kelola daftar panduan dan tutorial IT system.',
                             default => __('messages.desc_ticket_management'),
                         };
                     @endphp
