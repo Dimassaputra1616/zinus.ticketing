@@ -30,7 +30,7 @@ class TutorialController extends Controller
             'title' => 'required|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
             'content' => 'required|string',
-            'image' => 'nullable|image|max:4096', // max 4MB
+            'image' => 'nullable|image|max:102400', // max 100MB
         ]);
 
         $tutorial = new Tutorial($validated);
@@ -60,7 +60,7 @@ class TutorialController extends Controller
             'title' => 'required|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
             'content' => 'required|string',
-            'image' => 'nullable|image|max:4096',
+            'image' => 'nullable|image|max:102400',
         ]);
 
         $tutorial->fill($validated);

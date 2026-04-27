@@ -76,7 +76,7 @@
                         if (file) { previewUrl = URL.createObjectURL(file); removeImage = false; }
                         else { previewUrl = null; }
                     " class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border file:border-emerald-200 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 transition shadow-sm">
-                    <p class="text-[10px] text-slate-400 mt-1">Format: JPG, PNG, WEBP. Maks 4MB.</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Format: JPG, PNG, WEBP. Maks 100MB.</p>
                 </div>
 
                 <div class="space-y-2">
