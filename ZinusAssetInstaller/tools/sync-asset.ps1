@@ -187,6 +187,247 @@ function Get-CategoryFromChassis {
     return $null
 }
 
+function Convert-WmiMonitorString {
+    param($Value)
+
+    if ($null -eq $Value) {
+        return $null
+    }
+
+    $chars = @()
+    foreach ($code in $Value) {
+        if ($null -ne $code -and [int]$code -gt 0) {
+            $chars += [char][int]$code
+        }
+    }
+
+    $text = (-join $chars).Trim()
+    if ($text -eq "") {
+        return $null
+    }
+
+    return $text
+}
+
+function Get-StableHash {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        $Value = [guid]::NewGuid().ToString()
+    }
+
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($Value)
+        $hashBytes = $sha.ComputeHash($bytes)
+        return (($hashBytes | ForEach-Object { $_.ToString("x2") }) -join "").Substring(0, 16).ToUpper()
+    } finally {
+        $sha.Dispose()
+    }
+}
+
+function Get-MonitorConnectionLabel {
+    param($Technology)
+
+    if ($null -eq $Technology) {
+        return $null
+    }
+
+    switch ([int64]$Technology) {
+        -2 { return "Uninitialized" }
+        -1 { return "Other" }
+        0 { return "Other" }
+        1 { return "VGA" }
+        2 { return "S-Video" }
+        3 { return "Composite" }
+        4 { return "Component" }
+        5 { return "DVI" }
+        6 { return "HDMI" }
+        8 { return "D-JPN" }
+        9 { return "SDI" }
+        10 { return "DisplayPort" }
+        11 { return "Embedded DisplayPort" }
+        12 { return "UDI" }
+        13 { return "Embedded UDI" }
+        14 { return "SDTV Dongle" }
+        15 { return "Miracast" }
+        16 { return "Indirect Wired" }
+        17 { return "Indirect Virtual" }
+        2147483648 { return "Internal" }
+        default { return "Unknown" }
+    }
+}
+
+function New-MonitorHostname {
+    param(
+        [string]$ParentHostname,
+        [string]$Model,
+        [string]$Serial,
+        [int]$Index
+    )
+
+    $base = $ParentHostname
+    if ([string]::IsNullOrWhiteSpace($base)) {
+        $base = $env:COMPUTERNAME
+    }
+
+    $suffix = $Model
+    if ([string]::IsNullOrWhiteSpace($suffix)) {
+        $suffix = $Serial
+    }
+    if ([string]::IsNullOrWhiteSpace($suffix)) {
+        $suffix = "MON-$Index"
+    }
+
+    $suffix = ($suffix -replace '[^A-Za-z0-9_-]+', '-').Trim('-')
+    if ([string]::IsNullOrWhiteSpace($suffix)) {
+        $suffix = "MON-$Index"
+    }
+
+    $hostname = "$base-$suffix"
+    if ($hostname.Length -gt 191) {
+        $hostname = $hostname.Substring(0, 191)
+    }
+
+    return $hostname
+}
+
+function Get-ConnectedMonitors {
+    param(
+        [string]$ParentHostname,
+        [string[]]$CommonPlaceholders,
+        [string[]]$SerialPlaceholders
+    )
+
+    $results = @()
+
+    try {
+        $monitorIds = @(Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorID -ErrorAction SilentlyContinue)
+    } catch {
+        Write-Log "Failed to collect monitor IDs: $($_.Exception.Message)" "WARN"
+        return $results
+    }
+
+    if (-not $monitorIds -or $monitorIds.Count -eq 0) {
+        return $results
+    }
+
+    try {
+        $connections = @(Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorConnectionParams -ErrorAction SilentlyContinue)
+    } catch {
+        $connections = @()
+        Write-Log "Failed to collect monitor connection info: $($_.Exception.Message)" "WARN"
+    }
+
+    try {
+        $displayParams = @(Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorBasicDisplayParams -ErrorAction SilentlyContinue)
+    } catch {
+        $displayParams = @()
+        Write-Log "Failed to collect monitor display params: $($_.Exception.Message)" "WARN"
+    }
+
+    $connectionByInstance = @{}
+    foreach ($connection in $connections) {
+        if ($connection.InstanceName) {
+            $connectionByInstance[$connection.InstanceName] = $connection
+        }
+    }
+
+    $displayByInstance = @{}
+    foreach ($display in $displayParams) {
+        if ($display.InstanceName) {
+            $displayByInstance[$display.InstanceName] = $display
+        }
+    }
+
+    $index = 0
+    foreach ($monitor in $monitorIds) {
+        $isActive = $true
+        if ($monitor.PSObject.Properties.Name -contains "Active") {
+            $isActive = [bool]$monitor.Active
+        }
+        if (-not $isActive) {
+            continue
+        }
+
+        $connection = $null
+        if ($monitor.InstanceName -and $connectionByInstance.ContainsKey($monitor.InstanceName)) {
+            $connection = $connectionByInstance[$monitor.InstanceName]
+        }
+
+        $connectionLabel = $null
+        if ($connection) {
+            $connectionLabel = Get-MonitorConnectionLabel -Technology $connection.VideoOutputTechnology
+        }
+
+        if ($connectionLabel -eq "Internal") {
+            continue
+        }
+
+        $manufacturer = Normalize-AssetValue -Value (Convert-WmiMonitorString $monitor.ManufacturerName) -Placeholders $CommonPlaceholders
+        $model = Normalize-AssetValue -Value (Convert-WmiMonitorString $monitor.UserFriendlyName) -Placeholders $CommonPlaceholders
+        $serial = Normalize-AssetValue -Value (Convert-WmiMonitorString $monitor.SerialNumberID) -Placeholders $SerialPlaceholders
+
+        $index++
+        $fingerprintSource = @($monitor.InstanceName, $serial, $manufacturer, $model) -join "|"
+        $fingerprint = $serial
+        if ([string]::IsNullOrWhiteSpace($fingerprint)) {
+            $fingerprint = Get-StableHash -Value $fingerprintSource
+        }
+        $fingerprint = ($fingerprint -replace '[^A-Za-z0-9._-]+', '-').Trim('-')
+        if ([string]::IsNullOrWhiteSpace($fingerprint)) {
+            $fingerprint = Get-StableHash -Value $fingerprintSource
+        }
+
+        $assetCode = "MON-$fingerprint"
+        if ($assetCode.Length -gt 191) {
+            $assetCode = $assetCode.Substring(0, 191)
+        }
+
+        $monitorHostname = New-MonitorHostname -ParentHostname $ParentHostname -Model $model -Serial $serial -Index $index
+        $display = $null
+        if ($monitor.InstanceName -and $displayByInstance.ContainsKey($monitor.InstanceName)) {
+            $display = $displayByInstance[$monitor.InstanceName]
+        }
+
+        $widthCm = $null
+        $heightCm = $null
+        if ($display) {
+            if ($display.MaxHorizontalImageSize -gt 0) {
+                $widthCm = [int]$display.MaxHorizontalImageSize
+            }
+            if ($display.MaxVerticalImageSize -gt 0) {
+                $heightCm = [int]$display.MaxVerticalImageSize
+            }
+        }
+
+        $displayNameParts = @()
+        if ($manufacturer) { $displayNameParts += $manufacturer }
+        if ($model) { $displayNameParts += $model }
+        if ($serial) { $displayNameParts += "($serial)" }
+        $displayName = ($displayNameParts -join " ").Trim()
+        if ([string]::IsNullOrWhiteSpace($displayName)) {
+            $displayName = $monitorHostname
+        }
+
+        $results += [pscustomobject]@{
+            asset_code       = $assetCode
+            hostname         = $monitorHostname
+            name             = $displayName
+            serial_number    = $serial
+            manufacturer     = $manufacturer
+            brand            = $manufacturer
+            model            = $model
+            connection       = $connectionLabel
+            instance_name    = $monitor.InstanceName
+            screen_width_cm  = $widthCm
+            screen_height_cm = $heightCm
+        }
+    }
+
+    return $results
+}
+
 function Get-RustDesktopId {
     # Try using rustdesk CLI first
     $exePaths = @(
@@ -384,6 +625,7 @@ $serialNumber = Get-SerialNumber -SerialPlaceholders $serialPlaceholders
 $brand = Normalize-AssetValue -Value $csInfo.Manufacturer -Placeholders $commonPlaceholders
 $model = Normalize-AssetValue -Value $csInfo.Model -Placeholders $commonPlaceholders
 $category = Get-CategoryFromChassis
+$monitors = Get-ConnectedMonitors -ParentHostname $hostname -CommonPlaceholders $commonPlaceholders -SerialPlaceholders $serialPlaceholders
 
 try {
     $baseboard = Get-CimInstance Win32_BaseBoard -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -431,6 +673,7 @@ $payload = @{
     storage_gb         = $storageGb
     storage_detail     = $storageDetail
     disks              = $disks
+    monitors           = $monitors
     installed_software = $installedSoftware
     serial_number      = $serialNumber
 }

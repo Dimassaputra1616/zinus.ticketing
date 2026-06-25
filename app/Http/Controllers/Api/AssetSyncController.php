@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
+use App\Models\AssetRelation;
 use App\Models\Category;
 use App\Models\Department;
 use App\Models\AssetSyncLog;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -41,6 +43,18 @@ class AssetSyncController extends Controller
             'agent_sha256' => ['nullable', 'string'],
             'idempotency_key' => ['nullable', 'string'],
             'rustdesk_id' => ['nullable', 'string', 'max:100'],
+            'monitors' => ['nullable', 'array', 'max:12'],
+            'monitors.*.asset_code' => ['nullable', 'string', 'max:191'],
+            'monitors.*.hostname' => ['nullable', 'string', 'max:191'],
+            'monitors.*.name' => ['nullable', 'string', 'max:191'],
+            'monitors.*.serial_number' => ['nullable', 'string', 'max:191'],
+            'monitors.*.manufacturer' => ['nullable', 'string', 'max:150'],
+            'monitors.*.brand' => ['nullable', 'string', 'max:150'],
+            'monitors.*.model' => ['nullable', 'string', 'max:150'],
+            'monitors.*.connection' => ['nullable', 'string', 'max:100'],
+            'monitors.*.instance_name' => ['nullable', 'string', 'max:255'],
+            'monitors.*.screen_width_cm' => ['nullable', 'numeric', 'min:0'],
+            'monitors.*.screen_height_cm' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         if ($validator->fails()) {
@@ -293,6 +307,12 @@ class AssetSyncController extends Controller
             }
 
             $mode = $existingAsset ? ($restored ? 'restored' : 'updated') : 'created';
+            $monitorSync = $this->syncAttachedMonitors(
+                $asset,
+                $data['monitors'] ?? [],
+                $departmentId,
+                $factory
+            );
 
             AssetSyncLog::create([
                 'asset_id' => $asset->id,
@@ -311,6 +331,7 @@ class AssetSyncController extends Controller
                 'data' => [
                     'asset_id' => $asset->id,
                     'mode' => $mode,
+                    'monitors' => $monitorSync,
                 ],
             ]);
         } catch (Throwable $e) {
@@ -365,6 +386,345 @@ class AssetSyncController extends Controller
                 'error_id' => $errorId,
             ], 500);
         }
+    }
+
+    protected function syncAttachedMonitors(Asset $parentAsset, array $monitors, ?int $departmentId, ?string $factory): array
+    {
+        if (empty($monitors)) {
+            return [
+                'received' => 0,
+                'synced' => 0,
+                'created' => 0,
+                'updated' => 0,
+                'linked_manual' => 0,
+                'attached' => 0,
+                'skipped' => 0,
+                'detached' => 0,
+            ];
+        }
+
+        $summary = [
+            'received' => count($monitors),
+            'synced' => 0,
+            'created' => 0,
+            'updated' => 0,
+            'linked_manual' => 0,
+            'attached' => 0,
+            'skipped' => 0,
+            'detached' => 0,
+        ];
+        $syncedMonitorIds = [];
+        $monitorCategory = Category::firstOrCreate(['name' => 'Monitor']);
+
+        foreach ($monitors as $index => $monitorPayload) {
+            if (! is_array($monitorPayload)) {
+                $summary['skipped']++;
+                continue;
+            }
+
+            $monitorData = $this->normalizeMonitorPayload($monitorPayload, $parentAsset, $index + 1);
+            if (! $monitorData['asset_code']) {
+                $summary['skipped']++;
+                continue;
+            }
+
+            $result = DB::transaction(function () use ($parentAsset, $departmentId, $factory, $monitorCategory, $monitorData) {
+                $existingMonitor = $this->findExistingMonitor($monitorData);
+                $restored = false;
+
+                if ($existingMonitor && $existingMonitor->trashed()) {
+                    if ($existingMonitor->source_type === 'manual') {
+                        return ['mode' => 'skipped', 'asset' => null, 'attached' => false];
+                    }
+
+                    $existingMonitor->restore();
+                    $restored = true;
+                }
+
+                if (! $existingMonitor || $existingMonitor->source_type !== 'manual') {
+                    $this->clearMonitorConflicts($monitorData, $existingMonitor?->id);
+                }
+
+                if ($existingMonitor && $existingMonitor->source_type === 'manual') {
+                    $monitorAsset = $existingMonitor;
+                    $mode = 'linked_manual';
+                } else {
+                    $payload = [
+                        'asset_code' => $monitorData['asset_code'],
+                        'name' => $monitorData['name'],
+                        'hostname' => $monitorData['hostname'],
+                        'category' => 'Monitor',
+                        'category_id' => $monitorCategory->id,
+                        'brand' => $monitorData['brand'],
+                        'model' => $monitorData['model'],
+                        'serial_number' => $monitorData['serial_number'],
+                        'specs' => $this->buildMonitorSpecs($monitorData, $parentAsset),
+                        'status' => Asset::STATUS_IN_USE,
+                        'department_id' => $departmentId,
+                        'location' => $factory ?: $parentAsset->location,
+                        'sync_source' => 'agent',
+                        'source_type' => 'agent',
+                        'last_synced_at' => now(),
+                    ];
+
+                    if ($existingMonitor) {
+                        $existingMonitor->fill($payload);
+                        $existingMonitor->save();
+                        $monitorAsset = $existingMonitor->fresh();
+                        $mode = $restored ? 'restored' : 'updated';
+                    } else {
+                        $monitorAsset = Asset::create($payload);
+                        $mode = 'created';
+                    }
+                }
+
+                $attached = $this->attachMonitorToParent($parentAsset, $monitorAsset);
+
+                return ['mode' => $mode, 'asset' => $monitorAsset, 'attached' => $attached];
+            });
+
+            if (! $result['asset']) {
+                $summary['skipped']++;
+                continue;
+            }
+
+            $syncedMonitorIds[] = $result['asset']->id;
+            $summary['synced']++;
+
+            if ($result['mode'] === 'created') {
+                $summary['created']++;
+            } elseif ($result['mode'] === 'linked_manual') {
+                $summary['linked_manual']++;
+            } else {
+                $summary['updated']++;
+            }
+
+            if ($result['attached']) {
+                $summary['attached']++;
+            }
+        }
+
+        if (! empty($syncedMonitorIds)) {
+            $summary['detached'] = $this->detachMissingAgentMonitors($parentAsset, $syncedMonitorIds);
+        }
+
+        return $summary;
+    }
+
+    protected function normalizeMonitorPayload(array $monitor, Asset $parentAsset, int $index): array
+    {
+        $serial = $this->cleanAssetString($monitor['serial_number'] ?? null);
+        $instanceName = $this->cleanAssetString($monitor['instance_name'] ?? null, 255);
+        $brand = $this->cleanAssetString($monitor['brand'] ?? ($monitor['manufacturer'] ?? null), 150);
+        $model = $this->cleanAssetString($monitor['model'] ?? null, 150);
+        $connection = $this->cleanAssetString($monitor['connection'] ?? null, 100);
+
+        $assetCode = $this->cleanAssetString($monitor['asset_code'] ?? null);
+        if (! $assetCode) {
+            $fingerprint = $serial ?: $instanceName ?: ($parentAsset->asset_code . '-MON-' . $index);
+            $assetCode = 'MON-' . $this->assetCodeSegment($fingerprint);
+        }
+        $assetCode = Str::limit($assetCode, 191, '');
+
+        $hostname = $this->cleanAssetString($monitor['hostname'] ?? null);
+        if (! $hostname) {
+            $hostname = Str::limit($parentAsset->hostname ?: $parentAsset->asset_code, 150, '')
+                . '-MON-' . $index;
+        }
+        $hostname = Str::limit($hostname, 191, '');
+
+        $name = $this->cleanAssetString($monitor['name'] ?? null);
+        if (! $name) {
+            $nameParts = array_filter([$model, $serial ? "({$serial})" : null]);
+            $name = $nameParts ? implode(' ', $nameParts) : $hostname;
+        }
+        $name = Str::limit($name, 191, '');
+
+        return [
+            'asset_code' => $assetCode,
+            'hostname' => $hostname,
+            'name' => $name,
+            'serial_number' => $serial,
+            'brand' => $brand,
+            'model' => $model,
+            'connection' => $connection,
+            'instance_name' => $instanceName,
+            'screen_width_cm' => isset($monitor['screen_width_cm']) ? (float) $monitor['screen_width_cm'] : null,
+            'screen_height_cm' => isset($monitor['screen_height_cm']) ? (float) $monitor['screen_height_cm'] : null,
+        ];
+    }
+
+    protected function findExistingMonitor(array $monitorData): ?Asset
+    {
+        $serial = $monitorData['serial_number'];
+        $hostname = $monitorData['hostname'];
+
+        return Asset::withTrashed()
+            ->where(function ($query) use ($monitorData, $serial, $hostname) {
+                $query->where('asset_code', $monitorData['asset_code']);
+
+                if ($serial) {
+                    $query->orWhere(function ($nested) use ($serial) {
+                        $nested->where('serial_number', $serial)
+                            ->where(function ($categoryQuery) {
+                                $categoryQuery->where('category', 'Monitor')
+                                    ->orWhere('asset_code', 'like', 'MON-%');
+                            });
+                    });
+                }
+
+                if ($hostname) {
+                    $query->orWhere(function ($nested) use ($hostname) {
+                        $nested->where('hostname', $hostname)
+                            ->where(function ($categoryQuery) {
+                                $categoryQuery->where('category', 'Monitor')
+                                    ->orWhere('asset_code', 'like', 'MON-%');
+                            });
+                    });
+                }
+            })
+            ->latest('updated_at')
+            ->first();
+    }
+
+    protected function clearMonitorConflicts(array $monitorData, ?int $keepId): void
+    {
+        $conflictIds = DB::table('assets')
+            ->where(function ($query) use ($monitorData) {
+                $query->where('asset_code', $monitorData['asset_code']);
+
+                if ($monitorData['serial_number']) {
+                    $query->orWhere('serial_number', $monitorData['serial_number']);
+                }
+
+                if ($monitorData['hostname']) {
+                    $query->orWhere('hostname', $monitorData['hostname']);
+                }
+            })
+            ->where(function ($query) {
+                $query->where('source_type', '!=', 'manual')
+                    ->orWhereNull('source_type');
+            })
+            ->where(function ($query) {
+                $query->where('category', 'Monitor')
+                    ->orWhere('asset_code', 'like', 'MON-%');
+            })
+            ->when($keepId, fn ($query) => $query->where('id', '!=', $keepId))
+            ->pluck('id');
+
+        foreach ($conflictIds as $conflictId) {
+            DB::table('assets')
+                ->where('id', $conflictId)
+                ->update([
+                    'serial_number' => null,
+                    'asset_code' => '_MERGED_MON_' . $conflictId,
+                    'hostname' => null,
+                    'name' => '_merged_monitor_' . $conflictId,
+                    'updated_at' => now(),
+                ]);
+        }
+    }
+
+    protected function attachMonitorToParent(Asset $parentAsset, Asset $monitorAsset): bool
+    {
+        AssetRelation::active()
+            ->where('child_asset_id', $monitorAsset->id)
+            ->where('parent_asset_id', '!=', $parentAsset->id)
+            ->get()
+            ->each(function (AssetRelation $relation) use ($parentAsset) {
+                $relation->update([
+                    'ended_at' => now(),
+                    'notes' => trim(($relation->notes ? $relation->notes . "\n" : '') . 'Auto-detached by agent sync before assigning to ' . $parentAsset->asset_code),
+                ]);
+            });
+
+        $existingRelation = AssetRelation::active()
+            ->where('parent_asset_id', $parentAsset->id)
+            ->where('child_asset_id', $monitorAsset->id)
+            ->first();
+
+        if ($existingRelation) {
+            return false;
+        }
+
+        AssetRelation::create([
+            'parent_asset_id' => $parentAsset->id,
+            'child_asset_id' => $monitorAsset->id,
+            'relation_type' => AssetRelation::TYPE_ATTACHED,
+            'started_at' => now(),
+            'notes' => 'Auto-attached by asset sync agent.',
+        ]);
+
+        return true;
+    }
+
+    protected function detachMissingAgentMonitors(Asset $parentAsset, array $syncedMonitorIds): int
+    {
+        $staleRelations = AssetRelation::with('childAsset')
+            ->active()
+            ->where('parent_asset_id', $parentAsset->id)
+            ->whereNotIn('child_asset_id', $syncedMonitorIds)
+            ->whereHas('childAsset', function ($query) {
+                $query->where('category', 'Monitor')
+                    ->where('source_type', 'agent');
+            })
+            ->get();
+
+        foreach ($staleRelations as $relation) {
+            $relation->update([
+                'ended_at' => now(),
+                'notes' => trim(($relation->notes ? $relation->notes . "\n" : '') . 'Auto-detached because monitor was not reported by the latest agent sync.'),
+            ]);
+        }
+
+        return $staleRelations->count();
+    }
+
+    protected function buildMonitorSpecs(array $monitorData, Asset $parentAsset): ?string
+    {
+        $parts = [
+            'Host PC: ' . $parentAsset->asset_code,
+        ];
+
+        foreach ([
+            'brand' => 'Brand',
+            'model' => 'Model',
+            'serial_number' => 'Serial',
+            'connection' => 'Connection',
+            'instance_name' => 'Instance',
+        ] as $key => $label) {
+            if (filled($monitorData[$key] ?? null)) {
+                $parts[] = $label . ': ' . $monitorData[$key];
+            }
+        }
+
+        if (! empty($monitorData['screen_width_cm']) || ! empty($monitorData['screen_height_cm'])) {
+            $parts[] = 'Size: ' . ($monitorData['screen_width_cm'] ?: '?') . ' x ' . ($monitorData['screen_height_cm'] ?: '?') . ' cm';
+        }
+
+        return implode(' | ', $parts);
+    }
+
+    protected function cleanAssetString(mixed $value, int $limit = 191): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $cleaned = trim(preg_replace('/\s+/', ' ', (string) $value));
+
+        return $cleaned === '' ? null : Str::limit($cleaned, $limit, '');
+    }
+
+    protected function assetCodeSegment(string $value): string
+    {
+        $segment = trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $value), '-');
+
+        if ($segment === '') {
+            $segment = strtoupper(substr(hash('sha256', $value), 0, 16));
+        }
+
+        return Str::limit($segment, 187, '');
     }
 
     protected function validationErrorResponse(Request $request, array $errors): JsonResponse

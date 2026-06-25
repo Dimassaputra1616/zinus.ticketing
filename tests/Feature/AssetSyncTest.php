@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Asset;
+use App\Models\AssetRelation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -183,6 +184,105 @@ class AssetSyncTest extends TestCase
         $this->assertDatabaseHas('assets', [
             'serial_number' => 'SN-DELETED',
             'deleted_at' => null,
+        ]);
+    }
+
+    public function test_sync_creates_and_attaches_reported_monitors(): void
+    {
+        $response = $this->syncAsset([
+            'hostname' => 'pc-monitor-host',
+            'serial_number' => 'PC-SN-001',
+            'category' => 'PC',
+            'factory' => 'Factory A',
+            'department' => 'IT',
+            'monitors' => [
+                [
+                    'asset_code' => 'MON-DISPLAY-001',
+                    'hostname' => 'pc-monitor-host-P2419H',
+                    'name' => 'Dell P2419H',
+                    'serial_number' => 'DISPLAY-001',
+                    'manufacturer' => 'Dell',
+                    'model' => 'P2419H',
+                    'connection' => 'HDMI',
+                    'instance_name' => 'DISPLAY\\DEL40A9\\1&UID4352',
+                    'screen_width_cm' => 52,
+                    'screen_height_cm' => 29,
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.monitors.received', 1)
+            ->assertJsonPath('data.monitors.synced', 1)
+            ->assertJsonPath('data.monitors.created', 1)
+            ->assertJsonPath('data.monitors.attached', 1);
+
+        $parent = Asset::where('serial_number', 'PC-SN-001')->firstOrFail();
+        $monitor = Asset::where('asset_code', 'MON-DISPLAY-001')->firstOrFail();
+
+        $this->assertEquals('Monitor', $monitor->category);
+        $this->assertEquals('pc-monitor-host-P2419H', $monitor->hostname);
+        $this->assertEquals('Dell', $monitor->brand);
+        $this->assertEquals('P2419H', $monitor->model);
+        $this->assertStringContainsString('Connection: HDMI', $monitor->specs);
+
+        $this->assertDatabaseHas('asset_relations', [
+            'parent_asset_id' => $parent->id,
+            'child_asset_id' => $monitor->id,
+            'relation_type' => AssetRelation::TYPE_ATTACHED,
+            'ended_at' => null,
+        ]);
+    }
+
+    public function test_sync_moves_monitor_relation_to_latest_reporting_pc(): void
+    {
+        $this->syncAsset([
+            'hostname' => 'first-pc',
+            'serial_number' => 'PC-SN-FIRST',
+            'category' => 'PC',
+            'monitors' => [
+                [
+                    'asset_code' => 'MON-MOVE-001',
+                    'hostname' => 'first-pc-MON-1',
+                    'serial_number' => 'MON-MOVE-001',
+                    'model' => 'Move Display',
+                ],
+            ],
+        ])->assertStatus(200);
+
+        $firstParent = Asset::where('serial_number', 'PC-SN-FIRST')->firstOrFail();
+        $monitor = Asset::where('asset_code', 'MON-MOVE-001')->firstOrFail();
+
+        $this->syncAsset([
+            'hostname' => 'second-pc',
+            'serial_number' => 'PC-SN-SECOND',
+            'category' => 'PC',
+            'monitors' => [
+                [
+                    'asset_code' => 'MON-MOVE-001',
+                    'hostname' => 'second-pc-MON-1',
+                    'serial_number' => 'MON-MOVE-001',
+                    'model' => 'Move Display',
+                ],
+            ],
+        ])->assertStatus(200)
+            ->assertJsonPath('data.monitors.updated', 1)
+            ->assertJsonPath('data.monitors.attached', 1);
+
+        $secondParent = Asset::where('serial_number', 'PC-SN-SECOND')->firstOrFail();
+        $monitor->refresh();
+
+        $this->assertEquals('second-pc-MON-1', $monitor->hostname);
+        $this->assertEquals(1, AssetRelation::active()->where('child_asset_id', $monitor->id)->count());
+        $this->assertDatabaseHas('asset_relations', [
+            'parent_asset_id' => $secondParent->id,
+            'child_asset_id' => $monitor->id,
+            'ended_at' => null,
+        ]);
+        $this->assertDatabaseMissing('asset_relations', [
+            'parent_asset_id' => $firstParent->id,
+            'child_asset_id' => $monitor->id,
+            'ended_at' => null,
         ]);
     }
 }
