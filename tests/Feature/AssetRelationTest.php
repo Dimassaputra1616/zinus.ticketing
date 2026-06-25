@@ -71,6 +71,33 @@ class AssetRelationTest extends TestCase
         $this->assertDatabaseCount('asset_relations', 0);
     }
 
+    public function test_asset_detail_page_renders_operational_sections(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = $this->asset('PC-001', 'Office PC', 'PC');
+        $asset->update([
+            'hostname' => 'office-pc-01',
+            'serial_number' => 'SN-001',
+            'condition' => 'good',
+            'lifecycle_status' => 'active',
+            'cpu' => 'Intel Core i5',
+            'ram_gb' => 16,
+            'storage_gb' => 512,
+            'os_name' => 'Windows 11',
+            'ip_address' => '10.10.10.10',
+            'rustdesk_id' => '123456789',
+            'warranty_until' => now()->addYear()->toDateString(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('assets.show', $asset))
+            ->assertOk()
+            ->assertSee('Technical Inventory')
+            ->assertSee('Lifecycle Control')
+            ->assertSee('Relationship Workspace')
+            ->assertSee('Asset Mutation Timeline');
+    }
+
     private function asset(string $code, string $name, string $category): Asset
     {
         return Asset::create([
