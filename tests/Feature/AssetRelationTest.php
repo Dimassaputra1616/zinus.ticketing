@@ -75,6 +75,16 @@ class AssetRelationTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $asset = $this->asset('PC-001', 'Office PC', 'PC');
+        $monitor = $this->asset('MON-001', 'Desk Monitor', 'Monitor');
+        $monitor->update(['hostname' => 'monitor-frontdesk-01']);
+        AssetRelation::create([
+            'parent_asset_id' => $asset->id,
+            'child_asset_id' => $monitor->id,
+            'relation_type' => AssetRelation::TYPE_ATTACHED,
+            'started_at' => now(),
+            'created_by' => $admin->id,
+        ]);
+
         $asset->update([
             'hostname' => 'office-pc-01',
             'serial_number' => 'SN-001',
@@ -106,6 +116,9 @@ class AssetRelationTest extends TestCase
         $this->assertStringContainsString('1034.66 GB', $technicalInventoryHtml);
         $this->assertStringContainsString('Microsoft Windows 10 Home Single Language', $technicalInventoryHtml);
         $this->assertStringContainsString('10.62.36.74', $technicalInventoryHtml);
+        $this->assertStringContainsString('monitor-frontdesk-01', $technicalInventoryHtml);
+        $this->assertStringContainsString(e(route('assets.show', $monitor)), $technicalInventoryHtml);
+        $this->assertStringNotContainsString('Desk Monitor', $technicalInventoryHtml);
     }
 
     private function asset(string $code, string $name, string $category): Asset

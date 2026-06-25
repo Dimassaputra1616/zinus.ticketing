@@ -100,6 +100,14 @@
     $osValue = $asset->os_name ?: $specFallback('os', 'operating system');
     $ipValue = $asset->ip_address ?: $specFallback('ip', 'ip address');
     $rawUserValue = $specFallback('user', 'username', 'logged user');
+    $attachedMonitorLinks = $attachedAssets
+        ->filter(fn ($child) => \Illuminate\Support\Str::contains(\Illuminate\Support\Str::lower((string) $child->category), 'monitor'))
+        ->map(fn ($child) => [
+            'label' => $child->hostname ?: $child->asset_code,
+            'url' => route('assets.show', $child),
+        ])
+        ->filter(fn ($link) => filled($link['label']))
+        ->values();
 
     $trackedFields = [
         $asset->asset_code,
@@ -141,6 +149,9 @@
         ['label' => 'IP Address', 'value' => $ipValue, 'mono' => true, 'copy' => true],
         ['label' => 'RustDesk ID', 'value' => $asset->rustdesk_id, 'mono' => true, 'copy' => true],
     ];
+    if ($attachedMonitorLinks->isNotEmpty()) {
+        $hardwareFields[] = ['label' => 'Attached Monitor', 'links' => $attachedMonitorLinks, 'mono' => true];
+    }
 
     $ownershipFields = [
         ['label' => 'Factory', 'value' => $asset->factory],
@@ -419,14 +430,34 @@
 
                         <div class="mt-5 grid gap-x-6 gap-y-1 md:grid-cols-2">
                             @foreach (array_merge($identityFields, $hardwareFields) as $field)
+                                @php
+                                    $fieldLinks = collect($field['links'] ?? []);
+                                    $hasFieldLinks = $fieldLinks->isNotEmpty();
+                                    $fieldTitle = $hasFieldLinks ? $fieldLinks->pluck('label')->join(', ') : $formatValue($field['value'] ?? null);
+                                @endphp
                                 <div class="flex min-h-[54px] items-center justify-between gap-4 border-b border-slate-100 py-3">
                                     <div class="min-w-0">
                                         <div class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">{{ $field['label'] }}</div>
-                                        <div class="mt-1 truncate text-sm font-semibold text-slate-900 {{ ($field['mono'] ?? false) ? 'font-mono' : '' }}" title="{{ $formatValue($field['value']) }}">
-                                            {{ $formatValue($field['value']) }}
+                                        <div class="mt-1 text-sm font-semibold text-slate-900 {{ ($field['mono'] ?? false) ? 'font-mono' : '' }}" title="{{ $fieldTitle }}">
+                                            @if ($hasFieldLinks)
+                                                <div class="flex min-w-0 flex-wrap gap-2">
+                                                    @foreach ($fieldLinks as $link)
+                                                        <a
+                                                            href="{{ $link['url'] }}"
+                                                            class="inline-flex max-w-full items-center rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 hover:text-emerald-800"
+                                                        >
+                                                            <span class="truncate">{{ $link['label'] }}</span>
+                                                        </a>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <div class="truncate">
+                                                    {{ $formatValue($field['value'] ?? null) }}
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
-                                    @if (($field['copy'] ?? false) && filled($field['value']))
+                                    @if (($field['copy'] ?? false) && filled($field['value'] ?? null))
                                         <button
                                             type="button"
                                             class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-emerald-200 hover:text-emerald-700"
