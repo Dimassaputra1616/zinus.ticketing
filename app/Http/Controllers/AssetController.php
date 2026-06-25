@@ -42,7 +42,15 @@ class AssetController extends Controller
         $perPage = (int) $request->query('per_page', 10);
         $perPage = $perPage > 0 ? min($perPage, 100) : 10;
 
-        $base = Asset::query();
+        $base = Asset::query()->where(function ($q) {
+            $q->where('source_type', 'agent')
+              ->orWhereNull('source_type')
+              ->orWhereIn('category', ['PC', 'Laptop']);
+        })->where(function ($q) {
+            $q->where('source_type', '!=', 'manual')
+              ->orWhereNull('source_type');
+        });
+
         $stats = [
             'total' => (clone $base)->count(),
             'active' => (clone $base)->where('status', $statusMap['active'])->count(),
@@ -52,6 +60,14 @@ class AssetController extends Controller
         ];
 
         $assetsQuery = $this->assetService->filteredQuery($filters, false);
+        $assetsQuery->where(function ($q) {
+            $q->where('source_type', 'agent')
+              ->orWhereNull('source_type')
+              ->orWhereIn('category', ['PC', 'Laptop']);
+        })->where(function ($q) {
+            $q->where('source_type', '!=', 'manual')
+              ->orWhereNull('source_type');
+        });
 
         if (array_key_exists($statusKey, $statusMap)) {
             $assetsQuery->where('status', $statusMap[$statusKey]);
@@ -69,7 +85,7 @@ class AssetController extends Controller
                     'Zinus F2 Karawang',
                     'Zinus F3 Tangerang',
                 ],
-                'categories' => ['PC', 'Laptop', 'Monitor', 'Peripheral'],
+                'categories' => ['PC', 'Laptop'],
                 'statuses' => ['active', 'in_repair', 'spare', 'retired'],
             ],
         ]);

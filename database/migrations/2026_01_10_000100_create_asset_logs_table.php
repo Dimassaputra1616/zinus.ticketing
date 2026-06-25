@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('asset_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('asset_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('asset_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('actor_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('action');
             $table->text('notes')->nullable();

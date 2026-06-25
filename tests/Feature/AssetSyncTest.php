@@ -96,6 +96,7 @@ class AssetSyncTest extends TestCase
             'serial_number' => 'OLD-SERIAL',
             'asset_code' => 'OLD-SERIAL',
             'sync_source' => 'agent',
+            'source_type' => 'agent',
             'status' => 'in_use',
         ]);
 
@@ -131,6 +132,7 @@ class AssetSyncTest extends TestCase
                 'serial_number' => 'SN-MULTI',
                 'asset_code' => 'SN-MULTI-2',
                 'sync_source' => 'agent',
+                'source_type' => 'agent',
                 'status' => 'in_use',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -163,6 +165,7 @@ class AssetSyncTest extends TestCase
             'serial_number' => 'SN-DELETED',
             'asset_code' => 'SN-DELETED',
             'sync_source' => 'agent',
+            'source_type' => 'agent',
             'status' => 'in_use',
         ]);
         $asset->delete();

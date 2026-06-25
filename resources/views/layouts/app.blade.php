@@ -660,7 +660,7 @@
         @endphp
 
         <aside
-            class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen z-50 lg:shrink-0 flex-col justify-between shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out"
+            class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen z-50 lg:shrink-0 flex-col justify-between shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto overflow-x-hidden custom-scrollbar transition-all duration-300 ease-in-out"
             style="background-color: var(--zinus-sidebar-bg); color: var(--zinus-sidebar-text);"
             :class="sidebarCollapsed ? 'w-[72px]' : 'w-[260px]'"
         >
@@ -696,48 +696,133 @@
                 <nav id="tour-sidebar" class="flex-1 space-y-1.5 sidebar-nav text-[14px] transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
                     @foreach ($navItems as $item)
                         @continue(! $item['visible'])
-                        @php
-                            $isActive = request()->routeIs($item['route']);
-                            $badgeCount = (int) ($item['badgeCount'] ?? 0);
-                            $badgeType = $item['badgeType'] ?? null;
-                        @endphp
-                        <a
-                            href="{{ route($item['route']) }}"
-                            @class([
-                                'group flex items-center rounded-lg py-3 text-[14px] font-medium transition-all duration-150 border-l-[3px] border-transparent',
-                                'opacity-80' => ! $isActive,
-                                'is-active text-white' => $isActive,
-                                'hover:text-white' => ! $isActive,
-                            ])
-                            :class="sidebarCollapsed ? 'justify-center px-0' : 'px-4 gap-3'"
-                            style="{{ $isActive ? 'background: linear-gradient(135deg, var(--zinus-green), var(--zinus-green-strong)); border-left-color: var(--zinus-mint); box-shadow: 0 20px 40px rgba(0,0,0,0.35);' : 'color: var(--zinus-sidebar-text);' }}"
-                        >
-                            <svg
-                                class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="1.8"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                viewBox="0 0 24 24"
-                            >
-                                {!! $item['icon'] !!}
-                            </svg>
-                            <span class="flex-1 whitespace-nowrap overflow-hidden transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>{{ $item['label'] }}</span>
-                            @if ($badgeType)
-                                <span
-                                    class="inline-flex items-center gap-1 rounded-full bg-rose-100 py-0.5 text-[0.65rem] font-semibold uppercase text-rose-600 transition-all duration-300"
-                                    :class="sidebarCollapsed ? 'absolute -top-1 -right-1 w-2 h-2 p-0 min-w-0 rounded-full' : 'ml-auto px-2 tracking-[0.25em]'"
-                                    data-notification-badge="{{ $badgeType }}"
-                                    @if ($badgeCount === 0) hidden style="display: none;" @endif
+                        @if ($item['route'] === 'assets.index')
+                            @php
+                                $isAssetCenterActive = request()->is('admin/assets*') || request()->is('admin/assets/*');
+                            @endphp
+                            <div x-data="{ open: {{ $isAssetCenterActive ? 'true' : 'false' }} }" class="w-full">
+                                <button
+                                    @click="open = !open"
+                                    @class([
+                                        'w-full group flex items-center rounded-lg py-3 text-[14px] font-medium transition-all duration-150 border-l-[3px]',
+                                        'opacity-80 hover:text-white hover:opacity-100' => ! $isAssetCenterActive,
+                                        'text-white font-semibold' => $isAssetCenterActive,
+                                    ])
+                                    :class="sidebarCollapsed ? 'justify-center px-0' : 'px-4 gap-3'"
+                                    style="{{ $isAssetCenterActive ? 'border-left-color: var(--zinus-mint); background: rgba(255, 255, 255, 0.05);' : 'color: var(--zinus-sidebar-text); border-left-color: transparent;' }}"
                                 >
-                                    <template x-if="!sidebarCollapsed">
-                                        <span class="flex items-center gap-1"><span>New</span><span class="tracking-normal" data-notification-count="{{ $badgeType }}">{{ $badgeCount > 9 ? '9+' : $badgeCount }}</span></span>
-                                    </template>
-                                </span>
-                            @endif
-                        </a>
+                                    <svg
+                                        class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.8"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        {!! $item['icon'] !!}
+                                    </svg>
+                                    <span class="flex-1 text-left whitespace-nowrap overflow-hidden transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>Asset Center</span>
+                                    <svg
+                                        class="h-4 w-4 transition-transform duration-200"
+                                        :class="open ? 'rotate-180' : ''"
+                                        x-show="!sidebarCollapsed"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.06z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                                <div
+                                    x-show="open && !sidebarCollapsed"
+                                    x-transition:enter="transition ease-out duration-100"
+                                    x-transition:enter-start="transform opacity-0 scale-95"
+                                    x-transition:enter-end="transform opacity-100 scale-100"
+                                    class="mt-1 space-y-1 pl-9 text-xs"
+                                >
+                                    <a href="{{ route('admin.assets.overview') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.overview') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Dashboard (Overview)
+                                    </a>
+                                    <a href="{{ route('admin.assets.pc') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.pc') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        PC
+                                    </a>
+                                    <a href="{{ route('admin.assets.laptop') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.laptop') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Laptop
+                                    </a>
+                                    <a href="{{ route('admin.assets.monitor') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.monitor') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Monitor
+                                    </a>
+                                    <a href="{{ route('admin.assets.printer-scanner') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.printer-scanner') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Printer & Scanner
+                                    </a>
+                                    <a href="{{ route('admin.assets.network-device') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.network-device') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Network Device
+                                    </a>
+                                    <a href="{{ route('admin.assets.cctv') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.cctv') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        CCTV
+                                    </a>
+                                    <a href="{{ route('admin.assets.peripheral') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.peripheral') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Peripheral
+                                    </a>
+                                    <a href="{{ route('admin.assets.software-license') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.software-license') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Software License
+                                    </a>
+                                    <a href="{{ route('admin.assets.assignment') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.assignment') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Mutation / Assignment
+                                    </a>
+                                    <a href="{{ route('admin.assets.audit-log') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.audit-log') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Audit Log
+                                    </a>
+                                    <a href="{{ route('admin.assets.import-export') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.import-export') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
+                                        Import / Export
+                                    </a>
+                                </div>
+                            </div>
+                        @else
+                            @php
+                                $isActive = request()->routeIs($item['route']);
+                                $badgeCount = (int) ($item['badgeCount'] ?? 0);
+                                $badgeType = $item['badgeType'] ?? null;
+                            @endphp
+                            <a
+                                href="{{ route($item['route']) }}"
+                                @class([
+                                    'group flex items-center rounded-lg py-3 text-[14px] font-medium transition-all duration-150 border-l-[3px] border-transparent',
+                                    'opacity-80' => ! $isActive,
+                                    'is-active text-white' => $isActive,
+                                    'hover:text-white' => ! $isActive,
+                                ])
+                                :class="sidebarCollapsed ? 'justify-center px-0' : 'px-4 gap-3'"
+                                style="{{ $isActive ? 'background: linear-gradient(135deg, var(--zinus-green), var(--zinus-green-strong)); border-left-color: var(--zinus-mint); box-shadow: 0 20px 40px rgba(0,0,0,0.35);' : 'color: var(--zinus-sidebar-text);' }}"
+                            >
+                                <svg
+                                    class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    viewBox="0 0 24 24"
+                                >
+                                    {!! $item['icon'] !!}
+                                </svg>
+                                <span class="flex-1 whitespace-nowrap overflow-hidden transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>{{ $item['label'] }}</span>
+                                @if ($badgeType)
+                                    <span
+                                        class="inline-flex items-center gap-1 rounded-full bg-rose-100 py-0.5 text-[0.65rem] font-semibold uppercase text-rose-600 transition-all duration-300"
+                                        :class="sidebarCollapsed ? 'absolute -top-1 -right-1 w-2 h-2 p-0 min-w-0 rounded-full' : 'ml-auto px-2 tracking-[0.25em]'"
+                                        data-notification-badge="{{ $badgeType }}"
+                                        @if ($badgeCount === 0) hidden style="display: none;" @endif
+                                    >
+                                        <template x-if="!sidebarCollapsed">
+                                            <span class="flex items-center gap-1"><span>New</span><span class="tracking-normal" data-notification-count="{{ $badgeType }}">{{ $badgeCount > 9 ? '9+' : $badgeCount }}</span></span>
+                                        </template>
+                                    </span>
+                                @endif
+                            </a>
+                        @endif
                     @endforeach
                 </nav>
 

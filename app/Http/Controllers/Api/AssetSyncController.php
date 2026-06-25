@@ -117,15 +117,38 @@ class AssetSyncController extends Controller
 
             $status = $this->normalizeStatus($data['status'] ?? null);
 
-            // --- Resolve existing asset (upsert: find best match, merge duplicates) ---
+            // Guard against overwriting or violating unique constraints with manually managed assets
+            $manualConflict = Asset::withTrashed()
+                ->where('source_type', 'manual')
+                ->where(function ($query) use ($serialNumber, $hostname) {
+                    $query->where('serial_number', $serialNumber)
+                        ->orWhere('asset_code', $serialNumber);
+                    if ($hostname !== '' && $hostname !== null) {
+                        $query->orWhere('hostname', $hostname)
+                              ->orWhere('name', $hostname);
+                    }
+                })
+                ->exists();
+
+            if ($manualConflict) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Asset is manually managed. Sync skipped.',
+                ]);
+            }
+
             $existingAsset = null;
             $restored = false;
 
-            // 1. Primary lookup: by serial_number or asset_code matching the serial
+            // 1. Primary lookup: by serial_number or asset_code matching the serial (excluding manual assets)
             $candidates = Asset::withTrashed()
                 ->where(function ($query) use ($serialNumber) {
                     $query->where('serial_number', $serialNumber)
                         ->orWhere('asset_code', $serialNumber);
+                })
+                ->where(function ($query) {
+                    $query->where('source_type', '!=', 'manual')
+                        ->orWhereNull('source_type');
                 })
                 ->latest('updated_at')
                 ->get();
@@ -143,10 +166,14 @@ class AssetSyncController extends Controller
                     ->first();
             }
 
-            // 2. Fallback: by hostname (agent-synced assets only)
+            // 2. Fallback: by hostname (agent-synced assets only, excluding manual assets)
             if (! $existingAsset && $hostname !== '' && $hostname !== null) {
                 $existingAsset = Asset::withTrashed()
                     ->where('sync_source', 'agent')
+                    ->where(function ($query) {
+                        $query->where('source_type', '!=', 'manual')
+                            ->orWhereNull('source_type');
+                    })
                     ->where(function ($query) use ($hostname) {
                         $query->where('hostname', $hostname)
                             ->orWhere('name', $hostname);
@@ -155,7 +182,7 @@ class AssetSyncController extends Controller
                     ->first();
             }
 
-            // 3. Clear ALL conflicting records that would violate UNIQUE constraints
+            // 3. Clear ALL conflicting records that would violate UNIQUE constraints (excluding manual assets)
             //    The assets table has UNIQUE on: serial_number, asset_code, hostname
             //    Note: asset_code & name are NOT nullable; serial_number & hostname are nullable
             //    Soft-deleted rows still enforce UNIQUE in PostgreSQL
@@ -170,6 +197,10 @@ class AssetSyncController extends Controller
                     if ($hostname !== '' && $hostname !== null) {
                         $query->orWhere('hostname', $hostname);
                     }
+                })
+                ->where(function ($query) {
+                    $query->where('source_type', '!=', 'manual')
+                        ->orWhereNull('source_type');
                 })
                 ->when($keepId, fn($q) => $q->where('id', '!=', $keepId))
                 ->pluck('id');
@@ -244,6 +275,7 @@ class AssetSyncController extends Controller
                 'location' => $factory,
                 'notes' => null,
                 'sync_source' => 'agent',
+                'source_type' => 'agent',
                 'last_synced_at' => now(),
             ];
 

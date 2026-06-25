@@ -371,12 +371,16 @@ class AssetService
     {
         $this->assignCategoryId($data);
         $data['sync_source'] = $data['sync_source'] ?? 'manual';
+        $data['source_type'] = $data['source_type'] ?? 'manual';
+        $data['lifecycle_status'] = $data['lifecycle_status'] ?? 'active';
 
         return DB::transaction(function () use ($data, $actor) {
             $asset = Asset::create($data);
             $this->log($asset, 'created', $actor, [
                 'status' => $asset->status,
                 'category' => $asset->category,
+                'source_type' => $asset->source_type,
+                'lifecycle_status' => $asset->lifecycle_status,
             ]);
 
             return $asset;
@@ -387,6 +391,7 @@ class AssetService
     {
         $this->assignCategoryId($data);
         $data['sync_source'] = $data['sync_source'] ?? ($asset->sync_source ?? 'manual');
+        $data['source_type'] = $data['source_type'] ?? ($asset->source_type ?? 'manual');
 
         return DB::transaction(function () use ($asset, $data, $actor) {
             $original = $asset->only([
@@ -399,13 +404,17 @@ class AssetService
                 'serial_number',
                 'specs',
                 'status',
+                'condition',
+                'lifecycle_status',
                 'department_id',
                 'user_id',
                 'location',
                 'purchase_date',
                 'warranty_expired',
+                'warranty_until',
                 'price',
                 'notes',
+                'source_type',
             ]);
 
             $asset->update($data);

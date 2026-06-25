@@ -30,6 +30,7 @@ class Asset extends Model
         'name',
         'hostname',
         'category',
+        'sub_category',
         'category_id',
         'factory',
         'brand',
@@ -44,6 +45,9 @@ class Asset extends Model
         'ip_address',
         'rustdesk_id',
         'sync_source',
+        'source_type',
+        'condition',
+        'lifecycle_status',
         'last_synced_at',
         'status',
         'department_id',
@@ -51,6 +55,7 @@ class Asset extends Model
         'location',
         'purchase_date',
         'warranty_expired',
+        'warranty_until',
         'price',
         'notes',
     ];
@@ -58,6 +63,7 @@ class Asset extends Model
     protected $casts = [
         'purchase_date' => 'date',
         'warranty_expired' => 'date',
+        'warranty_until' => 'date',
         'price' => 'decimal:2',
         'last_synced_at' => 'datetime',
     ];
@@ -85,5 +91,41 @@ class Asset extends Model
     public function assetLogs(): HasMany
     {
         return $this->hasMany(AssetLog::class);
+    }
+
+    public function childRelations(): HasMany
+    {
+        return $this->hasMany(AssetRelation::class, 'parent_asset_id');
+    }
+
+    public function parentRelations(): HasMany
+    {
+        return $this->hasMany(AssetRelation::class, 'child_asset_id');
+    }
+
+    public function activeChildRelations(): HasMany
+    {
+        return $this->hasMany(AssetRelation::class, 'parent_asset_id')->whereNull('ended_at');
+    }
+
+    public function activeParentRelation(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(AssetRelation::class, 'child_asset_id')->whereNull('ended_at');
+    }
+
+    public function attachedAssets(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Asset::class, 'asset_relations', 'parent_asset_id', 'child_asset_id')
+            ->wherePivotNull('ended_at')
+            ->withPivot(['id', 'relation_type', 'started_at', 'notes'])
+            ->withTimestamps();
+    }
+
+    public function attachedTo(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Asset::class, 'asset_relations', 'child_asset_id', 'parent_asset_id')
+            ->wherePivotNull('ended_at')
+            ->withPivot(['id', 'relation_type', 'started_at', 'notes'])
+            ->withTimestamps();
     }
 }

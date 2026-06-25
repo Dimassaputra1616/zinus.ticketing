@@ -56,12 +56,12 @@ Route::get('/dashboard', function (Request $request) {
     $highPriorityList = collect();
     $ticketsByCategory = collect();
     $liveMonitoringQueue = collect();
-    
+
     if ($hasDashboardAccess) {
         $highPriorityQuery = (clone $baseQuery)->where('priority', 'high')->whereNotIn('status', ['resolved', 'closed']);
         $highPriorityTickets = $highPriorityQuery->count();
         $highPriorityList = $highPriorityQuery->with(['category', 'department', 'user'])->latest()->take(5)->get();
-        
+
         $ticketsByCategory = \Illuminate\Support\Facades\DB::table('tickets')
             ->selectRaw('category_id, count(*) as count')
             ->whereNotIn('status', ['resolved', 'closed'])
@@ -82,7 +82,7 @@ Route::get('/dashboard', function (Request $request) {
             ->oldest() // Oldest indicates waiting the longest
             ->limit(20)
             ->get();
-            
+
         // --- Executive Metrics ---
         $today = now()->startOfDay();
         $totalTicketsToday = (clone $baseQuery)->where('created_at', '>=', $today)->count();
@@ -95,27 +95,27 @@ Route::get('/dashboard', function (Request $request) {
         $activeTicketsNow = $openTickets + $inProgressTickets;
 
         // Ticket Trend Chart Data (30 Days: Created vs Resolved)
-        // For the frontend we'll send 30 days of data and the frontend can toggle to 7. 
+        // For the frontend we'll send 30 days of data and the frontend can toggle to 7.
         // Or we just send 30 days and the charts handles it. Let's send 30 and 90 raw data arrays for JavaScript.
         $trendData30 = collect();
         for ($i = 29; $i >= 0; $i--) {
             $date = now()->subDays($i)->startOfDay();
             $trendData30->put($date->format('Y-m-d'), ['created' => 0, 'resolved' => 0]);
         }
-        
+
         $createdTrendQuery = \Illuminate\Support\Facades\DB::table('tickets')
             ->selectRaw('DATE(created_at) as date, count(*) as count')
             ->where('created_at', '>=', now()->subDays(29)->startOfDay())
             ->groupBy('date')
             ->get();
-            
+
         $resolvedTrendQuery = \Illuminate\Support\Facades\DB::table('tickets')
             ->selectRaw('DATE(updated_at) as date, count(*) as count')
             ->whereIn('status', ['resolved', 'closed'])
             ->where('updated_at', '>=', now()->subDays(29)->startOfDay())
             ->groupBy('date')
             ->get();
-            
+
         foreach ($createdTrendQuery as $row) {
             if ($trendData30->has($row->date)) {
                 $item = $trendData30->get($row->date);
@@ -130,17 +130,17 @@ Route::get('/dashboard', function (Request $request) {
                 $trendData30->put($row->date, $item);
             }
         }
-        
+
         $trendData = [
             'labels' => $trendData30->keys()->map(fn($date) => Carbon\Carbon::parse($date)->format('M d'))->values(),
             'created' => $trendData30->pluck('created')->values(),
             'resolved' => $trendData30->pluck('resolved')->values(),
         ];
-        
+
         // Incident Heatmap Data (Tickets by Department)
         $departmentHeatmapQuery = \Illuminate\Support\Facades\DB::table('tickets')
             ->join('departments', 'tickets.department_id', '=', 'departments.id')
-            ->selectRaw('departments.name as department_name, 
+            ->selectRaw('departments.name as department_name,
                          SUM(CASE WHEN tickets.status NOT IN (\'resolved\', \'closed\') THEN 1 ELSE 0 END) as open_count,
                          SUM(CASE WHEN tickets.status IN (\'resolved\', \'closed\') THEN 1 ELSE 0 END) as resolved_count,
                          COUNT(tickets.id) as total_count')
@@ -149,11 +149,11 @@ Route::get('/dashboard', function (Request $request) {
             ->orderByDesc('total_count')
             ->limit(10)
             ->get();
-            
+
         // Category Heatmap Data
         $categoryHeatmapQuery = \Illuminate\Support\Facades\DB::table('tickets')
             ->join('categories', 'tickets.category_id', '=', 'categories.id')
-            ->selectRaw('categories.name as category_name, 
+            ->selectRaw('categories.name as category_name,
                          SUM(CASE WHEN tickets.status NOT IN (\'resolved\', \'closed\') THEN 1 ELSE 0 END) as open_count,
                          SUM(CASE WHEN tickets.status IN (\'resolved\', \'closed\') THEN 1 ELSE 0 END) as resolved_count,
                          COUNT(tickets.id) as total_count')
@@ -162,7 +162,7 @@ Route::get('/dashboard', function (Request $request) {
             ->orderByDesc('total_count')
             ->limit(10)
             ->get();
-            
+
         // Assets / Infrastructure Overview
         try {
             $assetOverview = [
@@ -189,7 +189,7 @@ Route::get('/dashboard', function (Request $request) {
                 $assignedTickets = (clone $baseQuery)->where('assigned_admin_id', $tech->id);
                 $openCount = (clone $assignedTickets)->whereNotIn('status', ['resolved', 'closed'])->count();
                 $resolvedCount = (clone $assignedTickets)->whereIn('status', ['resolved', 'closed'])->count();
-                
+
                 // Calculate avg resolution time (in hours) for this tech's resolved tickets
                 $resolvedTickets = (clone $assignedTickets)->whereIn('status', ['resolved', 'closed'])->get();
                 $avgResTime = 0;
@@ -216,7 +216,7 @@ Route::get('/dashboard', function (Request $request) {
             'medium' => now()->subHours(24),
             'low' => now()->subHours(48),
         ];
-        
+
         $slaBreachTickets = (clone $baseQuery)
             ->whereNotIn('status', ['resolved', 'closed'])
             ->where(function ($query) use ($slaThresholds) {
@@ -231,7 +231,7 @@ Route::get('/dashboard', function (Request $request) {
             ->with(['category', 'user', 'assignedAdmin'])
             ->orderBy('created_at')
             ->get();
-            
+
         $slaBreachCount = $slaBreachTickets->count();
 
         // System Avg Resolution Time (Last 30 days)
@@ -239,7 +239,7 @@ Route::get('/dashboard', function (Request $request) {
             ->whereIn('status', ['resolved', 'closed'])
             ->where('updated_at', '>=', now()->subDays(30))
             ->get();
-            
+
         $globalAvgResTime = 0;
         if ($globallyResolved->count() > 0) {
             $totalMins = $globallyResolved->sum(function($ticket) {
@@ -247,7 +247,7 @@ Route::get('/dashboard', function (Request $request) {
             });
             $globalAvgResTime = round($totalMins / 60 / $globallyResolved->count(), 1);
         }
-        
+
         // Recent Activity Feed (Ticket Logs)
         $recentActivity = \App\Models\TicketLog::with(['ticket', 'user'])
             ->latest()
@@ -330,7 +330,7 @@ Route::get('/dashboard', function (Request $request) {
     }
 
     $viewName = $hasDashboardAccess ? 'dashboard-admin' : 'dashboard';
-    
+
     return view($viewName, $viewData);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -381,22 +381,58 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/assets/user-assets', [App\Http\Controllers\AssetController::class, 'userAssets'])->name('assets.userAssets');
     Route::get('/admin/assets/detail', [App\Http\Controllers\AssetController::class, 'assetDetail'])->name('assets.detail');
     Route::get('/admin/assets/create', [App\Http\Controllers\AssetController::class, 'create'])->name('assets.create');
-    Route::get('/admin/assets/{asset}', [App\Http\Controllers\AssetController::class, 'show'])->name('assets.show');
-    Route::get('/admin/assets/{asset}/edit', [App\Http\Controllers\AssetController::class, 'edit'])->name('assets.edit');
+
+    // Asset Center specific routes
+    Route::get('/admin/assets/overview', [App\Http\Controllers\AssetCenterController::class, 'overview'])->name('admin.assets.overview');
+
+    // Category Pages
+    Route::redirect('/admin/assets/pc-laptop', '/admin/assets/pc');
+    Route::get('/admin/assets/pc', [App\Http\Controllers\AssetCenterController::class, 'pcIndex'])->name('admin.assets.pc');
+    Route::get('/admin/assets/laptop', [App\Http\Controllers\AssetCenterController::class, 'laptopIndex'])->name('admin.assets.laptop');
+    Route::get('/admin/assets/monitor', [App\Http\Controllers\AssetCenterController::class, 'monitorIndex'])->name('admin.assets.monitor');
+    Route::get('/admin/assets/printer-scanner', [App\Http\Controllers\AssetCenterController::class, 'printerScannerIndex'])->name('admin.assets.printer-scanner');
+    Route::get('/admin/assets/network-device', [App\Http\Controllers\AssetCenterController::class, 'networkDeviceIndex'])->name('admin.assets.network-device');
+    Route::get('/admin/assets/cctv', [App\Http\Controllers\AssetCenterController::class, 'cctvIndex'])->name('admin.assets.cctv');
+    Route::get('/admin/assets/peripheral', [App\Http\Controllers\AssetCenterController::class, 'peripheralIndex'])->name('admin.assets.peripheral');
+    Route::get('/admin/assets/software-license', [App\Http\Controllers\AssetCenterController::class, 'softwareLicenseIndex'])->name('admin.assets.software-license');
+
+    // Manual Inventory CRUD
+    Route::get('/admin/assets/manual', [App\Http\Controllers\AssetCenterController::class, 'manualIndex'])->name('admin.assets.manual.index');
+    Route::get('/admin/assets/manual/create', [App\Http\Controllers\AssetCenterController::class, 'manualCreate'])->name('admin.assets.manual.create');
+    Route::post('/admin/assets/manual', [App\Http\Controllers\AssetCenterController::class, 'manualStore'])->name('admin.assets.manual.store');
+    Route::get('/admin/assets/manual/{asset}/edit', [App\Http\Controllers\AssetCenterController::class, 'manualEdit'])->name('admin.assets.manual.edit')->whereNumber('asset');
+    Route::put('/admin/assets/manual/{asset}', [App\Http\Controllers\AssetCenterController::class, 'manualUpdate'])->name('admin.assets.manual.update')->whereNumber('asset');
+    Route::delete('/admin/assets/manual/{asset}', [App\Http\Controllers\AssetCenterController::class, 'manualDestroy'])->name('admin.assets.manual.destroy')->whereNumber('asset');
+
+    Route::get('/admin/assets/assignment', [App\Http\Controllers\AssetCenterController::class, 'assignment'])->name('admin.assets.assignment');
+    Route::get('/admin/assets/audit-log', [App\Http\Controllers\AssetCenterController::class, 'auditLog'])->name('admin.assets.audit-log');
+    Route::patch('/admin/assets/{asset}/lifecycle', [App\Http\Controllers\AssetCenterController::class, 'updateLifecycle'])->name('admin.assets.lifecycle.update')->whereNumber('asset');
+    Route::get('/admin/assets/import-export', [App\Http\Controllers\AssetCenterController::class, 'importExport'])->name('admin.assets.import-export');
+    Route::post('/admin/assets/import', [App\Http\Controllers\AssetCenterController::class, 'import'])->name('admin.assets.import');
+    Route::get('/admin/assets/export', [App\Http\Controllers\AssetCenterController::class, 'export'])->name('admin.assets.export');
+
+    // Asset Relationship routes
+    Route::post('/admin/assets/{asset}/relations', [App\Http\Controllers\AssetCenterController::class, 'attachRelation'])->name('admin.assets.relations.attach')->whereNumber('asset');
+    Route::post('/admin/assets/{asset}/relations/parent', [App\Http\Controllers\AssetCenterController::class, 'attachParentRelation'])->name('admin.assets.relations.attach-parent')->whereNumber('asset');
+    Route::patch('/admin/assets/relations/{relation}/detach', [App\Http\Controllers\AssetCenterController::class, 'detachRelation'])->name('admin.assets.relations.detach');
+
+    // Override original show detail route
+    Route::get('/admin/assets/{asset}', [App\Http\Controllers\AssetCenterController::class, 'showDetail'])->name('assets.show')->whereNumber('asset');
+    Route::get('/admin/assets/{asset}/edit', [App\Http\Controllers\AssetController::class, 'edit'])->name('assets.edit')->whereNumber('asset');
     Route::post('/admin/assets', [App\Http\Controllers\AssetController::class, 'store'])->name('assets.store');
-    Route::put('/admin/assets/{asset}', [App\Http\Controllers\AssetController::class, 'update'])->name('assets.update');
-    Route::delete('/admin/assets/{asset}', [App\Http\Controllers\AssetController::class, 'destroy'])->name('assets.destroy');
-    
+    Route::put('/admin/assets/{asset}', [App\Http\Controllers\AssetController::class, 'update'])->name('assets.update')->whereNumber('asset');
+    Route::delete('/admin/assets/{asset}', [App\Http\Controllers\AssetController::class, 'destroy'])->name('assets.destroy')->whereNumber('asset');
+
     // Chat Conversations
     Route::get('/admin/conversations', [App\Http\Controllers\Admin\ConversationController::class, 'index'])->name('admin.conversations.index');
     Route::get('/admin/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'show'])->name('admin.conversations.show');
     Route::post('/admin/conversations/{conversation}/reply', [App\Http\Controllers\Admin\ConversationController::class, 'reply'])->name('admin.conversations.reply');
-    
+
     // Admin Tutorials
     Route::resource('admin/tutorials', App\Http\Controllers\Admin\TutorialController::class, ['as' => 'admin']);
     Route::post('/admin/conversations/{conversation}/close', [App\Http\Controllers\Admin\ConversationController::class, 'close'])->name('admin.conversations.close');
     Route::post('/admin/conversations/{conversation}/reopen', [App\Http\Controllers\Admin\ConversationController::class, 'reopen'])->name('admin.conversations.reopen');
-    
+
     Route::get('/admin/notifications/summary', AdminNotificationSummaryController::class)->name('admin.notifications.summary');
 
     // Reports
@@ -415,10 +451,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
         if (!$ip || !filter_var($ip, FILTER_VALIDATE_IP)) {
             return response()->json(['status' => 'offline']);
         }
-        
+
         // Timeout 1s, count 1
         exec(sprintf('ping -c 1 -W 1 %s', escapeshellarg($ip)), $output, $result);
-        
+
         return response()->json(['status' => $result === 0 ? 'online' : 'offline']);
     })->name('remote-system.ping');
 });
