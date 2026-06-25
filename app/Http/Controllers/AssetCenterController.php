@@ -769,6 +769,7 @@ class AssetCenterController extends Controller
 
         return view('assets.detail', compact(
             'asset',
+            'activeParentRelation',
             'parentAsset',
             'attachedAssets',
             'relationHistory',

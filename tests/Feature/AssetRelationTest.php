@@ -121,6 +121,28 @@ class AssetRelationTest extends TestCase
         $this->assertStringNotContainsString('Desk Monitor', $technicalInventoryHtml);
     }
 
+    public function test_child_asset_detail_renders_current_host_relation(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $parent = $this->asset('PC-001', 'Office PC', 'PC');
+        $monitor = $this->asset('MON-001', 'Desk Monitor', 'Monitor');
+
+        $relation = AssetRelation::create([
+            'parent_asset_id' => $parent->id,
+            'child_asset_id' => $monitor->id,
+            'relation_type' => AssetRelation::TYPE_ATTACHED,
+            'started_at' => now(),
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('assets.show', $monitor))
+            ->assertOk()
+            ->assertSee('Current Host')
+            ->assertSee('Office PC')
+            ->assertSee(route('admin.assets.relations.detach', $relation), false);
+    }
+
     private function asset(string $code, string $name, string $category): Asset
     {
         return Asset::create([
