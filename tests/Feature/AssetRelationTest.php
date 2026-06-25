@@ -80,22 +80,32 @@ class AssetRelationTest extends TestCase
             'serial_number' => 'SN-001',
             'condition' => 'good',
             'lifecycle_status' => 'active',
-            'cpu' => 'Intel Core i5',
-            'ram_gb' => 16,
-            'storage_gb' => 512,
-            'os_name' => 'Windows 11',
-            'ip_address' => '10.10.10.10',
             'rustdesk_id' => '123456789',
+            'specs' => 'CPU: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz | RAM: 15.9 GB | Storage: 1034.66 GB | OS: Microsoft Windows 10 Home Single Language | IP: 10.62.36.74 | User: Administrator',
             'warranty_until' => now()->addYear()->toDateString(),
         ]);
 
-        $this->actingAs($admin)
+        $response = $this->actingAs($admin)
             ->get(route('assets.show', $asset))
             ->assertOk()
             ->assertSee('Technical Inventory')
             ->assertSee('Lifecycle Control')
             ->assertSee('Relationship Workspace')
-            ->assertSee('Asset Mutation Timeline');
+            ->assertSee('Asset Mutation Timeline')
+            ->assertSee('Original Agent Payload')
+            ->assertDontSee('Raw Specs');
+
+        $technicalInventoryHtml = \Illuminate\Support\Str::between(
+            $response->getContent(),
+            'Technical Inventory',
+            'Ownership & Commercials'
+        );
+
+        $this->assertStringContainsString('Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz', $technicalInventoryHtml);
+        $this->assertStringContainsString('15.9 GB', $technicalInventoryHtml);
+        $this->assertStringContainsString('1034.66 GB', $technicalInventoryHtml);
+        $this->assertStringContainsString('Microsoft Windows 10 Home Single Language', $technicalInventoryHtml);
+        $this->assertStringContainsString('10.62.36.74', $technicalInventoryHtml);
     }
 
     private function asset(string $code, string $name, string $category): Asset

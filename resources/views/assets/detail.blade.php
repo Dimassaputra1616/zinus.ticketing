@@ -70,9 +70,36 @@
 
     $assetTitle = filled($asset->name) ? $asset->name : $asset->asset_code;
     $brandModel = trim(($asset->brand ?? '') . ' ' . ($asset->model ?? ''));
+    $rawSpecMap = collect(explode('|', (string) $asset->specs))
+        ->map(fn ($part) => trim($part))
+        ->filter()
+        ->mapWithKeys(function ($part) {
+            [$key, $value] = array_pad(explode(':', $part, 2), 2, null);
+            $key = strtolower(trim((string) $key));
+            $value = trim((string) $value);
+
+            return $key !== '' && $value !== '' ? [$key => $value] : [];
+        });
+    $specFallback = function (string ...$keys) use ($rawSpecMap) {
+        foreach ($keys as $key) {
+            $value = $rawSpecMap->get(strtolower($key));
+
+            if (filled($value)) {
+                return $value;
+            }
+        }
+
+        return null;
+    };
+
+    $cpuValue = $asset->cpu ?: $specFallback('cpu', 'processor');
+    $ramValue = $asset->ram_gb ? $asset->ram_gb . ' GB' : $specFallback('ram', 'memory');
     $storageValue = $asset->storage_detail
         ? ($asset->storage_gb ? "{$asset->storage_detail} ({$asset->storage_gb} GB)" : $asset->storage_detail)
-        : ($asset->storage_gb ? $asset->storage_gb . ' GB' : null);
+        : ($asset->storage_gb ? $asset->storage_gb . ' GB' : $specFallback('storage', 'disk'));
+    $osValue = $asset->os_name ?: $specFallback('os', 'operating system');
+    $ipValue = $asset->ip_address ?: $specFallback('ip', 'ip address');
+    $rawUserValue = $specFallback('user', 'username', 'logged user');
 
     $trackedFields = [
         $asset->asset_code,
@@ -86,6 +113,11 @@
         $asset->condition,
         $asset->lifecycle_status,
         $asset->warranty_until ?: $asset->warranty_expired,
+        $cpuValue,
+        $ramValue,
+        $storageValue,
+        $osValue,
+        $ipValue,
         $asset->notes,
     ];
     $filledFields = collect($trackedFields)->filter(fn ($field) => filled($field))->count();
@@ -102,18 +134,18 @@
 
     $hardwareFields = [
         ['label' => 'Brand / Model', 'value' => $brandModel],
-        ['label' => 'CPU', 'value' => $asset->cpu],
-        ['label' => 'RAM', 'value' => $asset->ram_gb ? $asset->ram_gb . ' GB' : null],
+        ['label' => 'CPU', 'value' => $cpuValue],
+        ['label' => 'RAM', 'value' => $ramValue],
         ['label' => 'Storage', 'value' => $storageValue],
-        ['label' => 'Operating System', 'value' => $asset->os_name],
-        ['label' => 'IP Address', 'value' => $asset->ip_address, 'mono' => true, 'copy' => true],
+        ['label' => 'Operating System', 'value' => $osValue],
+        ['label' => 'IP Address', 'value' => $ipValue, 'mono' => true, 'copy' => true],
         ['label' => 'RustDesk ID', 'value' => $asset->rustdesk_id, 'mono' => true, 'copy' => true],
     ];
 
     $ownershipFields = [
         ['label' => 'Factory', 'value' => $asset->factory],
         ['label' => 'Department', 'value' => $asset->department?->name],
-        ['label' => 'Assigned User', 'value' => $asset->user?->name],
+        ['label' => 'Assigned User', 'value' => $asset->user?->name ?: $rawUserValue],
         ['label' => 'Location', 'value' => $asset->location ?: $asset->factory],
         ['label' => 'Purchase Date', 'value' => $formatDate($asset->purchase_date)],
         ['label' => 'Warranty Until', 'value' => $formatDate($warrantyDate)],
@@ -268,7 +300,7 @@
                                 <div class="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                                     @foreach ([
                                         ['label' => 'Department', 'value' => $asset->department?->name],
-                                        ['label' => 'Assigned User', 'value' => $asset->user?->name],
+                                        ['label' => 'Assigned User', 'value' => $asset->user?->name ?: $rawUserValue],
                                         ['label' => 'Location', 'value' => $asset->location ?: $asset->factory],
                                         ['label' => 'Updated', 'value' => $formatDateTime($asset->updated_at)],
                                     ] as $heroField)
@@ -479,10 +511,14 @@
                                 <div class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Notes</div>
                                 <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ $asset->notes ?: 'No notes recorded.' }}</p>
                             </div>
-                            <div class="border-t border-slate-100 pt-4">
-                                <div class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Raw Specs</div>
-                                <p class="mt-2 whitespace-pre-line break-words font-mono text-xs leading-6 text-slate-700">{{ $asset->specs ?: 'No raw specification recorded.' }}</p>
-                            </div>
+                            @if ($asset->specs)
+                                <details class="border-t border-slate-100 pt-4">
+                                    <summary class="cursor-pointer select-none text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400 transition hover:text-slate-600">
+                                        Original Agent Payload
+                                    </summary>
+                                    <p class="mt-3 whitespace-pre-line break-words rounded-lg bg-slate-50 p-3 font-mono text-xs leading-6 text-slate-700">{{ $asset->specs }}</p>
+                                </details>
+                            @endif
                         </div>
                     </section>
                 </div>
