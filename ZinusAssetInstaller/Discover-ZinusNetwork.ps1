@@ -228,12 +228,176 @@ $targets = @(
     }
 )
 
-$results = @()
-$index = 0
+Write-Host "Starting parallel network discovery on $($targets.Count) targets..." -ForegroundColor Cyan
 
-foreach ($target in $targets) {
-    $index++
-    Write-Progress -Activity "Zinus Network Discovery" -Status "$target ($index/$($targets.Count))" -PercentComplete (($index / $targets.Count) * 100)
+# Create Runspace Pool
+$sessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+$pool = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspacePool(1, 50, $sessionState, $Host)
+$pool.Open()
+
+# Target worker script
+$workerScript = {
+    param(
+        [string]$target,
+        [int]$PingTimeoutMs,
+        [int]$PortTimeoutMs,
+        [int]$NbtstatTimeoutMs,
+        [bool]$ProbeWsMan
+    )
+
+    function Test-Ping {
+        param(
+            [string]$Computer,
+            [int]$TimeoutMs
+        )
+
+        $ping = New-Object System.Net.NetworkInformation.Ping
+        try {
+            $reply = $ping.Send($Computer, $TimeoutMs)
+            return $reply.Status -eq [System.Net.NetworkInformation.IPStatus]::Success
+        } catch {
+            return $false
+        } finally {
+            $ping.Dispose()
+        }
+    }
+
+    function Test-TcpPorts {
+        param(
+            [string]$Computer,
+            [int[]]$Ports,
+            [int]$TimeoutMs
+        )
+
+        $pending = @()
+        try {
+            foreach ($port in $Ports) {
+                $client = New-Object System.Net.Sockets.TcpClient
+                try {
+                    $async = $client.BeginConnect($Computer, $port, $null, $null)
+                    $pending += [pscustomobject]@{
+                        port   = $port
+                        client = $client
+                        async  = $async
+                    }
+                } catch {
+                    $client.Close()
+                }
+            }
+
+            $deadline = [DateTime]::UtcNow.AddMilliseconds($TimeoutMs)
+            while ($pending.Count -gt 0 -and [DateTime]::UtcNow -lt $deadline) {
+                $unfinished = @($pending | Where-Object { -not $_.async.IsCompleted })
+                if ($unfinished.Count -eq 0) {
+                    break
+                }
+                Start-Sleep -Milliseconds 25
+            }
+
+            $openPorts = @()
+            foreach ($probe in $pending) {
+                if (-not $probe.async.IsCompleted) {
+                    continue
+                }
+
+                try {
+                    $probe.client.EndConnect($probe.async)
+                    $openPorts += $probe.port
+                } catch {}
+            }
+
+            return @($openPorts)
+        } finally {
+            foreach ($probe in $pending) {
+                $probe.client.Close()
+            }
+        }
+    }
+
+    function Resolve-ComputerName {
+        param(
+            [string]$IpAddress,
+            [int]$NetBiosTimeoutMs
+        )
+
+        try {
+            $name = [System.Net.Dns]::GetHostEntry($IpAddress).HostName
+            if ($name -and $name -ne $IpAddress) {
+                return [pscustomobject]@{
+                    hostname = $name
+                    source   = "DNS"
+                }
+            }
+        } catch {}
+
+        $stdoutPath = [IO.Path]::GetTempFileName()
+        $stderrPath = [IO.Path]::GetTempFileName()
+        $process = $null
+
+        try {
+            $process = Start-Process `
+                -FilePath "$env:SystemRoot\System32\nbtstat.exe" `
+                -ArgumentList @("-A", $IpAddress) `
+                -NoNewWindow `
+                -PassThru `
+                -RedirectStandardOutput $stdoutPath `
+                -RedirectStandardError $stderrPath
+
+            $finished = $process.WaitForExit($NetBiosTimeoutMs)
+            if (-not $finished) {
+                return [pscustomobject]@{ hostname = $null; source = $null }
+            }
+
+            $process.WaitForExit()
+            $nbtstatOutput = Get-Content -Path $stdoutPath -ErrorAction SilentlyContinue
+            foreach ($line in $nbtstatOutput) {
+                if ($line -match '^\s*(\S+)\s+<00>\s+UNIQUE(?:\s+Registered)?\s*$') {
+                    return [pscustomobject]@{
+                        hostname = $matches[1]
+                        source   = "NetBIOS"
+                    }
+                }
+            }
+        } catch {
+        } finally {
+            if ($process) {
+                try {
+                    if (-not $process.HasExited) {
+                        $process.Kill()
+                    }
+                } catch {}
+                try { $process.Dispose() } catch {}
+            }
+            Remove-Item -Path $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+        }
+
+        return [pscustomobject]@{
+            hostname = $null
+            source   = $null
+        }
+    }
+
+    function Get-MacFromNeighbor {
+        param([string]$IpAddress)
+
+        try {
+            $neighbor = Get-NetNeighbor -IPAddress $IpAddress -ErrorAction SilentlyContinue |
+                Where-Object { $_.LinkLayerAddress -and $_.LinkLayerAddress -ne "00-00-00-00-00-00" } |
+                Select-Object -First 1
+
+            if ($neighbor) {
+                return [pscustomobject]@{
+                    mac_address = $neighbor.LinkLayerAddress
+                    state       = $neighbor.State
+                }
+            }
+        } catch {}
+
+        return [pscustomobject]@{
+            mac_address = $null
+            state       = $null
+        }
+    }
 
     $pingOnline = $false
     try {
@@ -243,7 +407,7 @@ foreach ($target in $targets) {
     }
 
     if ($pingOnline) {
-        Start-Sleep -Milliseconds 50
+        Start-Sleep -Milliseconds 25
     }
 
     $portsToProbe = @(135, 139, 445)
@@ -253,6 +417,7 @@ foreach ($target in $targets) {
 
     $openPorts = @(Test-TcpPorts -Computer $target -Ports $portsToProbe -TimeoutMs $PortTimeoutMs)
     $online = $pingOnline -or $openPorts.Count -gt 0
+
     $computerName = if ($online) {
         Resolve-ComputerName -IpAddress $target -NetBiosTimeoutMs $NbtstatTimeoutMs
     } else {
@@ -262,6 +427,7 @@ foreach ($target in $targets) {
     $dnsName = if ($computerName.source -eq "DNS") { $computerName.hostname } else { $null }
     $neighbor = if ($online) { Get-MacFromNeighbor -IpAddress $target } else { [pscustomobject]@{ mac_address = $null; state = $null } }
     $wsmanOpen = if ($ProbeWsMan) { 5985 -in $openPorts } else { $null }
+
     $detectionMethod = if ($pingOnline) {
         "Ping"
     } elseif ($openPorts.Count -gt 0) {
@@ -270,7 +436,7 @@ foreach ($target in $targets) {
         $null
     }
 
-    $results += [pscustomobject]@{
+    return [pscustomobject]@{
         ip_address     = $target
         online         = $online
         hostname       = $computerName.hostname
@@ -284,7 +450,56 @@ foreach ($target in $targets) {
     }
 }
 
+$runspaces = @()
+foreach ($target in $targets) {
+    $pipeline = [System.Management.Automation.PowerShell]::Create()
+    $pipeline.RunspacePool = $pool
+
+    $pipeline.AddScript($workerScript) | Out-Null
+    $pipeline.AddArgument($target) | Out-Null
+    $pipeline.AddArgument($PingTimeoutMs) | Out-Null
+    $pipeline.AddArgument($PortTimeoutMs) | Out-Null
+    $pipeline.AddArgument($NbtstatTimeoutMs) | Out-Null
+    $pipeline.AddArgument($ProbeWsMan) | Out-Null
+
+    $runspaces += [pscustomobject]@{
+        Target      = $target
+        PowerShell  = $pipeline
+        AsyncResult = $pipeline.BeginInvoke()
+    }
+}
+
+# Wait for completion and collect results
+$results = @()
+$totalCount = $targets.Count
+$completedCount = 0
+
+while ($runspaces.Count -gt 0) {
+    $completed = @($runspaces | Where-Object { $_.AsyncResult.IsCompleted })
+    foreach ($r in $completed) {
+        $completedCount++
+        Write-Progress -Activity "Zinus Network Discovery" -Status "Scanned $($r.Target) ($completedCount/$totalCount)" -PercentComplete (($completedCount / $totalCount) * 100)
+        
+        try {
+            $output = $r.PowerShell.EndInvoke($r.AsyncResult)
+            if ($output) {
+                $results += $output
+            }
+        } catch {
+            # Log error internally but keep running
+        } finally {
+            $r.PowerShell.Dispose()
+        }
+    }
+    $runspaces = @($runspaces | Where-Object { -not $_.AsyncResult.IsCompleted })
+    if ($runspaces.Count -gt 0) {
+        Start-Sleep -Milliseconds 100
+    }
+}
+$pool.Close()
+
 Write-Progress -Activity "Zinus Network Discovery" -Completed
+
 
 $resultFullPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ResultPath)
 $resultDir = Split-Path -Parent $resultFullPath

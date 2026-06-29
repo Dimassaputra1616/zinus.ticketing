@@ -1,7 +1,11 @@
 # =========================
 # ZINUS ASSET SYNC SCRIPT
 # =========================
+param(
+    [switch]$NoDelay
+)
 $ErrorActionPreference = "Stop"
+
 
 $installRoot = Join-Path $env:ProgramData "ZinusAssetSync"
 $logRoot = Join-Path $installRoot "logs"
@@ -673,6 +677,12 @@ function Set-RustDeskConfig {
 }
 
 $syncMutex = Enter-SyncMutex
+
+if (-not $NoDelay) {
+    $delay = Get-Random -Minimum 0 -Maximum 1800
+    Write-Log "Applying random start delay of $delay seconds to prevent server overload..." "INFO"
+    Start-Sleep -Seconds $delay
+}
 
 if (-not (Test-Path $configPath)) {
     Write-Log "Config file not found at $configPath." "ERROR"

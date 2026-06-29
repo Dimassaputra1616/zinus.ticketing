@@ -614,19 +614,77 @@ $collector = {
     }
 }
 
-$results = @()
+Write-Host "Starting parallel remote scan on $($targets.Count) targets..." -ForegroundColor Cyan
 
-foreach ($target in $targets) {
-    Write-Host "Scanning $target..." -ForegroundColor Cyan
+# Create Runspace Pool
+$sessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+$pool = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspacePool(1, 30, $sessionState, $Host)
+$pool.Open()
+
+# Target worker script
+$workerScript = {
+    param(
+        [string]$target,
+        [string]$Token,
+        [string]$Factory,
+        [string]$Department,
+        [string]$ServerUrl,
+        [string]$AgentVersion,
+        [int]$WsManPort,
+        [int]$PortTimeoutMs,
+        [bool]$SkipPreflight,
+        [System.Management.Automation.PSCredential]$Credential,
+        [scriptblock]$collector
+    )
+
+    function Test-TcpPort {
+        param(
+            [string]$Computer,
+            [int]$Port,
+            [int]$TimeoutMs
+        )
+
+        $client = New-Object System.Net.Sockets.TcpClient
+        try {
+            $async = $client.BeginConnect($Computer, $Port, $null, $null)
+            if (-not $async.AsyncWaitHandle.WaitOne($TimeoutMs, $false)) {
+                return $false
+            }
+
+            $client.EndConnect($async)
+            return $true
+        } catch {
+            return $false
+        } finally {
+            $client.Close()
+        }
+    }
+
+    function New-ScanResult {
+        param(
+            [string]$Computer,
+            [string]$Status,
+            [string]$Message,
+            [string]$AssetCode = "",
+            [string]$Hostname = ""
+        )
+
+        [pscustomobject]@{
+            computer   = $Computer
+            hostname   = $Hostname
+            asset_code = $AssetCode
+            status     = $Status
+            message    = $Message
+            scanned_at = (Get-Date).ToString("s")
+        }
+    }
 
     try {
         if (-not $SkipPreflight) {
             $portOpen = Test-TcpPort -Computer $target -Port $WsManPort -TimeoutMs $PortTimeoutMs
             if (-not $portOpen) {
                 $message = "WinRM port $WsManPort tidak terbuka atau tidak reachable. Aktifkan WinRM/firewall di target."
-                Write-Host "Skipped: $target - $message" -ForegroundColor Yellow
-                $results += New-ScanResult -Computer $target -Status "skipped" -Message $message
-                continue
+                return New-ScanResult -Computer $target -Status "skipped" -Message $message
             }
         }
 
@@ -642,6 +700,10 @@ foreach ($target in $targets) {
 
         $payload = Invoke-Command @invokeParams
         $payload = $payload | Select-Object -First 1
+
+        if (-not $payload) {
+            return New-ScanResult -Computer $target -Status "failed" -Message "Invoke-Command returned no data."
+        }
 
         $jsonBody = $payload | Select-Object `
             factory,
@@ -669,8 +731,7 @@ foreach ($target in $targets) {
         $response = Invoke-RestMethod -Uri $ServerUrl -Method Post -Headers @{ Authorization = "Bearer $Token" } -Body $jsonBody -ContentType "application/json"
         $summary = if ($response.counts) { ($response.counts | ConvertTo-Json -Compress) } else { "Synced" }
 
-        Write-Host "Success: $target $summary" -ForegroundColor Green
-        $results += New-ScanResult -Computer $target -Status "success" -Message $summary -AssetCode $payload.asset_code -Hostname $payload.hostname
+        return New-ScanResult -Computer $target -Status "success" -Message $summary -AssetCode $payload.asset_code -Hostname $payload.hostname
     } catch {
         $message = $_.Exception.Message
         try {
@@ -682,10 +743,75 @@ foreach ($target in $targets) {
             }
         } catch {}
 
-        Write-Host "Failed: $target - $message" -ForegroundColor Red
-        $results += New-ScanResult -Computer $target -Status "failed" -Message $message
+        return New-ScanResult -Computer $target -Status "failed" -Message $message
     }
 }
+
+$runspaces = @()
+foreach ($target in $targets) {
+    $pipeline = [System.Management.Automation.PowerShell]::Create()
+    $pipeline.RunspacePool = $pool
+    
+    $pipeline.AddScript($workerScript) | Out-Null
+    $pipeline.AddArgument($target) | Out-Null
+    $pipeline.AddArgument($Token) | Out-Null
+    $pipeline.AddArgument($Factory) | Out-Null
+    $pipeline.AddArgument($Department) | Out-Null
+    $pipeline.AddArgument($ServerUrl) | Out-Null
+    $pipeline.AddArgument($AgentVersion) | Out-Null
+    $pipeline.AddArgument($WsManPort) | Out-Null
+    $pipeline.AddArgument($PortTimeoutMs) | Out-Null
+    $pipeline.AddArgument($SkipPreflight) | Out-Null
+    $pipeline.AddArgument($Credential) | Out-Null
+    $pipeline.AddArgument($collector) | Out-Null
+
+    $runspaces += [pscustomobject]@{
+        Target      = $target
+        PowerShell  = $pipeline
+        AsyncResult = $pipeline.BeginInvoke()
+    }
+}
+
+# Wait for completion and collect results
+$results = @()
+$totalCount = $targets.Count
+$completedCount = 0
+
+while ($runspaces.Count -gt 0) {
+    $completed = @($runspaces | Where-Object { $_.AsyncResult.IsCompleted })
+    foreach ($r in $completed) {
+        $completedCount++
+        try {
+            $output = $r.PowerShell.EndInvoke($r.AsyncResult)
+            if ($output) {
+                $results += $output
+                $scanResult = $output | Select-Object -First 1
+                $statusColor = "Green"
+                if ($scanResult.status -eq "skipped") { $statusColor = "Yellow" }
+                if ($scanResult.status -eq "failed") { $statusColor = "Red" }
+                
+                Write-Host "[$completedCount/$totalCount] Result for $($r.Target): $($scanResult.status.ToUpper()) - $($scanResult.message)" -ForegroundColor $statusColor
+            } else {
+                $errResult = New-ScanResult -Computer $r.Target -Status "failed" -Message "No output returned from runspace."
+                $results += $errResult
+                Write-Host "[$completedCount/$totalCount] Result for $($r.Target): FAILED - No output returned." -ForegroundColor Red
+            }
+        } catch {
+            $message = $_.Exception.Message
+            $errResult = New-ScanResult -Computer $r.Target -Status "failed" -Message $message
+            $results += $errResult
+            Write-Host "[$completedCount/$totalCount] Result for $($r.Target): FAILED - $message" -ForegroundColor Red
+        } finally {
+            $r.PowerShell.Dispose()
+        }
+    }
+    $runspaces = @($runspaces | Where-Object { -not $_.AsyncResult.IsCompleted })
+    if ($runspaces.Count -gt 0) {
+        Start-Sleep -Milliseconds 200
+    }
+}
+$pool.Close()
+
 
 $resultFullPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ResultPath)
 $resultDir = Split-Path -Parent $resultFullPath

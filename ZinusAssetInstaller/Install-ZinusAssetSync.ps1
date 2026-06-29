@@ -117,5 +117,5 @@ Write-Host "Install complete. Files copied to $installRoot" -ForegroundColor Gre
 
 if (-not $SkipRun) {
     Write-Host "Running agent once for verification..." -ForegroundColor Cyan
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$installScript"
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$installScript" -NoDelay
 }
