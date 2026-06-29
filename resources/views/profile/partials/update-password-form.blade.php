@@ -16,7 +16,7 @@
         <div>
             <x-input-label for="update_password_current_password" :value="__('Current Password')" />
             <div class="relative" x-data="{ show: false }">
-                <x-text-input id="update_password_current_password" name="current_password" :type="show ? 'text' : 'password'" class="mt-1 block w-full pr-12" autocomplete="current-password" />
+                <x-text-input id="update_password_current_password" name="current_password" x-bind:type="show ? 'text' : 'password'" class="mt-1 block w-full pr-12" autocomplete="current-password" />
                 <button
                     type="button"
                     class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
@@ -42,7 +42,7 @@
         <div>
             <x-input-label for="update_password_password" :value="__('New Password')" />
             <div class="relative" x-data="{ show: false }">
-                <x-text-input id="update_password_password" name="password" :type="show ? 'text' : 'password'" class="mt-1 block w-full pr-12" autocomplete="new-password" />
+                <x-text-input id="update_password_password" name="password" x-bind:type="show ? 'text' : 'password'" class="mt-1 block w-full pr-12" autocomplete="new-password" />
                 <button
                     type="button"
                     class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
@@ -68,7 +68,7 @@
         <div>
             <x-input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
             <div class="relative" x-data="{ show: false }">
-                <x-text-input id="update_password_password_confirmation" name="password_confirmation" :type="show ? 'text' : 'password'" class="mt-1 block w-full pr-12" autocomplete="new-password" />
+                <x-text-input id="update_password_password_confirmation" name="password_confirmation" x-bind:type="show ? 'text' : 'password'" class="mt-1 block w-full pr-12" autocomplete="new-password" />
                 <button
                     type="button"
                     class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"

@@ -31,7 +31,9 @@ class AssetSyncController extends Controller
             'category' => ['nullable', 'string', 'max:100'],
             'brand' => ['nullable', 'string', 'max:150'],
             'model' => ['nullable', 'string', 'max:150'],
-            'serial_number' => ['required', 'string', 'max:191'],
+            'serial_number' => ['nullable', 'string', 'max:191'],
+            'identity_source' => ['nullable', 'string', 'max:50'],
+            'is_identity_verified' => ['nullable', 'boolean'],
             'cpu' => ['nullable', 'string', 'max:150'],
             'ram_gb' => ['nullable', 'numeric', 'min:0'],
             'storage_gb' => ['nullable', 'integer', 'min:0'],
@@ -53,6 +55,8 @@ class AssetSyncController extends Controller
             'monitors.*.model' => ['nullable', 'string', 'max:150'],
             'monitors.*.connection' => ['nullable', 'string', 'max:100'],
             'monitors.*.instance_name' => ['nullable', 'string', 'max:255'],
+            'monitors.*.identity_source' => ['nullable', 'string', 'max:50'],
+            'monitors.*.is_identity_verified' => ['nullable', 'boolean'],
             'monitors.*.screen_width_cm' => ['nullable', 'numeric', 'min:0'],
             'monitors.*.screen_height_cm' => ['nullable', 'numeric', 'min:0'],
         ]);
@@ -62,23 +66,22 @@ class AssetSyncController extends Controller
         }
 
         $data = $validator->validated();
-        $serialNumber = trim((string) $data['serial_number']);
-        if ($serialNumber === '') {
-            return $this->validationErrorResponse($request, [
-                'serial_number' => ['Serial number is required.'],
-            ]);
-        }
-        if (! empty($data['asset_code']) && trim((string) $data['asset_code']) !== $serialNumber) {
-            return $this->validationErrorResponse($request, [
-                'asset_code' => ['Asset code must match serial number.'],
-            ]);
-        }
-        $assetCode = $serialNumber;
         $ip = $request->ip();
         $hostname = $data['hostname'] ?? null;
         if ($hostname !== null) {
             $hostname = trim((string) $hostname);
         }
+        $serialNumber = $this->cleanAssetString($data['serial_number'] ?? null);
+        $assetCode = $this->cleanAssetString($data['asset_code'] ?? null);
+        if (! $assetCode) {
+            $assetCode = $serialNumber ?: 'HOST-' . $this->assetCodeSegment($hostname ?: (string) Str::uuid());
+        }
+        $assetCode = Str::limit($assetCode, 191, '');
+        $identitySource = $this->cleanAssetString($data['identity_source'] ?? null, 50);
+        if (! in_array($identitySource, ['serial', 'uuid', 'hostname'], true)) {
+            $identitySource = $serialNumber ? 'serial' : 'hostname';
+        }
+        $isIdentityVerified = filter_var($data['is_identity_verified'] ?? (bool) $serialNumber, FILTER_VALIDATE_BOOLEAN);
         $userName = $data['user_name'] ?? null;
         $incomingSha = isset($data['agent_sha256']) ? trim((string) $data['agent_sha256']) : '';
         if ($incomingSha === '') {
@@ -134,9 +137,11 @@ class AssetSyncController extends Controller
             // Guard against overwriting or violating unique constraints with manually managed assets
             $manualConflict = Asset::withTrashed()
                 ->where('source_type', 'manual')
-                ->where(function ($query) use ($serialNumber, $hostname) {
-                    $query->where('serial_number', $serialNumber)
-                        ->orWhere('asset_code', $serialNumber);
+                ->where(function ($query) use ($serialNumber, $assetCode, $hostname) {
+                    $query->where('asset_code', $assetCode);
+                    if ($serialNumber) {
+                        $query->orWhere('serial_number', $serialNumber);
+                    }
                     if ($hostname !== '' && $hostname !== null) {
                         $query->orWhere('hostname', $hostname)
                               ->orWhere('name', $hostname);
@@ -154,11 +159,13 @@ class AssetSyncController extends Controller
             $existingAsset = null;
             $restored = false;
 
-            // 1. Primary lookup: by serial_number or asset_code matching the serial (excluding manual assets)
+            // 1. Primary lookup: by asset_code or serial_number (excluding manual assets)
             $candidates = Asset::withTrashed()
-                ->where(function ($query) use ($serialNumber) {
-                    $query->where('serial_number', $serialNumber)
-                        ->orWhere('asset_code', $serialNumber);
+                ->where(function ($query) use ($serialNumber, $assetCode) {
+                    $query->where('asset_code', $assetCode);
+                    if ($serialNumber) {
+                        $query->orWhere('serial_number', $serialNumber);
+                    }
                 })
                 ->where(function ($query) {
                     $query->where('source_type', '!=', 'manual')
@@ -205,9 +212,11 @@ class AssetSyncController extends Controller
             // Find all conflicting records and update them individually
             // (need unique placeholder per record for non-nullable unique columns)
             $conflictIds = \Illuminate\Support\Facades\DB::table('assets')
-                ->where(function ($query) use ($serialNumber, $hostname) {
-                    $query->where('serial_number', $serialNumber)
-                        ->orWhere('asset_code', $serialNumber);
+                ->where(function ($query) use ($serialNumber, $assetCode, $hostname) {
+                    $query->where('asset_code', $assetCode);
+                    if ($serialNumber) {
+                        $query->orWhere('serial_number', $serialNumber);
+                    }
                     if ($hostname !== '' && $hostname !== null) {
                         $query->orWhere('hostname', $hostname);
                     }
@@ -265,6 +274,8 @@ class AssetSyncController extends Controller
             if (! empty($data['user_name'])) {
                 $specParts[] = 'User: ' . $data['user_name'];
             }
+            $specParts[] = 'Identity Source: ' . $identitySource;
+            $specParts[] = 'Identity Verified: ' . ($isIdentityVerified ? 'Yes' : 'No');
             $specString = implode(' | ', $specParts);
 
             $payload = [
@@ -293,8 +304,16 @@ class AssetSyncController extends Controller
                 'last_synced_at' => now(),
             ];
 
-            if ($existingAsset && $existingAsset->department_id) {
-                unset($payload['department_id']);
+            if ($existingAsset) {
+                if ($existingAsset->department_id) {
+                    unset($payload['department_id']);
+                }
+                if (filled($existingAsset->location)) {
+                    unset($payload['location']);
+                }
+                if (filled($existingAsset->factory)) {
+                    unset($payload['factory']);
+                }
             }
             $payload['asset_code'] = $assetCode;
 
@@ -313,6 +332,14 @@ class AssetSyncController extends Controller
                 $departmentId,
                 $factory
             );
+            $counts = [
+                'pc_created' => $mode === 'created' ? 1 : 0,
+                'pc_updated' => in_array($mode, ['updated', 'restored'], true) ? 1 : 0,
+                'monitors_created' => $monitorSync['created'],
+                'monitors_updated' => $monitorSync['updated'],
+                'monitors_attached' => $monitorSync['attached'],
+                'monitor_links_closed' => $monitorSync['links_closed'],
+            ];
 
             AssetSyncLog::create([
                 'asset_id' => $asset->id,
@@ -322,16 +349,18 @@ class AssetSyncController extends Controller
                 'user_name' => $userName,
                 'status' => 'success',
                 'mode' => $mode,
-                'message' => 'Sync OK',
+                'message' => 'Sync OK ' . json_encode($counts),
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Asset synced',
+                'counts' => $counts,
                 'data' => [
                     'asset_id' => $asset->id,
                     'mode' => $mode,
                     'monitors' => $monitorSync,
+                    'counts' => $counts,
                 ],
             ]);
         } catch (Throwable $e) {
@@ -400,6 +429,7 @@ class AssetSyncController extends Controller
                 'attached' => 0,
                 'skipped' => 0,
                 'detached' => 0,
+                'links_closed' => 0,
             ];
         }
 
@@ -412,6 +442,7 @@ class AssetSyncController extends Controller
             'attached' => 0,
             'skipped' => 0,
             'detached' => 0,
+            'links_closed' => 0,
         ];
         $syncedMonitorIds = [];
         $monitorCategory = Category::firstOrCreate(['name' => 'Monitor']);
@@ -434,7 +465,7 @@ class AssetSyncController extends Controller
 
                 if ($existingMonitor && $existingMonitor->trashed()) {
                     if ($existingMonitor->source_type === 'manual') {
-                        return ['mode' => 'skipped', 'asset' => null, 'attached' => false];
+                        return ['mode' => 'skipped', 'asset' => null, 'attached' => false, 'links_closed' => 0];
                     }
 
                     $existingMonitor->restore();
@@ -461,13 +492,20 @@ class AssetSyncController extends Controller
                         'specs' => $this->buildMonitorSpecs($monitorData, $parentAsset),
                         'status' => Asset::STATUS_IN_USE,
                         'department_id' => $departmentId,
-                        'location' => $factory ?: $parentAsset->location,
+                        'location' => $parentAsset->location ?: $factory,
                         'sync_source' => 'agent',
                         'source_type' => 'agent',
                         'last_synced_at' => now(),
                     ];
 
                     if ($existingMonitor) {
+                        if ($existingMonitor->department_id) {
+                            unset($payload['department_id']);
+                        }
+                        if (filled($existingMonitor->location)) {
+                            unset($payload['location']);
+                        }
+
                         $existingMonitor->fill($payload);
                         $existingMonitor->save();
                         $monitorAsset = $existingMonitor->fresh();
@@ -478,9 +516,14 @@ class AssetSyncController extends Controller
                     }
                 }
 
-                $attached = $this->attachMonitorToParent($parentAsset, $monitorAsset);
+                $relationResult = $this->attachMonitorToParent($parentAsset, $monitorAsset);
 
-                return ['mode' => $mode, 'asset' => $monitorAsset, 'attached' => $attached];
+                return [
+                    'mode' => $mode,
+                    'asset' => $monitorAsset,
+                    'attached' => $relationResult['attached'],
+                    'links_closed' => $relationResult['links_closed'],
+                ];
             });
 
             if (! $result['asset']) {
@@ -502,10 +545,12 @@ class AssetSyncController extends Controller
             if ($result['attached']) {
                 $summary['attached']++;
             }
+            $summary['links_closed'] += $result['links_closed'];
         }
 
         if (! empty($syncedMonitorIds)) {
             $summary['detached'] = $this->detachMissingAgentMonitors($parentAsset, $syncedMonitorIds);
+            $summary['links_closed'] += $summary['detached'];
         }
 
         return $summary;
@@ -518,6 +563,10 @@ class AssetSyncController extends Controller
         $brand = $this->cleanAssetString($monitor['brand'] ?? ($monitor['manufacturer'] ?? null), 150);
         $model = $this->cleanAssetString($monitor['model'] ?? null, 150);
         $connection = $this->cleanAssetString($monitor['connection'] ?? null, 100);
+        $identitySource = $this->cleanAssetString($monitor['identity_source'] ?? null, 50);
+        if (! in_array($identitySource, ['serial', 'wmi_hash'], true)) {
+            $identitySource = $serial ? 'serial' : 'wmi_hash';
+        }
 
         $assetCode = $this->cleanAssetString($monitor['asset_code'] ?? null);
         if (! $assetCode) {
@@ -549,6 +598,8 @@ class AssetSyncController extends Controller
             'model' => $model,
             'connection' => $connection,
             'instance_name' => $instanceName,
+            'identity_source' => $identitySource,
+            'is_identity_verified' => filter_var($monitor['is_identity_verified'] ?? (bool) $serial, FILTER_VALIDATE_BOOLEAN),
             'screen_width_cm' => isset($monitor['screen_width_cm']) ? (float) $monitor['screen_width_cm'] : null,
             'screen_height_cm' => isset($monitor['screen_height_cm']) ? (float) $monitor['screen_height_cm'] : null,
         ];
@@ -557,10 +608,9 @@ class AssetSyncController extends Controller
     protected function findExistingMonitor(array $monitorData): ?Asset
     {
         $serial = $monitorData['serial_number'];
-        $hostname = $monitorData['hostname'];
 
         return Asset::withTrashed()
-            ->where(function ($query) use ($monitorData, $serial, $hostname) {
+            ->where(function ($query) use ($monitorData, $serial) {
                 $query->where('asset_code', $monitorData['asset_code']);
 
                 if ($serial) {
@@ -569,17 +619,7 @@ class AssetSyncController extends Controller
                             ->where(function ($categoryQuery) {
                                 $categoryQuery->where('category', 'Monitor')
                                     ->orWhere('asset_code', 'like', 'MON-%');
-                            });
-                    });
-                }
-
-                if ($hostname) {
-                    $query->orWhere(function ($nested) use ($hostname) {
-                        $nested->where('hostname', $hostname)
-                            ->where(function ($categoryQuery) {
-                                $categoryQuery->where('category', 'Monitor')
-                                    ->orWhere('asset_code', 'like', 'MON-%');
-                            });
+                        });
                     });
                 }
             })
@@ -625,13 +665,14 @@ class AssetSyncController extends Controller
         }
     }
 
-    protected function attachMonitorToParent(Asset $parentAsset, Asset $monitorAsset): bool
+    protected function attachMonitorToParent(Asset $parentAsset, Asset $monitorAsset): array
     {
-        AssetRelation::active()
+        $closedRelations = AssetRelation::active()
             ->where('child_asset_id', $monitorAsset->id)
             ->where('parent_asset_id', '!=', $parentAsset->id)
-            ->get()
-            ->each(function (AssetRelation $relation) use ($parentAsset) {
+            ->get();
+
+        $closedRelations->each(function (AssetRelation $relation) use ($parentAsset) {
                 $relation->update([
                     'ended_at' => now(),
                     'notes' => trim(($relation->notes ? $relation->notes . "\n" : '') . 'Auto-detached by agent sync before assigning to ' . $parentAsset->asset_code),
@@ -644,7 +685,10 @@ class AssetSyncController extends Controller
             ->first();
 
         if ($existingRelation) {
-            return false;
+            return [
+                'attached' => false,
+                'links_closed' => $closedRelations->count(),
+            ];
         }
 
         AssetRelation::create([
@@ -655,7 +699,10 @@ class AssetSyncController extends Controller
             'notes' => 'Auto-attached by asset sync agent.',
         ]);
 
-        return true;
+        return [
+            'attached' => true,
+            'links_closed' => $closedRelations->count(),
+        ];
     }
 
     protected function detachMissingAgentMonitors(Asset $parentAsset, array $syncedMonitorIds): int
@@ -683,7 +730,7 @@ class AssetSyncController extends Controller
     protected function buildMonitorSpecs(array $monitorData, Asset $parentAsset): ?string
     {
         $parts = [
-            'Host PC: ' . $parentAsset->asset_code,
+            'Host Asset: ' . $parentAsset->asset_code,
         ];
 
         foreach ([
@@ -692,11 +739,14 @@ class AssetSyncController extends Controller
             'serial_number' => 'Serial',
             'connection' => 'Connection',
             'instance_name' => 'Instance',
+            'identity_source' => 'Identity Source',
         ] as $key => $label) {
             if (filled($monitorData[$key] ?? null)) {
                 $parts[] = $label . ': ' . $monitorData[$key];
             }
         }
+
+        $parts[] = 'Identity Verified: ' . (($monitorData['is_identity_verified'] ?? false) ? 'Yes' : 'No');
 
         if (! empty($monitorData['screen_width_cm']) || ! empty($monitorData['screen_height_cm'])) {
             $parts[] = 'Size: ' . ($monitorData['screen_width_cm'] ?: '?') . ' x ' . ($monitorData['screen_height_cm'] ?: '?') . ' cm';

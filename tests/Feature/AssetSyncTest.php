@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Asset;
 use App\Models\AssetRelation;
+use App\Models\Department;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -46,13 +47,44 @@ class AssetSyncTest extends TestCase
             ->assertJson([
                 'success' => true,
                 'message' => 'Asset synced',
-            ]);
+            ])
+            ->assertJsonPath('counts.pc_created', 1)
+            ->assertJsonPath('counts.pc_updated', 0);
 
         $this->assertDatabaseHas('assets', [
             'serial_number' => 'SN-001',
             'asset_code' => 'SN-001',
             'name' => 'laptop-01',
         ]);
+    }
+
+    public function test_asset_sync_accepts_missing_serial_with_fallback_identity(): void
+    {
+        $response = $this->syncAsset([
+            'asset_code' => 'UUID-550e8400-e29b-41d4-a716-446655440000',
+            'hostname' => 'fallback-laptop-01',
+            'serial_number' => null,
+            'identity_source' => 'uuid',
+            'is_identity_verified' => false,
+            'category' => 'Laptop',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('counts.pc_created', 1)
+            ->assertJsonPath('counts.pc_updated', 0)
+            ->assertJsonPath('counts.monitors_created', 0)
+            ->assertJsonPath('counts.monitor_links_closed', 0);
+
+        $this->assertDatabaseHas('assets', [
+            'asset_code' => 'UUID-550e8400-e29b-41d4-a716-446655440000',
+            'hostname' => 'fallback-laptop-01',
+            'serial_number' => null,
+            'category' => 'Laptop',
+        ]);
+
+        $asset = Asset::where('asset_code', 'UUID-550e8400-e29b-41d4-a716-446655440000')->firstOrFail();
+        $this->assertStringContainsString('Identity Source: uuid', $asset->specs);
+        $this->assertStringContainsString('Identity Verified: No', $asset->specs);
     }
 
     public function test_sync_updates_existing_asset_with_same_serial(): void
@@ -86,6 +118,40 @@ class AssetSyncTest extends TestCase
         $this->assertEquals('pc-updated', $asset->hostname);
         $this->assertEquals('Intel i7', $asset->cpu);
         $this->assertEquals('10.0.0.5', $asset->ip_address);
+    }
+
+    public function test_sync_preserves_existing_organizational_assignment(): void
+    {
+        $department = Department::create(['name' => 'Quality Control']);
+        $asset = Asset::create([
+            'asset_code' => 'SN-ORG-001',
+            'name' => 'pc-qc-001',
+            'hostname' => 'pc-qc-001',
+            'serial_number' => 'SN-ORG-001',
+            'factory' => 'Zinus',
+            'location' => 'QC Office',
+            'department_id' => $department->id,
+            'status' => Asset::STATUS_IN_USE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->syncAsset([
+            'hostname' => 'pc-qc-001',
+            'serial_number' => 'SN-ORG-001',
+            'factory' => 'GCI-HWANG',
+            'department' => 'IT',
+            'cpu' => 'Intel Core i7',
+            'ip_address' => '10.62.38.10',
+        ])->assertOk();
+
+        $asset->refresh();
+
+        $this->assertEquals('Zinus', $asset->factory);
+        $this->assertEquals('QC Office', $asset->location);
+        $this->assertEquals($department->id, $asset->department_id);
+        $this->assertEquals('Intel Core i7', $asset->cpu);
+        $this->assertEquals('10.62.38.10', $asset->ip_address);
     }
 
     public function test_sync_resolves_hostname_conflict(): void
@@ -205,6 +271,8 @@ class AssetSyncTest extends TestCase
                     'model' => 'P2419H',
                     'connection' => 'HDMI',
                     'instance_name' => 'DISPLAY\\DEL40A9\\1&UID4352',
+                    'identity_source' => 'serial',
+                    'is_identity_verified' => true,
                     'screen_width_cm' => 52,
                     'screen_height_cm' => 29,
                 ],
@@ -215,7 +283,9 @@ class AssetSyncTest extends TestCase
             ->assertJsonPath('data.monitors.received', 1)
             ->assertJsonPath('data.monitors.synced', 1)
             ->assertJsonPath('data.monitors.created', 1)
-            ->assertJsonPath('data.monitors.attached', 1);
+            ->assertJsonPath('data.monitors.attached', 1)
+            ->assertJsonPath('counts.monitors_created', 1)
+            ->assertJsonPath('counts.monitors_attached', 1);
 
         $parent = Asset::where('serial_number', 'PC-SN-001')->firstOrFail();
         $monitor = Asset::where('asset_code', 'MON-DISPLAY-001')->firstOrFail();
@@ -225,6 +295,83 @@ class AssetSyncTest extends TestCase
         $this->assertEquals('Dell', $monitor->brand);
         $this->assertEquals('P2419H', $monitor->model);
         $this->assertStringContainsString('Connection: HDMI', $monitor->specs);
+        $this->assertStringContainsString('Identity Source: serial', $monitor->specs);
+        $this->assertStringContainsString('Identity Verified: Yes', $monitor->specs);
+
+        $this->assertDatabaseHas('asset_relations', [
+            'parent_asset_id' => $parent->id,
+            'child_asset_id' => $monitor->id,
+            'relation_type' => AssetRelation::TYPE_ATTACHED,
+            'ended_at' => null,
+        ]);
+    }
+
+    public function test_monitor_sync_records_fallback_identity_when_serial_is_missing(): void
+    {
+        $response = $this->syncAsset([
+            'hostname' => 'pc-wmi-monitor-host',
+            'serial_number' => 'PC-SN-WMI-001',
+            'category' => 'PC',
+            'monitors' => [
+                [
+                    'asset_code' => 'MON-WMIHASH-001',
+                    'hostname' => 'pc-wmi-monitor-host-MON-1',
+                    'name' => 'Generic Display',
+                    'model' => 'Generic Display',
+                    'connection' => 'DisplayPort',
+                    'instance_name' => 'DISPLAY\\GENERIC\\1&UID1111',
+                    'identity_source' => 'wmi_hash',
+                    'is_identity_verified' => false,
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.monitors.received', 1)
+            ->assertJsonPath('data.monitors.synced', 1)
+            ->assertJsonPath('data.monitors.created', 1)
+            ->assertJsonPath('data.monitors.attached', 1);
+
+        $monitor = Asset::where('asset_code', 'MON-WMIHASH-001')->firstOrFail();
+
+        $this->assertNull($monitor->serial_number);
+        $this->assertStringContainsString('Identity Source: wmi_hash', $monitor->specs);
+        $this->assertStringContainsString('Identity Verified: No', $monitor->specs);
+    }
+
+    public function test_laptop_sync_creates_and_attaches_reported_monitors(): void
+    {
+        $response = $this->syncAsset([
+            'hostname' => 'laptop-monitor-host',
+            'serial_number' => 'LAP-SN-001',
+            'category' => 'Laptop',
+            'factory' => 'Factory A',
+            'department' => 'IT',
+            'monitors' => [
+                [
+                    'asset_code' => 'MON-LAPTOP-001',
+                    'hostname' => 'laptop-monitor-host-U2415',
+                    'name' => 'Dell U2415',
+                    'serial_number' => 'DISPLAY-LAP-001',
+                    'manufacturer' => 'Dell',
+                    'model' => 'U2415',
+                    'connection' => 'DisplayPort',
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.monitors.received', 1)
+            ->assertJsonPath('data.monitors.synced', 1)
+            ->assertJsonPath('data.monitors.created', 1)
+            ->assertJsonPath('data.monitors.attached', 1);
+
+        $parent = Asset::where('serial_number', 'LAP-SN-001')->firstOrFail();
+        $monitor = Asset::where('asset_code', 'MON-LAPTOP-001')->firstOrFail();
+
+        $this->assertEquals('Laptop', $parent->category);
+        $this->assertEquals('Monitor', $monitor->category);
+        $this->assertStringContainsString('Host Asset: LAP-SN-001', $monitor->specs);
 
         $this->assertDatabaseHas('asset_relations', [
             'parent_asset_id' => $parent->id,
@@ -267,7 +414,8 @@ class AssetSyncTest extends TestCase
             ],
         ])->assertStatus(200)
             ->assertJsonPath('data.monitors.updated', 1)
-            ->assertJsonPath('data.monitors.attached', 1);
+            ->assertJsonPath('data.monitors.attached', 1)
+            ->assertJsonPath('counts.monitor_links_closed', 1);
 
         $secondParent = Asset::where('serial_number', 'PC-SN-SECOND')->firstOrFail();
         $monitor->refresh();

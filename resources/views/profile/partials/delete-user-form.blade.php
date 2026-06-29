@@ -34,7 +34,7 @@
                     <x-text-input
                         id="password"
                         name="password"
-                        :type="show ? 'text' : 'password'"
+                        x-bind:type="show ? 'text' : 'password'"
                         class="mt-1 block w-full pr-12"
                         placeholder="{{ __('Password') }}"
                     />

@@ -1,12 +1,14 @@
 param(
-    [string]$Token = "qAccfWhyBO79J0GkaTVOkhGzFXbIfdiuhMmpdMiPLtZxkkNCw3qijMZF9oaGEBXQ",
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$Token,
     [string]$Factory = "GCI-HWANG",
     [string]$Department = "IT",
     [string]$ServerUrl = "https://app.it-ticketing.web.id/api/asset-sync",
     [string]$AgentVersion = "1.1.0",
-    [string]$RustdeskIdServer = "10.62.38.204",
-    [string]$RustdeskRelayServer = "10.62.38.204",
-    [string]$RustdeskKey = "KNvKx1FO3BHoVfXnT97eSkhYkg7fHXr1OSAGdBja39M",
+    [string]$RustdeskIdServer = "",
+    [string]$RustdeskRelayServer = "",
+    [string]$RustdeskKey = "",
     [switch]$SkipRun
 )
 
@@ -15,6 +17,20 @@ $ErrorActionPreference = "Stop"
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Host "Please run this installer as Administrator." -ForegroundColor Red
+    exit 1
+}
+
+$Token = $Token.Trim()
+$Factory = $Factory.Trim()
+$Department = $Department.Trim()
+$ServerUrl = $ServerUrl.Trim()
+$AgentVersion = $AgentVersion.Trim()
+$RustdeskIdServer = $RustdeskIdServer.Trim()
+$RustdeskRelayServer = $RustdeskRelayServer.Trim()
+$RustdeskKey = $RustdeskKey.Trim()
+
+if ([string]::IsNullOrWhiteSpace($Token)) {
+    Write-Host "Token is required. Pass -Token when running the installer." -ForegroundColor Red
     exit 1
 }
 
@@ -69,17 +85,28 @@ $config = [ordered]@{
 $config | ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
 
 $schtasksPath = Join-Path $env:WINDIR "System32\schtasks.exe"
-$taskName = "Zinus Asset Monthly Sync"
+$taskName = "Zinus Asset Daily Sync"
+$legacyTaskName = "Zinus Asset Monthly Sync"
+$startupTaskName = "Zinus Asset Startup Sync"
 $taskCommand = "`"$installCmd`""
 
 if (Test-Path $schtasksPath) {
+    & $schtasksPath /Delete /TN "$legacyTaskName" /F 2>$null | Out-Null
+
     & $schtasksPath /Create `
-        /SC MONTHLY `
-        /MO 1 `
-        /D 1 `
+        /SC DAILY `
         /ST 09:00 `
         /TN "$taskName" `
         /TR $taskCommand `
+        /RU SYSTEM `
+        /RL HIGHEST `
+        /F | Out-Null
+
+    & $schtasksPath /Create `
+        /SC ONSTART `
+        /TN "$startupTaskName" `
+        /TR $taskCommand `
+        /RU SYSTEM `
         /RL HIGHEST `
         /F | Out-Null
 } else {

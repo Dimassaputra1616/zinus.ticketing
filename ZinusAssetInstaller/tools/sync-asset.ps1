@@ -49,6 +49,22 @@ function Write-Log {
     Add-Content -Path $logFile -Value $line
 }
 
+function Enter-SyncMutex {
+    $mutexName = "Global\ZinusAssetSyncAgent"
+    try {
+        $mutex = New-Object System.Threading.Mutex($false, $mutexName)
+        if (-not $mutex.WaitOne(0)) {
+            Write-Log "Another Zinus Asset Sync process is already running. Exiting." "WARN"
+            exit 0
+        }
+
+        return $mutex
+    } catch {
+        Write-Log "Failed to acquire sync mutex: $($_.Exception.Message)" "WARN"
+        return $null
+    }
+}
+
 function Normalize-AssetValue {
     param(
         [string]$Value,
@@ -75,13 +91,72 @@ function Normalize-AssetValue {
 
 function Get-PrimaryIpv4 {
     try {
-        $ip = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-            Where-Object { $_.IPAddress -notmatch '^169\.254\.' } |
-            Select-Object -First 1 -ExpandProperty IPAddress
-        return $ip
-    } catch {
+        $routes = @(Get-NetRoute -AddressFamily IPv4 -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue |
+            Where-Object { $_.InterfaceIndex -and $_.NextHop -and $_.NextHop -ne "0.0.0.0" } |
+            Sort-Object RouteMetric, InterfaceMetric)
+
+        foreach ($route in $routes) {
+            $adapter = Get-NetAdapter -InterfaceIndex $route.InterfaceIndex -ErrorAction SilentlyContinue
+            if ($adapter -and $adapter.Status -ne "Up") {
+                continue
+            }
+
+            $ip = Get-NetIPAddress -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $_.IPAddress -and
+                    $_.IPAddress -notmatch '^169\.254\.' -and
+                    $_.IPAddress -notmatch '^127\.'
+                } |
+                Sort-Object PrefixLength -Descending |
+                Select-Object -First 1 -ExpandProperty IPAddress
+
+            if ($ip) {
+                return $ip
+            }
+        }
+
+        $adapterConfig = Get-CimInstance Win32_NetworkAdapterConfiguration -Filter "IPEnabled = true" -ErrorAction SilentlyContinue |
+            Where-Object { $_.DefaultIPGateway -and $_.IPAddress } |
+            Select-Object -First 1
+
+        if ($adapterConfig) {
+            return @($adapterConfig.IPAddress | Where-Object {
+                $_ -match '^\d{1,3}(\.\d{1,3}){3}$' -and
+                $_ -notmatch '^169\.254\.' -and
+                $_ -notmatch '^127\.'
+            })[0]
+        }
+
         return $null
-    }
+    } catch {}
+}
+
+function Get-LoggedOnUser {
+    try {
+        $csUser = Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty UserName
+
+        $normalized = Normalize-AssetValue -Value $csUser -Placeholders $commonPlaceholders
+        if ($normalized) {
+            return $normalized
+        }
+    } catch {}
+
+    try {
+        $explorerProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'explorer.exe'" -ErrorAction SilentlyContinue)
+        foreach ($process in $explorerProcesses) {
+            $owner = Invoke-CimMethod -InputObject $process -MethodName GetOwner -ErrorAction SilentlyContinue
+            if ($owner -and $owner.User) {
+                if ($owner.Domain) {
+                    return "$($owner.Domain)\$($owner.User)"
+                }
+
+                return $owner.User
+            }
+        }
+    } catch {}
+
+    return $null
 }
 
 function Get-DiskInfo {
@@ -120,9 +195,7 @@ function Get-SerialNumber {
         if ($serial) {
             return $serial
         }
-    } catch {
-        return $null
-    }
+    } catch {}
 
     try {
         $serial = Get-CimInstance Win32_ComputerSystemProduct -ErrorAction SilentlyContinue |
@@ -142,22 +215,58 @@ function Get-SerialNumber {
         if ($serial) {
             return $serial
         }
-    } catch {
-        return $null
-    }
-
-    try {
-        $serial = Get-CimInstance Win32_ComputerSystemProduct -ErrorAction SilentlyContinue |
-            Select-Object -First 1 -ExpandProperty UUID
-        $serial = Normalize-AssetValue -Value $serial -Placeholders $SerialPlaceholders
-        if ($serial) {
-            return $serial
-        }
-    } catch {
-        return $null
-    }
+    } catch {}
 
     return $null
+}
+
+function Get-SystemUuid {
+    param(
+        [string[]]$SerialPlaceholders
+    )
+
+    try {
+        $uuid = Get-CimInstance Win32_ComputerSystemProduct -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty UUID
+        return Normalize-AssetValue -Value $uuid -Placeholders $SerialPlaceholders
+    } catch {
+        return $null
+    }
+}
+
+function Get-AssetIdentity {
+    param(
+        [string]$SerialNumber,
+        [string]$Uuid,
+        [string]$Hostname
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($SerialNumber)) {
+        return [pscustomobject]@{
+            asset_code           = $SerialNumber
+            identity_source      = "serial"
+            is_identity_verified = $true
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($Uuid)) {
+        return [pscustomobject]@{
+            asset_code           = "UUID-$Uuid"
+            identity_source      = "uuid"
+            is_identity_verified = $false
+        }
+    }
+
+    $hostnameValue = $Hostname
+    if ([string]::IsNullOrWhiteSpace($hostnameValue)) {
+        $hostnameValue = $env:COMPUTERNAME
+    }
+
+    return [pscustomobject]@{
+        asset_code           = "HOST-$hostnameValue"
+        identity_source      = "hostname"
+        is_identity_verified = $false
+    }
 }
 
 function Get-CategoryFromChassis {
@@ -360,7 +469,7 @@ function Get-ConnectedMonitors {
             $connectionLabel = Get-MonitorConnectionLabel -Technology $connection.VideoOutputTechnology
         }
 
-        if ($connectionLabel -eq "Internal") {
+        if (@("Internal", "Embedded DisplayPort", "Embedded UDI") -contains $connectionLabel) {
             continue
         }
 
@@ -371,12 +480,18 @@ function Get-ConnectedMonitors {
         $index++
         $fingerprintSource = @($monitor.InstanceName, $serial, $manufacturer, $model) -join "|"
         $fingerprint = $serial
+        $identitySource = "serial"
+        $isIdentityVerified = $true
         if ([string]::IsNullOrWhiteSpace($fingerprint)) {
             $fingerprint = Get-StableHash -Value $fingerprintSource
+            $identitySource = "wmi_hash"
+            $isIdentityVerified = $false
         }
         $fingerprint = ($fingerprint -replace '[^A-Za-z0-9._-]+', '-').Trim('-')
         if ([string]::IsNullOrWhiteSpace($fingerprint)) {
             $fingerprint = Get-StableHash -Value $fingerprintSource
+            $identitySource = "wmi_hash"
+            $isIdentityVerified = $false
         }
 
         $assetCode = "MON-$fingerprint"
@@ -420,6 +535,8 @@ function Get-ConnectedMonitors {
             model            = $model
             connection       = $connectionLabel
             instance_name    = $monitor.InstanceName
+            identity_source  = $identitySource
+            is_identity_verified = $isIdentityVerified
             screen_width_cm  = $widthCm
             screen_height_cm = $heightCm
         }
@@ -555,6 +672,8 @@ function Set-RustDeskConfig {
     }
 }
 
+$syncMutex = Enter-SyncMutex
+
 if (-not (Test-Path $configPath)) {
     Write-Log "Config file not found at $configPath." "ERROR"
     exit 1
@@ -606,7 +725,7 @@ try {
 }
 
 $hostname = $env:COMPUTERNAME
-$username = $env:USERNAME
+$username = Get-LoggedOnUser
 $osName = $osInfo.Caption
 if (-not $osName) {
     $osName = $osInfo.Version
@@ -622,6 +741,8 @@ $memoryGb = [math]::Round($csInfo.TotalPhysicalMemory / 1GB, 2)
 $ipAddress = Get-PrimaryIpv4
 $installedSoftware = @()
 $serialNumber = Get-SerialNumber -SerialPlaceholders $serialPlaceholders
+$systemUuid = Get-SystemUuid -SerialPlaceholders $serialPlaceholders
+$identity = Get-AssetIdentity -SerialNumber $serialNumber -Uuid $systemUuid -Hostname $hostname
 $brand = Normalize-AssetValue -Value $csInfo.Manufacturer -Placeholders $commonPlaceholders
 $model = Normalize-AssetValue -Value $csInfo.Model -Placeholders $commonPlaceholders
 $category = Get-CategoryFromChassis
@@ -643,8 +764,7 @@ if (-not $model -and $baseboard) {
 $rustdeskId = Get-RustDesktopId
 
 if (-not $serialNumber) {
-    Write-Log "Serial number not found. Sync requires serial number." "ERROR"
-    exit 1
+    Write-Log "Serial number not found. Using $($identity.identity_source) fallback asset identity." "WARN"
 }
 
 $storageGb = $null
@@ -657,11 +777,10 @@ if ($disks) {
 }
 
 $payload = @{
-    token              = $token
     factory            = $factory
     department         = $department
     agent_version      = $agentVersion
-    asset_code         = $serialNumber
+    asset_code         = $identity.asset_code
     hostname           = $hostname
     user_name          = $username
     os_name            = $osName
@@ -676,6 +795,8 @@ $payload = @{
     monitors           = $monitors
     installed_software = $installedSoftware
     serial_number      = $serialNumber
+    identity_source    = $identity.identity_source
+    is_identity_verified = $identity.is_identity_verified
 }
 
 if ($ipAddress) {
@@ -692,7 +813,15 @@ try {
         Authorization = "Bearer $token"
     }
     $response = Invoke-RestMethod -Uri $serverUrl -Method Post -Headers $headers -Body $jsonBody -ContentType "application/json"
-    Write-Log "Sync success."
+    if ($response.counts) {
+        $summary = $response.counts | ConvertTo-Json -Compress
+        Write-Log "Sync success. Summary: $summary"
+    } elseif ($response.data -and $response.data.counts) {
+        $summary = $response.data.counts | ConvertTo-Json -Compress
+        Write-Log "Sync success. Summary: $summary"
+    } else {
+        Write-Log "Sync success."
+    }
 } catch {
     $errMsg = $_.Exception.Message
     # Try to extract the response body for detailed error info
@@ -710,5 +839,21 @@ try {
     } else {
         Write-Log "Sync failed: $errMsg" "ERROR"
     }
+    if ($errMsg -match "401" -or $responseBody -match "Unauthorized") {
+        Write-Log "Unauthorized. Check that config.json token matches ASSET_SYNC_TOKEN/ASSET_SYNC_TOKENS on the Laravel server, then clear Laravel config cache." "ERROR"
+    }
+    if ($syncMutex) {
+        try {
+            $syncMutex.ReleaseMutex()
+            $syncMutex.Dispose()
+        } catch {}
+    }
     exit 1
+}
+
+if ($syncMutex) {
+    try {
+        $syncMutex.ReleaseMutex()
+        $syncMutex.Dispose()
+    } catch {}
 }

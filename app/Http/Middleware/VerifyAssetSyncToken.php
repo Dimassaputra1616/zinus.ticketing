@@ -42,6 +42,7 @@ class VerifyAssetSyncToken
 
         if (! $incoming || ! $authorized) {
             Log::warning('Asset sync unauthorized', [
+                'has_authorization_header' => $request->hasHeader('Authorization'),
                 'incoming_length' => strlen($incoming),
                 'expected_length' => strlen($expected),
                 'incoming_preview' => $incoming ? substr($incoming, 0, 6) . '...' . substr($incoming, -6) : null,
@@ -49,9 +50,6 @@ class VerifyAssetSyncToken
                 'scoped_tokens' => is_array($scopedTokens) ? count($scopedTokens) : 0,
                 'ip' => $request->ip(),
                 'path' => $request->path(),
-                'headers' => [
-                    'authorization' => $request->header('Authorization'),
-                ],
             ]);
 
             return response()->json(['message' => 'Unauthorized'], 401);
