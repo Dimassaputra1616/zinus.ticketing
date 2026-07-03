@@ -440,7 +440,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     // Remote System
     Route::get('/remote-system', function () {
-        $assets = \App\Models\Asset::with(['user', 'department'])
+        $assets = \App\Models\Asset::query()
+            ->remoteEndpoints()
+            ->with(['user', 'department'])
             ->orderByDesc('updated_at')
             ->get();
         return view('remote-system.index', compact('assets'));

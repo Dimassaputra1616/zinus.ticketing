@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,14 @@ class Asset extends Model
         self::STATUS_IN_USE,
         self::STATUS_MAINTENANCE,
         self::STATUS_BROKEN,
+    ];
+
+    public const REMOTE_ENDPOINT_CATEGORIES = [
+        'PC',
+        'Laptop',
+        'PC / Laptop',
+        'PC/Laptop',
+        'pc-laptop',
     ];
 
     protected $fillable = [
@@ -76,6 +85,16 @@ class Asset extends Model
     public function categoryRel(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function scopeRemoteEndpoints(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query->whereIn('category', self::REMOTE_ENDPOINT_CATEGORIES)
+                ->orWhereHas('categoryRel', function (Builder $categoryQuery) {
+                    $categoryQuery->whereIn('name', self::REMOTE_ENDPOINT_CATEGORIES);
+                });
+        });
     }
 
     public function department(): BelongsTo
