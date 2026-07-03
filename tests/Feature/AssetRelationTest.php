@@ -182,6 +182,82 @@ class AssetRelationTest extends TestCase
         $this->assertStringNotContainsString('Sub Category', $technicalInventoryHtml);
     }
 
+    public function test_non_computer_details_render_category_specific_technical_fields(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $cases = [
+            [
+                'category' => 'Printer & Scanner',
+                'sub_category' => 'Multifunction Printer',
+                'specs' => 'Connection: LAN | Print Type: Color | Paper: A4 | Firmware: 1.2.3',
+                'expected' => ['IP Address', 'Connection', 'Print Type', 'Paper Size', 'Firmware'],
+                'ip_address' => '192.168.10.20',
+            ],
+            [
+                'category' => 'Network Device',
+                'sub_category' => 'Switch',
+                'specs' => 'Management: Web | Ports: 24 | Speed: 1 Gbps | Firmware: 2.0 | MAC: 00:11:22:33:44:55',
+                'expected' => ['IP Address', 'Management / Connection', 'Ports', 'Speed', 'Firmware', 'MAC Address'],
+                'ip_address' => '192.168.10.21',
+            ],
+            [
+                'category' => 'CCTV',
+                'sub_category' => 'NVR',
+                'specs' => 'Resolution: 4 MP | Channels: 8 | Storage: 2 TB | Connection: PoE',
+                'expected' => ['IP Address', 'Resolution', 'Channels', 'Storage', 'Connection'],
+                'ip_address' => '192.168.10.22',
+            ],
+            [
+                'category' => 'Peripheral',
+                'sub_category' => 'UPS',
+                'specs' => 'Connection: USB | Interface: HID | Compatibility: Windows | Capacity: 1100 VA',
+                'expected' => ['Peripheral Type', 'Connection', 'Interface', 'Compatibility', 'Capacity / Power'],
+            ],
+            [
+                'category' => 'Software License',
+                'sub_category' => 'Subscription',
+                'specs' => 'Seats: 25 | Version: 2024 | Platform: Windows',
+                'expected' => ['Product / License Key', 'Vendor / Product', 'License Type', 'Seats', 'Version', 'Platform', 'License Expiry'],
+            ],
+        ];
+
+        foreach ($cases as $index => $case) {
+            $asset = $this->asset(
+                'CATEGORY-'.$index,
+                $case['category'].' Asset',
+                $case['category']
+            );
+            $asset->update([
+                'sub_category' => $case['sub_category'],
+                'brand' => 'Test Brand',
+                'model' => 'Test Model',
+                'serial_number' => 'CATEGORY-SN-'.$index,
+                'ip_address' => $case['ip_address'] ?? null,
+                'specs' => $case['specs'],
+                'warranty_until' => now()->addYear()->toDateString(),
+            ]);
+
+            $response = $this->actingAs($admin)
+                ->get(route('assets.show', $asset))
+                ->assertOk();
+
+            $technicalInventoryHtml = \Illuminate\Support\Str::between(
+                $response->getContent(),
+                'Technical Inventory',
+                'Ownership & Commercials'
+            );
+
+            foreach ($case['expected'] as $expectedLabel) {
+                $this->assertStringContainsString($expectedLabel, $technicalInventoryHtml);
+            }
+
+            $this->assertStringNotContainsString('>CPU<', $technicalInventoryHtml);
+            $this->assertStringNotContainsString('>RAM<', $technicalInventoryHtml);
+            $this->assertStringNotContainsString('Operating System', $technicalInventoryHtml);
+            $this->assertStringNotContainsString('RustDesk ID', $technicalInventoryHtml);
+        }
+    }
+
     private function asset(string $code, string $name, string $category): Asset
     {
         return Asset::create([

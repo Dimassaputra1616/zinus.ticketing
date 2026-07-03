@@ -458,7 +458,7 @@ class AssetCenterController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Asset Code', 'Name', 'Hostname', 'Category', 'Factory', 'Brand', 'Model', 'Serial Number', 'Source Type', 'Condition', 'Lifecycle Status', 'Warranty Until', 'Location', 'Status', 'Notes'];
+        $columns = ['Asset Code', 'Name', 'Hostname', 'Category', 'Sub Category', 'Factory', 'Brand', 'Model', 'Serial Number', 'IP Address', 'CPU', 'RAM GB', 'Storage GB', 'OS Name', 'RustDesk ID', 'Specs', 'Source Type', 'Condition', 'Lifecycle Status', 'Warranty Until', 'Location', 'Status', 'Notes'];
 
         $callback = function() use($columns) {
             $file = fopen('php://output', 'w');
@@ -470,10 +470,18 @@ class AssetCenterController extends Controller
                     $asset->name,
                     $asset->hostname,
                     $asset->category,
+                    $asset->sub_category,
                     $asset->factory,
                     $asset->brand,
                     $asset->model,
                     $asset->serial_number,
+                    $asset->ip_address,
+                    $asset->cpu,
+                    $asset->ram_gb,
+                    $asset->storage_gb,
+                    $asset->os_name,
+                    $asset->rustdesk_id,
+                    $asset->specs,
                     $asset->source_type,
                     $asset->condition ?: 'good',
                     $asset->lifecycle_status ?: 'active',
@@ -556,10 +564,18 @@ class AssetCenterController extends Controller
                     'name' => $this->csvValue($row, 'name', $hostname ?: 'Imported Asset'),
                     'hostname' => $hostname,
                     'category' => $this->csvValue($row, 'category', 'Other IT Equipment'),
+                    'sub_category' => $this->csvValue($row, 'sub_category'),
                     'factory' => $this->csvValue($row, 'factory'),
                     'brand' => $this->csvValue($row, 'brand'),
                     'model' => $this->csvValue($row, 'model'),
                     'serial_number' => $serialNumber,
+                    'ip_address' => $this->csvValue($row, 'ip_address'),
+                    'cpu' => $this->csvValue($row, 'cpu'),
+                    'ram_gb' => $this->csvValue($row, 'ram_gb'),
+                    'storage_gb' => $this->csvValue($row, 'storage_gb'),
+                    'os_name' => $this->csvValue($row, 'os_name'),
+                    'rustdesk_id' => $this->csvValue($row, 'rustdesk_id'),
+                    'specs' => $this->csvValue($row, 'specs'),
                     'source_type' => $sourceType,
                     'sync_source' => $sourceType === 'agent' ? 'agent' : 'manual',
                     'condition' => $this->normalizeImportedCondition($this->csvValue($row, 'condition')),
@@ -664,6 +680,7 @@ class AssetCenterController extends Controller
                   ->orWhere('serial_number', 'like', "%{$search}%")
                   ->orWhere('hostname', 'like', "%{$search}%")
                   ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhere('specs', 'like', "%{$search}%")
                   ->orWhere('brand', 'like', "%{$search}%")
                   ->orWhere('model', 'like', "%{$search}%");
             });

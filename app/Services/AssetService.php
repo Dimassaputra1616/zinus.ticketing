@@ -115,7 +115,10 @@ class AssetService
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
                         ->orWhere('asset_code', 'like', "%{$search}%")
+                        ->orWhere('hostname', 'like', "%{$search}%")
                         ->orWhere('serial_number', 'like', "%{$search}%")
+                        ->orWhere('ip_address', 'like', "%{$search}%")
+                        ->orWhere('specs', 'like', "%{$search}%")
                         ->orWhere('location', 'like', "%{$search}%");
                 });
             })
@@ -155,7 +158,10 @@ class AssetService
                 $query->where(function ($nested) use ($search) {
                     $nested->where('asset_code', 'like', "%{$search}%")
                         ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhere('hostname', 'like', "%{$search}%")
                         ->orWhere('serial_number', 'like', "%{$search}%")
+                        ->orWhere('ip_address', 'like', "%{$search}%")
+                        ->orWhere('specs', 'like', "%{$search}%")
                         ->orWhere('location', 'like', "%{$search}%")
                         ->orWhere('factory', 'like', "%{$search}%")
                         ->orWhere('brand', 'like', "%{$search}%")
@@ -350,12 +356,18 @@ class AssetService
             'id' => $asset->id,
             'asset_code' => $asset->asset_code,
             'name' => $asset->name,
+            'hostname' => $asset->hostname,
             'factory' => $asset->factory,
             'brand' => $asset->brand,
             'model' => $asset->model,
             'category' => $asset->category,
             'serial_number' => $asset->serial_number,
+            'cpu' => $asset->cpu,
+            'ram_gb' => $asset->ram_gb,
+            'storage_gb' => $asset->storage_gb,
+            'os_name' => $asset->os_name,
             'ip_address' => $asset->ip_address,
+            'rustdesk_id' => $asset->rustdesk_id,
             'specs' => $asset->specs,
             'status' => $asset->status,
             'location' => $asset->location,
@@ -398,12 +410,18 @@ class AssetService
             $original = $asset->only([
                 'asset_code',
                 'name',
+                'hostname',
                 'factory',
                 'brand',
                 'model',
                 'category',
                 'serial_number',
+                'cpu',
+                'ram_gb',
+                'storage_gb',
+                'os_name',
                 'ip_address',
+                'rustdesk_id',
                 'specs',
                 'status',
                 'condition',

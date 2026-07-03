@@ -11,6 +11,28 @@ class AssetCategoryIndexTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_every_asset_category_index_renders_its_expected_inventory_column(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $cases = [
+            ['admin.assets.pc', 'IP Address'],
+            ['admin.assets.laptop', 'IP Address'],
+            ['admin.assets.monitor', 'Connection'],
+            ['admin.assets.printer-scanner', 'IP Address'],
+            ['admin.assets.network-device', 'IP Address'],
+            ['admin.assets.cctv', 'IP Address'],
+            ['admin.assets.peripheral', 'Connection'],
+            ['admin.assets.software-license', 'License / Product Key'],
+        ];
+
+        foreach ($cases as [$route, $expectedColumn]) {
+            $this->actingAs($admin)
+                ->get(route($route))
+                ->assertOk()
+                ->assertSeeText($expectedColumn);
+        }
+    }
+
     public function test_identical_device_name_and_hostname_are_not_repeated_within_responsive_views(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
@@ -129,5 +151,51 @@ class AssetCategoryIndexTest extends TestCase
 
         // The page renders one desktop row and one mobile card.
         $this->assertSame(2, substr_count($visibleText, 'DisplayPort'));
+    }
+
+    public function test_peripheral_inventory_shows_connection_instead_of_ip_address(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        Asset::create([
+            'asset_code' => 'PER-KEYBOARD-01',
+            'name' => 'Finance Keyboard',
+            'category' => 'Peripheral',
+            'sub_category' => 'Keyboard',
+            'specs' => 'Connection: USB | Compatibility: Windows',
+            'status' => Asset::STATUS_IN_USE,
+            'source_type' => 'manual',
+            'sync_source' => 'manual',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.assets.peripheral'))
+            ->assertOk()
+            ->assertSeeText('Connection')
+            ->assertDontSeeText('IP Address');
+
+        $visibleText = strip_tags($response->getContent());
+
+        $this->assertSame(2, substr_count($visibleText, 'USB'));
+    }
+
+    public function test_inventory_can_be_searched_by_structured_specification(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        Asset::create([
+            'asset_code' => 'NET-SWITCH-01',
+            'name' => 'Core Switch',
+            'category' => 'Network Device',
+            'specs' => 'Ports: 24 | Speed: 1 Gbps',
+            'status' => Asset::STATUS_IN_USE,
+            'source_type' => 'manual',
+            'sync_source' => 'manual',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.network-device', ['search' => '24']))
+            ->assertOk()
+            ->assertSeeText('Core Switch');
     }
 }

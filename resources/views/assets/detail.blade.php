@@ -100,15 +100,18 @@
     $osValue = $asset->os_name ?: $specFallback('os', 'operating system');
     $ipValue = $asset->ip_address ?: $specFallback('ip', 'ip address');
     $rawUserValue = $specFallback('user', 'username', 'logged user');
-    $isMonitorCategory = \Illuminate\Support\Str::contains(
-        \Illuminate\Support\Str::lower((string) $asset->category),
-        'monitor'
-    );
+    $categoryProfileKey = \App\Support\AssetCategoryProfile::key($asset->category);
+    $isComputerCategory = in_array($categoryProfileKey, ['pc', 'laptop'], true);
+    $isMonitorCategory = $categoryProfileKey === 'monitor';
+    $isSoftwareCategory = $categoryProfileKey === 'software';
     $monitorConnection = $specFallback('connection');
     $monitorSize = $specFallback('size', 'screen size', 'display size');
     $monitorInstance = $specFallback('instance', 'instance name', 'display instance');
     $monitorIdentitySource = $specFallback('identity source');
     $monitorIdentityVerified = $specFallback('identity verified');
+    $connectionValue = $specFallback('connection', 'interface');
+    $firmwareValue = $specFallback('firmware', 'firmware version');
+    $macValue = $specFallback('mac', 'mac address');
     $attachedMonitorLinks = $attachedAssets
         ->filter(fn ($child) => \Illuminate\Support\Str::contains(\Illuminate\Support\Str::lower((string) $child->category), 'monitor'))
         ->map(fn ($child) => [
@@ -118,72 +121,34 @@
         ->filter(fn ($link) => filled($link['label']))
         ->values();
 
-    $trackedFields = $isMonitorCategory
-        ? [
-            $asset->asset_code,
-            $asset->name,
-            $asset->category,
-            $asset->serial_number,
-            $asset->brand,
-            $asset->model,
-            $monitorConnection,
-            $monitorSize,
-            $monitorInstance,
-            $monitorIdentitySource,
-            $monitorIdentityVerified,
-            $asset->department_id,
-            $asset->location,
-            $asset->condition,
-            $asset->lifecycle_status,
-            $asset->warranty_until ?: $asset->warranty_expired,
-            $asset->notes,
-        ]
-        : [
-            $asset->asset_code,
-            $asset->name,
-            $asset->category,
-            $asset->serial_number,
-            $asset->brand,
-            $asset->model,
-            $asset->department_id,
-            $asset->location,
-            $asset->condition,
-            $asset->lifecycle_status,
-            $asset->warranty_until ?: $asset->warranty_expired,
-            $cpuValue,
-            $ramValue,
-            $storageValue,
-            $osValue,
-            $ipValue,
-            $asset->notes,
-        ];
-    $filledFields = collect($trackedFields)->filter(fn ($field) => filled($field))->count();
-    $dataCompleteness = (int) round(($filledFields / max(count($trackedFields), 1)) * 100);
-
     $identityFields = [
         ['label' => 'Asset Code', 'value' => $asset->asset_code, 'copy' => true],
-        ['label' => 'Serial Number', 'value' => $asset->serial_number, 'mono' => true, 'copy' => true],
-        ['label' => 'Hostname', 'value' => $asset->hostname, 'mono' => true, 'copy' => true],
+        ['label' => $isSoftwareCategory ? 'Product / License Key' : 'Serial Number', 'value' => $asset->serial_number, 'mono' => true, 'copy' => true],
         ['label' => 'Category', 'value' => $asset->category],
         ['label' => 'Source', 'value' => $sourceLabel],
     ];
-    if (! $isMonitorCategory || filled($asset->sub_category)) {
-        array_splice($identityFields, 4, 0, [[
-            'label' => 'Sub Category',
+    if ($isComputerCategory || $isMonitorCategory || filled($asset->hostname)) {
+        array_splice($identityFields, 2, 0, [[
+            'label' => 'Hostname',
+            'value' => $asset->hostname,
+            'mono' => true,
+            'copy' => true,
+        ]]);
+    }
+    if (filled($asset->sub_category)) {
+        array_splice($identityFields, -1, 0, [[
+            'label' => match ($categoryProfileKey) {
+                'monitor' => 'Display Type',
+                'peripheral' => 'Peripheral Type',
+                'software' => 'License Type',
+                default => 'Device Type',
+            },
             'value' => $asset->sub_category,
         ]]);
     }
 
-    $hardwareFields = $isMonitorCategory
-        ? [
-            ['label' => 'Brand / Model', 'value' => $brandModel],
-            ['label' => 'Connection', 'value' => $monitorConnection],
-            ['label' => 'Screen Size', 'value' => $monitorSize],
-            ['label' => 'Display Instance', 'value' => $monitorInstance, 'mono' => true, 'copy' => true],
-            ['label' => 'Identity Source', 'value' => $monitorIdentitySource],
-            ['label' => 'Identity Verified', 'value' => $monitorIdentityVerified],
-        ]
-        : [
+    $hardwareFields = match ($categoryProfileKey) {
+        'pc', 'laptop' => [
             ['label' => 'Brand / Model', 'value' => $brandModel],
             ['label' => 'CPU', 'value' => $cpuValue],
             ['label' => 'RAM', 'value' => $ramValue],
@@ -191,20 +156,95 @@
             ['label' => 'Operating System', 'value' => $osValue],
             ['label' => 'IP Address', 'value' => $ipValue, 'mono' => true, 'copy' => true],
             ['label' => 'RustDesk ID', 'value' => $asset->rustdesk_id, 'mono' => true, 'copy' => true],
-        ];
-    if (! $isMonitorCategory && $attachedMonitorLinks->isNotEmpty()) {
+        ],
+        'monitor' => [
+            ['label' => 'Brand / Model', 'value' => $brandModel],
+            ['label' => 'Connection', 'value' => $monitorConnection],
+            ['label' => 'Screen Size', 'value' => $monitorSize],
+            ['label' => 'Resolution', 'value' => $specFallback('resolution', 'display resolution')],
+            ['label' => 'Display Instance', 'value' => $monitorInstance, 'mono' => true, 'copy' => true],
+            ['label' => 'Identity Source', 'value' => $monitorIdentitySource],
+            ['label' => 'Identity Verified', 'value' => $monitorIdentityVerified],
+        ],
+        'printer' => [
+            ['label' => 'Brand / Model', 'value' => $brandModel],
+            ['label' => 'IP Address', 'value' => $ipValue, 'mono' => true, 'copy' => true],
+            ['label' => 'Connection', 'value' => $connectionValue],
+            ['label' => 'Print Type', 'value' => $specFallback('print type', 'printing')],
+            ['label' => 'Paper Size', 'value' => $specFallback('paper', 'paper size')],
+            ['label' => 'Firmware', 'value' => $firmwareValue],
+        ],
+        'network' => [
+            ['label' => 'Brand / Model', 'value' => $brandModel],
+            ['label' => 'IP Address', 'value' => $ipValue, 'mono' => true, 'copy' => true],
+            ['label' => 'Management / Connection', 'value' => $specFallback('management', 'connection', 'protocol')],
+            ['label' => 'Ports', 'value' => $specFallback('ports', 'port count')],
+            ['label' => 'Speed', 'value' => $specFallback('speed', 'link speed', 'throughput')],
+            ['label' => 'Firmware', 'value' => $firmwareValue],
+            ['label' => 'MAC Address', 'value' => $macValue, 'mono' => true, 'copy' => true],
+        ],
+        'cctv' => [
+            ['label' => 'Brand / Model', 'value' => $brandModel],
+            ['label' => 'IP Address', 'value' => $ipValue, 'mono' => true, 'copy' => true],
+            ['label' => 'Resolution', 'value' => $specFallback('resolution', 'megapixel')],
+            ['label' => 'Channels', 'value' => $specFallback('channels', 'channel count')],
+            ['label' => 'Storage', 'value' => $specFallback('storage', 'disk')],
+            ['label' => 'Connection', 'value' => $connectionValue],
+            ['label' => 'MAC Address', 'value' => $macValue, 'mono' => true, 'copy' => true],
+        ],
+        'peripheral' => [
+            ['label' => 'Brand / Model', 'value' => $brandModel],
+            ['label' => 'Connection', 'value' => $specFallback('connection')],
+            ['label' => 'Interface', 'value' => $specFallback('interface')],
+            ['label' => 'Compatibility', 'value' => $specFallback('compatibility', 'platform')],
+            ['label' => 'Capacity / Power', 'value' => $specFallback('capacity', 'power', 'rating')],
+        ],
+        'software' => [
+            ['label' => 'Vendor / Product', 'value' => $brandModel],
+            ['label' => 'License Type', 'value' => $asset->sub_category ?: $specFallback('license type', 'type')],
+            ['label' => 'Seats', 'value' => $specFallback('seats', 'users', 'licenses')],
+            ['label' => 'Version', 'value' => $specFallback('version', 'edition')],
+            ['label' => 'Platform', 'value' => $specFallback('platform', 'operating system')],
+            ['label' => 'License Expiry', 'value' => $formatDate($warrantyDate)],
+        ],
+        default => [
+            ['label' => 'Brand / Model', 'value' => $brandModel],
+            ['label' => 'Specifications', 'value' => $asset->specs],
+        ],
+    };
+    if ($isComputerCategory && $attachedMonitorLinks->isNotEmpty()) {
         $hardwareFields[] = ['label' => 'Attached Monitor', 'links' => $attachedMonitorLinks, 'mono' => true];
     }
 
     $ownershipFields = [
         ['label' => 'Factory', 'value' => $asset->factory],
         ['label' => 'Department', 'value' => $asset->department?->name],
-        ['label' => 'Assigned User', 'value' => $asset->user?->name ?: $rawUserValue],
+        ['label' => $isSoftwareCategory ? 'License Owner' : 'Assigned User', 'value' => $asset->user?->name ?: $rawUserValue],
         ['label' => 'Location', 'value' => $asset->location ?: $asset->factory],
         ['label' => 'Purchase Date', 'value' => $formatDate($asset->purchase_date)],
-        ['label' => 'Warranty Until', 'value' => $formatDate($warrantyDate)],
+        ['label' => $isSoftwareCategory ? 'License Expiry' : 'Warranty Until', 'value' => $formatDate($warrantyDate)],
         ['label' => 'Price', 'value' => $formatMoney($asset->price)],
     ];
+
+    $trackedFields = collect(array_merge($identityFields, $hardwareFields))
+        ->map(function ($field) {
+            if (array_key_exists('value', $field)) {
+                return $field['value'];
+            }
+
+            return collect($field['links'] ?? [])->pluck('label')->filter()->join(', ');
+        })
+        ->merge([
+            $asset->department_id,
+            $asset->location ?: $asset->factory,
+            $asset->condition,
+            $asset->lifecycle_status,
+            $warrantyDate,
+            $asset->notes,
+        ])
+        ->all();
+    $filledFields = collect($trackedFields)->filter(fn ($field) => filled($field))->count();
+    $dataCompleteness = (int) round(($filledFields / max(count($trackedFields), 1)) * 100);
 
     $metricCards = [
         [
@@ -214,15 +254,23 @@
             'class' => 'border-emerald-100 bg-emerald-50/60 text-emerald-800',
         ],
         [
-            'label' => 'Warranty',
+            'label' => $isSoftwareCategory ? 'License Expiry' : 'Warranty',
             'value' => $warrantyState,
-            'caption' => $warrantyDate ? $formatDate($warrantyDate) : 'No warranty date',
+            'caption' => $warrantyDate
+                ? $formatDate($warrantyDate)
+                : ($isSoftwareCategory ? 'No expiry date' : 'No warranty date'),
             'class' => 'border-amber-100 bg-amber-50/60 text-amber-800',
         ],
         [
-            'label' => $isParentCategory ? 'Attached Assets' : 'Host Relation',
-            'value' => $isParentCategory ? $attachedAssets->count() : ($parentAsset ? 'Linked' : 'Spare'),
-            'caption' => $relationHistory->count() . ' movement records',
+            'label' => $isSoftwareCategory
+                ? 'License Assignment'
+                : ($isParentCategory ? 'Attached Assets' : 'Host Relation'),
+            'value' => $isSoftwareCategory
+                ? ($asset->user?->name ?: ($asset->department?->name ?: 'Unassigned'))
+                : ($isParentCategory ? $attachedAssets->count() : ($parentAsset ? 'Linked' : 'Spare')),
+            'caption' => $isSoftwareCategory
+                ? 'Current ownership scope'
+                : $relationHistory->count() . ' movement records',
             'class' => 'border-indigo-100 bg-indigo-50/60 text-indigo-800',
         ],
         [

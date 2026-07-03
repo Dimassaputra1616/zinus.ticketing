@@ -1,6 +1,10 @@
 @php
     $initialCategory = old('category', request('category', ''));
-    $initialPrinterMode = in_array($initialCategory, ['Printer & Scanner', 'Printer', 'Scanner'], true);
+    $categoryProfiles = \App\Support\AssetCategoryProfile::formProfiles();
+    $categoryKeys = collect($categories)
+        ->mapWithKeys(fn ($category) => [$category => \App\Support\AssetCategoryProfile::key($category)]);
+    $initialProfileKey = \App\Support\AssetCategoryProfile::key($initialCategory);
+    $initialProfile = $categoryProfiles[$initialProfileKey];
 @endphp
 
 <x-app-layout>
@@ -8,9 +12,14 @@
         class="w-full space-y-6 pb-12 pt-6"
         x-data="{
             category: @js($initialCategory),
-            get printerMode() {
-                return ['Printer & Scanner', 'Printer', 'Scanner'].includes(this.category);
-            }
+            categoryKeys: @js($categoryKeys),
+            profiles: @js($categoryProfiles),
+            get profileKey() {
+                return this.categoryKeys[this.category] || 'other';
+            },
+            get profile() {
+                return this.profiles[this.profileKey];
+            },
         }"
     >
         <!-- Hero Header -->
@@ -20,12 +29,12 @@
                     <p class="text-xs uppercase tracking-[0.35em] text-emerald-600/80">Asset Management Center</p>
                     <h1
                         class="text-3xl font-semibold text-slate-900"
-                        x-text="printerMode ? 'Add Printer / Scanner' : 'Add Manual Asset'"
-                    >{{ $initialPrinterMode ? 'Add Printer / Scanner' : 'Add Manual Asset' }}</h1>
+                        x-text="profile.create_title"
+                    >{{ $initialProfile['create_title'] }}</h1>
                     <p
                         class="text-sm text-slate-600"
-                        x-text="printerMode ? 'Record printer identity, network information, and operational details.' : 'Manually record and manage a non-agent device or hardware accessory.'"
-                    >{{ $initialPrinterMode ? 'Record printer identity, network information, and operational details.' : 'Manually record and manage a non-agent device or hardware accessory.' }}</p>
+                        x-text="profile.description"
+                    >{{ $initialProfile['description'] }}</p>
                 </div>
                 <a
                     href="{{ route('admin.assets.manual.index') }}"
@@ -73,8 +82,8 @@
                                         name="name"
                                         value="{{ old('name') }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                                        placeholder="{{ $initialPrinterMode ? 'e.g. Printer Finance, Scanner Warehouse' : 'e.g. Printer Finance, Core Switch L3' }}"
-                                        :placeholder="printerMode ? 'e.g. Printer Finance, Scanner Warehouse' : 'e.g. Printer Finance, Core Switch L3'"
+                                        placeholder="{{ $initialProfile['name_placeholder'] }}"
+                                        :placeholder="profile.name_placeholder"
                                         required
                                     >
                                     @error('name')
@@ -103,14 +112,14 @@
                                 </div>
                                 <div class="flex flex-col gap-1">
                                     <label class="text-sm font-semibold text-slate-700">
-                                        <span x-text="printerMode ? 'Device Type' : 'Sub Category'">{{ $initialPrinterMode ? 'Device Type' : 'Sub Category' }}</span>
+                                        <span x-text="profile.sub_label">{{ $initialProfile['sub_label'] }}</span>
                                     </label>
                                     <input
                                         name="sub_category"
                                         value="{{ old('sub_category') }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                                        placeholder="{{ $initialPrinterMode ? 'e.g. Printer, Scanner, Multifunction' : 'e.g. HDMI Monitor, Office PC, Barcode Scanner' }}"
-                                        :placeholder="printerMode ? 'e.g. Printer, Scanner, Multifunction' : 'e.g. HDMI Monitor, Office PC, Barcode Scanner'"
+                                        placeholder="{{ $initialProfile['sub_placeholder'] }}"
+                                        :placeholder="profile.sub_placeholder"
                                     >
                                     @error('sub_category')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -158,8 +167,8 @@
                                         name="location"
                                         value="{{ old('location') }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
-                                        placeholder="{{ $initialPrinterMode ? 'e.g. Finance Room, Print Area' : 'e.g. Server Room, Finance Room' }}"
-                                        :placeholder="printerMode ? 'e.g. Finance Room, Print Area' : 'e.g. Server Room, Finance Room'"
+                                        placeholder="{{ $initialProfile['location_placeholder'] }}"
+                                        :placeholder="profile.location_placeholder"
                                     >
                                     @error('location')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -210,8 +219,8 @@
                                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Lifecycle Details</p>
                                 <h3
                                     class="text-lg font-semibold text-slate-900"
-                                    x-text="printerMode ? 'Printer Details' : 'Technical Details'"
-                                >{{ $initialPrinterMode ? 'Printer Details' : 'Technical Details' }}</h3>
+                                    x-text="profile.detail_heading"
+                                >{{ $initialProfile['detail_heading'] }}</h3>
                             </div>
                             <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">OPTIONAL</span>
                         </div>
@@ -224,8 +233,8 @@
                                         name="brand"
                                         value="{{ old('brand') }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
-                                        placeholder="{{ $initialPrinterMode ? 'e.g. Epson, HP, Canon, Brother' : 'e.g. Epson, HP, Cisco' }}"
-                                        :placeholder="printerMode ? 'e.g. Epson, HP, Canon, Brother' : 'e.g. Epson, HP, Cisco'"
+                                        placeholder="{{ $initialProfile['brand_placeholder'] }}"
+                                        :placeholder="profile.brand_placeholder"
                                     >
                                     @error('brand')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -237,8 +246,8 @@
                                         name="model"
                                         value="{{ old('model') }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
-                                        placeholder="{{ $initialPrinterMode ? 'e.g. L3110, M404dn, G4010' : 'e.g. L3110, SG350-28' }}"
-                                        :placeholder="printerMode ? 'e.g. L3110, M404dn, G4010' : 'e.g. L3110, SG350-28'"
+                                        placeholder="{{ $initialProfile['model_placeholder'] }}"
+                                        :placeholder="profile.model_placeholder"
                                     >
                                     @error('model')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -248,12 +257,13 @@
 
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Serial Number</label>
+                                    <label class="text-sm font-semibold text-slate-700" x-text="profile.serial_label">{{ $initialProfile['serial_label'] }}</label>
                                     <input
                                         name="serial_number"
                                         value="{{ old('serial_number') }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
-                                        placeholder="e.g. S/N or Service Tag"
+                                        placeholder="{{ $initialProfile['serial_placeholder'] }}"
+                                        :placeholder="profile.serial_placeholder"
                                     >
                                     @error('serial_number')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -276,15 +286,15 @@
 
                             <div
                                 x-cloak
-                                x-show="printerMode"
+                                x-show="profile.show_ip || profile.show_specs"
                                 class="grid gap-4 md:grid-cols-2"
                             >
-                                <div class="flex flex-col gap-1">
+                                <div x-show="profile.show_ip" class="flex flex-col gap-1">
                                     <label class="text-sm font-semibold text-slate-700">IP Address</label>
                                     <input
                                         name="ip_address"
                                         value="{{ old('ip_address') }}"
-                                        :disabled="!printerMode"
+                                        :disabled="!profile.show_ip"
                                         inputmode="decimal"
                                         class="h-11 rounded-xl border border-slate-200 px-3 font-mono text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
                                         placeholder="e.g. 192.168.10.25"
@@ -293,18 +303,110 @@
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Printer Specifications</label>
+                                <div x-show="profile.show_specs" class="flex flex-col gap-1">
+                                    <label class="text-sm font-semibold text-slate-700" x-text="profile.specs_label">{{ $initialProfile['specs_label'] }}</label>
                                     <input
                                         name="specs"
                                         value="{{ old('specs') }}"
-                                        :disabled="!printerMode"
+                                        :disabled="!profile.show_specs"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
-                                        placeholder="Connection: LAN | Print Type: Color | Paper: A4"
+                                        placeholder="{{ $initialProfile['specs_placeholder'] }}"
+                                        :placeholder="profile.specs_placeholder"
                                     >
                                     @error('specs')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
                                     @enderror
+                                </div>
+                            </div>
+
+                            <div x-cloak x-show="profile.show_computer" class="space-y-4">
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-sm font-semibold text-slate-700">Hostname</label>
+                                        <input
+                                            name="hostname"
+                                            value="{{ old('hostname') }}"
+                                            :disabled="!profile.show_computer"
+                                            class="h-11 rounded-xl border border-slate-200 px-3 font-mono text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                            placeholder="e.g. PC-FIN-001"
+                                        >
+                                        @error('hostname')
+                                            <p class="text-xs text-rose-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-sm font-semibold text-slate-700">RustDesk ID</label>
+                                        <input
+                                            name="rustdesk_id"
+                                            value="{{ old('rustdesk_id') }}"
+                                            :disabled="!profile.show_computer"
+                                            class="h-11 rounded-xl border border-slate-200 px-3 font-mono text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                            placeholder="e.g. 123456789"
+                                        >
+                                        @error('rustdesk_id')
+                                            <p class="text-xs text-rose-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-sm font-semibold text-slate-700">CPU</label>
+                                        <input
+                                            name="cpu"
+                                            value="{{ old('cpu') }}"
+                                            :disabled="!profile.show_computer"
+                                            class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                            placeholder="e.g. Intel Core i5-12400"
+                                        >
+                                        @error('cpu')
+                                            <p class="text-xs text-rose-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-sm font-semibold text-slate-700">RAM (GB)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            name="ram_gb"
+                                            value="{{ old('ram_gb') }}"
+                                            :disabled="!profile.show_computer"
+                                            class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                            placeholder="e.g. 16"
+                                        >
+                                        @error('ram_gb')
+                                            <p class="text-xs text-rose-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-sm font-semibold text-slate-700">Storage (GB)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            name="storage_gb"
+                                            value="{{ old('storage_gb') }}"
+                                            :disabled="!profile.show_computer"
+                                            class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                            placeholder="e.g. 512"
+                                        >
+                                        @error('storage_gb')
+                                            <p class="text-xs text-rose-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-sm font-semibold text-slate-700">Operating System</label>
+                                        <input
+                                            name="os_name"
+                                            value="{{ old('os_name') }}"
+                                            :disabled="!profile.show_computer"
+                                            class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                            placeholder="e.g. Windows 11 Pro"
+                                        >
+                                        @error('os_name')
+                                            <p class="text-xs text-rose-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
                                 </div>
                             </div>
 
@@ -345,7 +447,10 @@
                                     @enderror
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Warranty Until</label>
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        x-text="profileKey === 'software' ? 'License Expiry' : 'Warranty Until'"
+                                    >{{ $initialProfileKey === 'software' ? 'License Expiry' : 'Warranty Until' }}</label>
                                     <input
                                         type="date"
                                         name="warranty_until"
@@ -360,14 +465,14 @@
 
                             <div class="flex flex-col gap-1">
                                 <label class="text-sm font-semibold text-slate-700">
-                                    <span x-text="printerMode ? 'Maintenance / Supply Notes' : 'Technical Notes / Specs'">{{ $initialPrinterMode ? 'Maintenance / Supply Notes' : 'Technical Notes / Specs' }}</span>
+                                    <span x-text="profile.notes_label">{{ $initialProfile['notes_label'] }}</span>
                                 </label>
                                 <textarea
                                     name="notes"
                                     rows="4"
                                     class="rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
-                                    placeholder="{{ $initialPrinterMode ? 'e.g. Toner condition, maintenance history, or known print issues...' : 'Enter physical condition details, IP address, specs or serial numbers of accessories...' }}"
-                                    :placeholder="printerMode ? 'e.g. Toner condition, maintenance history, or known print issues...' : 'Enter physical condition details, IP address, specs or serial numbers of accessories...'"
+                                    placeholder="{{ $initialProfile['notes_placeholder'] }}"
+                                    :placeholder="profile.notes_placeholder"
                                 >{{ old('notes') }}</textarea>
                                 @error('notes')
                                     <p class="text-xs text-rose-600">{{ $message }}</p>

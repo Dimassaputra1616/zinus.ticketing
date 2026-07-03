@@ -20,27 +20,31 @@
     ];
 
     $isSoftwareLicense = $title === 'Software License';
-    $isMonitorCategory = $title === 'Monitor';
+    $categoryProfileKey = \App\Support\AssetCategoryProfile::key($title);
+    $usesConnectionColumn = in_array($categoryProfileKey, ['monitor', 'peripheral'], true);
     $searchPlaceholder = match (true) {
         $isSoftwareLicense => 'Name, product key, asset code',
-        $isMonitorCategory => 'Name, hostname, serial, asset code',
+        $usesConnectionColumn => 'Name, connection, serial, asset code',
         default => 'Name, hostname, IP, asset code',
     };
-    $technicalColumnLabel = $isMonitorCategory ? 'Connection' : 'IP Address';
-    $technicalValue = function ($asset) use ($isMonitorCategory) {
-        if (! $isMonitorCategory) {
+    $technicalColumnLabel = $usesConnectionColumn ? 'Connection' : 'IP Address';
+    $technicalValue = function ($asset) use ($usesConnectionColumn) {
+        if (! $usesConnectionColumn) {
             return $asset->ip_address;
         }
 
+        $specValues = [];
         foreach (explode('|', (string) $asset->specs) as $specPart) {
             [$key, $value] = array_pad(explode(':', $specPart, 2), 2, null);
+            $normalizedKey = strtolower(trim((string) $key));
+            $normalizedValue = trim((string) $value);
 
-            if (strcasecmp(trim((string) $key), 'connection') === 0 && filled(trim((string) $value))) {
-                return trim((string) $value);
+            if ($normalizedKey !== '' && filled($normalizedValue)) {
+                $specValues[$normalizedKey] = $normalizedValue;
             }
         }
 
-        return null;
+        return $specValues['connection'] ?? $specValues['interface'] ?? null;
     };
     $activeFilterCount = collect([$search, $factory, $departmentId, $location, $status, $lifecycleStatus, $brand])
         ->filter(fn ($value) => filled($value))

@@ -155,6 +155,18 @@
                                 <td class="p-3">E.g. Printer, Router, Switch, UPS, Scanner.</td>
                             </tr>
                             <tr>
+                                <td class="p-3 border-r border-slate-200 font-bold text-slate-800">ip_address</td>
+                                <td class="p-3 border-r border-slate-200 text-rose-500 font-bold">No</td>
+                                <td class="p-3 border-r border-slate-200">192.168.10.25</td>
+                                <td class="p-3">Management IP for computers, printers, network devices, or CCTV.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 border-r border-slate-200 font-bold text-slate-800">specs</td>
+                                <td class="p-3 border-r border-slate-200 text-rose-500 font-bold">No</td>
+                                <td class="p-3 border-r border-slate-200">Ports: 24 | Speed: 1 Gbps</td>
+                                <td class="p-3">Category-specific specifications using `Label: Value` separated by `|`.</td>
+                            </tr>
+                            <tr>
                                 <td class="p-3 border-r border-slate-200 font-bold text-slate-800">source_type</td>
                                 <td class="p-3 border-r border-slate-200 text-rose-500 font-bold">No</td>
                                 <td class="p-3 border-r border-slate-200">manual</td>
