@@ -24,6 +24,7 @@ class StoreAssetRequest extends FormRequest
             'brand' => ['nullable', 'string', 'max:150'],
             'model' => ['nullable', 'string', 'max:150'],
             'serial_number' => ['nullable', 'string', 'max:191', 'unique:assets,serial_number'],
+            'ip_address' => ['nullable', 'string', 'max:150'],
             'specs' => ['nullable', 'string', 'max:5000'],
             'status' => ['required', Rule::in(Asset::STATUSES)],
             'condition' => ['nullable', 'string', 'in:good,minor_issue,damaged,repair,disposed,lost'],

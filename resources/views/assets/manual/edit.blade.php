@@ -1,11 +1,27 @@
+@php
+    $initialCategory = old('category', $asset->category);
+    $initialPrinterMode = in_array($initialCategory, ['Printer & Scanner', 'Printer', 'Scanner'], true);
+@endphp
+
 <x-app-layout>
-    <div class="w-full space-y-6 pb-12 pt-6">
+    <div
+        class="w-full space-y-6 pb-12 pt-6"
+        x-data="{
+            category: @js($initialCategory),
+            get printerMode() {
+                return ['Printer & Scanner', 'Printer', 'Scanner'].includes(this.category);
+            }
+        }"
+    >
         <!-- Hero Header -->
         <section class="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-indigo-50/60 p-4 shadow-md shadow-indigo-500/10 lg:p-6">
             <div class="flex items-center justify-between">
                 <div class="space-y-2">
                     <p class="text-xs uppercase tracking-[0.35em] text-indigo-600/80">Asset Management Center</p>
-                    <h1 class="text-3xl font-semibold text-slate-900">Edit Manual Asset</h1>
+                    <h1
+                        class="text-3xl font-semibold text-slate-900"
+                        x-text="printerMode ? 'Edit Printer / Scanner' : 'Edit Manual Asset'"
+                    >{{ $initialPrinterMode ? 'Edit Printer / Scanner' : 'Edit Manual Asset' }}</h1>
                     <p class="text-sm text-slate-600">Update details for manual asset: <span class="font-bold text-indigo-600">{{ $asset->asset_code }}</span></p>
                 </div>
                 <a
@@ -54,6 +70,8 @@
                                         name="name"
                                         value="{{ old('name', $asset->name) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                        placeholder="{{ $initialPrinterMode ? 'e.g. Printer Finance, Scanner Warehouse' : '' }}"
+                                        :placeholder="printerMode ? 'e.g. Printer Finance, Scanner Warehouse' : ''"
                                         required
                                     >
                                     @error('name')
@@ -67,6 +85,7 @@
                                     <label class="text-sm font-semibold text-slate-700">Category <span class="text-rose-500">*</span></label>
                                     <select
                                         name="category"
+                                        x-model="category"
                                         class="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
                                         required
                                     >
@@ -80,12 +99,15 @@
                                     @enderror
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">Sub Category</label>
+                                    <label class="text-sm font-semibold text-slate-700">
+                                        <span x-text="printerMode ? 'Device Type' : 'Sub Category'">{{ $initialPrinterMode ? 'Device Type' : 'Sub Category' }}</span>
+                                    </label>
                                     <input
                                         name="sub_category"
                                         value="{{ old('sub_category', $asset->sub_category) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                                        placeholder="e.g. HDMI Monitor, Office PC, Barcode Scanner"
+                                        placeholder="{{ $initialPrinterMode ? 'e.g. Printer, Scanner, Multifunction' : 'e.g. HDMI Monitor, Office PC, Barcode Scanner' }}"
+                                        :placeholder="printerMode ? 'e.g. Printer, Scanner, Multifunction' : 'e.g. HDMI Monitor, Office PC, Barcode Scanner'"
                                     >
                                     @error('sub_category')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -133,6 +155,8 @@
                                         name="location"
                                         value="{{ old('location', $asset->location) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                        placeholder="{{ $initialPrinterMode ? 'e.g. Finance Room, Print Area' : '' }}"
+                                        :placeholder="printerMode ? 'e.g. Finance Room, Print Area' : ''"
                                     >
                                     @error('location')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -181,7 +205,10 @@
                         <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                             <div>
                                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Lifecycle Details</p>
-                                <h3 class="text-lg font-semibold text-slate-900">Technical Details</h3>
+                                <h3
+                                    class="text-lg font-semibold text-slate-900"
+                                    x-text="printerMode ? 'Printer Details' : 'Technical Details'"
+                                >{{ $initialPrinterMode ? 'Printer Details' : 'Technical Details' }}</h3>
                             </div>
                             <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">OPTIONAL</span>
                         </div>
@@ -194,6 +221,8 @@
                                         name="brand"
                                         value="{{ old('brand', $asset->brand) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                        placeholder="{{ $initialPrinterMode ? 'e.g. Epson, HP, Canon, Brother' : '' }}"
+                                        :placeholder="printerMode ? 'e.g. Epson, HP, Canon, Brother' : ''"
                                     >
                                     @error('brand')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -205,6 +234,8 @@
                                         name="model"
                                         value="{{ old('model', $asset->model) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                        placeholder="{{ $initialPrinterMode ? 'e.g. L3110, M404dn, G4010' : '' }}"
+                                        :placeholder="printerMode ? 'e.g. L3110, M404dn, G4010' : ''"
                                     >
                                     @error('model')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
@@ -233,6 +264,40 @@
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
                                     >
                                     @error('price')
+                                        <p class="text-xs text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div
+                                x-cloak
+                                x-show="printerMode"
+                                class="grid gap-4 md:grid-cols-2"
+                            >
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-sm font-semibold text-slate-700">IP Address</label>
+                                    <input
+                                        name="ip_address"
+                                        value="{{ old('ip_address', $asset->ip_address) }}"
+                                        :disabled="!printerMode"
+                                        inputmode="decimal"
+                                        class="h-11 rounded-xl border border-slate-200 px-3 font-mono text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                        placeholder="e.g. 192.168.10.25"
+                                    >
+                                    @error('ip_address')
+                                        <p class="text-xs text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-sm font-semibold text-slate-700">Printer Specifications</label>
+                                    <input
+                                        name="specs"
+                                        value="{{ old('specs', $asset->specs) }}"
+                                        :disabled="!printerMode"
+                                        class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                        placeholder="Connection: LAN | Print Type: Color | Paper: A4"
+                                    >
+                                    @error('specs')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
                                     @enderror
                                 </div>
@@ -289,11 +354,15 @@
                             </div>
 
                             <div class="flex flex-col gap-1">
-                                <label class="text-sm font-semibold text-slate-700">Technical Notes / Specs</label>
+                                <label class="text-sm font-semibold text-slate-700">
+                                    <span x-text="printerMode ? 'Maintenance / Supply Notes' : 'Technical Notes / Specs'">{{ $initialPrinterMode ? 'Maintenance / Supply Notes' : 'Technical Notes / Specs' }}</span>
+                                </label>
                                 <textarea
                                     name="notes"
                                     rows="4"
                                     class="rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
+                                    placeholder="{{ $initialPrinterMode ? 'e.g. Toner condition, maintenance history, or known print issues...' : '' }}"
+                                    :placeholder="printerMode ? 'e.g. Toner condition, maintenance history, or known print issues...' : ''"
                                 >{{ old('notes', $asset->notes) }}</textarea>
                                 @error('notes')
                                     <p class="text-xs text-rose-600">{{ $message }}</p>
