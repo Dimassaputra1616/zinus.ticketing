@@ -27,52 +27,57 @@
         })"
         x-init="init()"
     >
-        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-100 bg-gradient-to-r from-white via-white to-emerald-50/60 px-4 py-4 sm:px-5">
-                <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <rect x="3" y="4" width="18" height="13" rx="2" />
-                                    <path d="M8 21h8m-4-4v4" />
-                                </svg>
-                            </span>
-                            <div>
-                                <h2 class="text-lg font-bold tracking-tight text-slate-900">Remote endpoints</h2>
-                                <p class="text-xs text-slate-500">PC dan laptop yang terdaftar untuk monitoring dan koneksi RustDesk.</p>
-                            </div>
-                        </div>
-                    </div>
+        <section class="relative overflow-hidden rounded-[28px] bg-slate-950 text-white shadow-[0_24px_70px_-35px_rgba(15,23,42,.8)] ring-1 ring-white/10">
+            <div class="pointer-events-none absolute -right-20 -top-28 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl"></div>
+            <div class="pointer-events-none absolute bottom-0 left-1/3 h-28 w-80 rounded-full bg-sky-500/10 blur-3xl"></div>
 
-                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
-                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Registered</p>
-                            <p class="mt-0.5 text-lg font-bold text-slate-900">{{ number_format($totalEndpoints) }}</p>
+            <div class="relative flex flex-col gap-5 px-5 py-5 xl:flex-row xl:items-center xl:justify-between sm:px-6">
+                <div class="flex items-start gap-3">
+                    <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="4" width="18" height="13" rx="2" />
+                            <path d="M8 21h8m-4-4v4" />
+                        </svg>
+                    </span>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-xl font-bold tracking-tight">Endpoint Command Center</h2>
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-300 ring-1 ring-emerald-400/20">
+                                <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400"></span>
+                                Live monitoring
+                            </span>
                         </div>
-                        <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2">
-                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">Ready</p>
-                            <p class="mt-0.5 text-lg font-bold text-emerald-800">{{ number_format($readyEndpoints) }}</p>
-                        </div>
-                        <div class="rounded-xl border border-amber-100 bg-amber-50/70 px-3 py-2">
-                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-600">Missing ID</p>
-                            <p class="mt-0.5 text-lg font-bold text-amber-800">{{ number_format($missingEndpoints) }}</p>
-                        </div>
-                        <div class="rounded-xl border border-sky-100 bg-sky-50/70 px-3 py-2">
-                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-600">Online page</p>
-                            <p class="mt-0.5 text-lg font-bold text-sky-800">
-                                <span x-text="onlineCount">0</span><span class="text-xs font-semibold text-sky-500">/{{ $assets->count() }}</span>
-                            </p>
-                        </div>
+                        <p class="mt-1 max-w-xl text-xs leading-relaxed text-slate-400">Manage PC and laptop availability, RustDesk readiness, and remote connections from one workspace.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:min-w-[520px]">
+                    <div class="rounded-2xl bg-white/[.06] px-3.5 py-2.5 ring-1 ring-white/10 backdrop-blur">
+                        <p class="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">Registered</p>
+                        <p class="mt-1 text-xl font-bold">{{ number_format($totalEndpoints) }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-emerald-400/10 px-3.5 py-2.5 ring-1 ring-emerald-400/20 backdrop-blur">
+                        <p class="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-400">Ready</p>
+                        <p class="mt-1 text-xl font-bold text-emerald-300">{{ number_format($readyEndpoints) }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-amber-400/10 px-3.5 py-2.5 ring-1 ring-amber-400/20 backdrop-blur">
+                        <p class="text-[9px] font-bold uppercase tracking-[0.18em] text-amber-400">Missing ID</p>
+                        <p class="mt-1 text-xl font-bold text-amber-300">{{ number_format($missingEndpoints) }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-sky-400/10 px-3.5 py-2.5 ring-1 ring-sky-400/20 backdrop-blur">
+                        <p class="text-[9px] font-bold uppercase tracking-[0.18em] text-sky-400">Online page</p>
+                        <p class="mt-1 text-xl font-bold text-sky-300">
+                            <span x-text="onlineCount">0</span><span class="text-xs font-semibold text-sky-500">/{{ $assets->count() }}</span>
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <div class="space-y-3 px-4 py-3 sm:px-5">
-                <form method="GET" class="grid gap-2 lg:grid-cols-[minmax(260px,1fr)_190px_auto_auto]">
-                    <label class="relative block">
+            <div class="relative border-t border-white/10 bg-white/[.04] px-5 py-4 sm:px-6">
+                <form method="GET" class="flex flex-col gap-2 md:flex-row">
+                    <label class="relative min-w-0 flex-1">
                         <span class="sr-only">Search remote endpoints</span>
-                        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <circle cx="11" cy="11" r="7" />
                             <path d="m20 20-3.5-3.5" stroke-linecap="round" />
                         </svg>
@@ -81,13 +86,13 @@
                             name="q"
                             value="{{ $search }}"
                             placeholder="Search name, hostname, IP, user..."
-                            class="h-10 w-full rounded-xl border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-400 focus:ring-emerald-200"
+                            class="h-11 w-full rounded-xl border-white/10 bg-white/[.08] pl-10 pr-3 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400 focus:bg-white/[.12] focus:ring-emerald-400/20"
                         >
                     </label>
 
                     <select
                         name="connection"
-                        class="h-10 rounded-xl border-slate-200 bg-slate-50 py-0 text-sm font-medium text-slate-700 focus:border-emerald-400 focus:ring-emerald-200"
+                        class="h-11 w-full rounded-xl border-white/10 bg-slate-900 py-0 text-sm font-medium text-slate-200 focus:border-emerald-400 focus:ring-emerald-400/20 md:w-56"
                     >
                         <option value="all" @selected($connection === 'all')>All configurations</option>
                         <option value="ready" @selected($connection === 'ready')>RustDesk ready</option>
@@ -96,7 +101,7 @@
 
                     <button
                         type="submit"
-                        class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+                        class="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/10 transition hover:bg-emerald-300"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <path d="M4 5h16l-6 7v5l-4 2v-7L4 5Z" stroke-linecap="round" stroke-linejoin="round" />
@@ -107,15 +112,15 @@
                     @if ($search !== '' || $connection !== 'all')
                         <a
                             href="{{ route('remote-system.index') }}"
-                            class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                            class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-white/10 px-4 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
                         >
                             Reset
                         </a>
                     @endif
                 </form>
 
-                <div class="flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="flex items-center gap-1 rounded-xl bg-slate-100 p-1">
+                <div class="mt-3 flex flex-col gap-2 border-t border-white/10 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="inline-flex self-start rounded-xl bg-black/20 p-1 ring-1 ring-white/10">
                         @foreach ([
                             ['key' => 'all', 'label' => 'All'],
                             ['key' => 'online', 'label' => 'Online'],
@@ -125,11 +130,11 @@
                                 type="button"
                                 @click="setLiveFilter('{{ $filter['key'] }}')"
                                 class="inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition"
-                                :class="liveFilter === '{{ $filter['key'] }}' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                :class="liveFilter === '{{ $filter['key'] }}' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
                             >
                                 {{ $filter['label'] }}
                                 @if ($filter['key'] === 'online')
-                                    <span class="text-[10px] text-emerald-600" x-text="onlineCount"></span>
+                                    <span class="text-[10px] text-emerald-500" x-text="onlineCount"></span>
                                 @elseif ($filter['key'] === 'offline')
                                     <span class="text-[10px] text-slate-500" x-text="offlineCount"></span>
                                 @endif
@@ -138,8 +143,8 @@
                     </div>
 
                     <p class="text-xs text-slate-500">
-                        Showing <span class="font-semibold text-slate-700">{{ $assets->firstItem() ?? 0 }}-{{ $assets->lastItem() ?? 0 }}</span>
-                        of <span class="font-semibold text-slate-700">{{ number_format($assets->total()) }}</span> matching endpoints
+                        Showing <span class="font-bold text-slate-300">{{ $assets->firstItem() ?? 0 }}-{{ $assets->lastItem() ?? 0 }}</span>
+                        of <span class="font-bold text-slate-300">{{ number_format($assets->total()) }}</span> matching endpoints
                     </p>
                 </div>
             </div>
@@ -154,10 +159,10 @@
                 Tidak ada perangkat <span class="font-bold" x-text="liveFilter"></span> pada halaman ini.
             </div>
 
-            <section class="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
+            <section class="hidden overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_55px_-40px_rgba(15,23,42,.5)] lg:block">
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[980px] text-left text-sm">
-                        <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                        <thead class="bg-slate-950 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                             <tr>
                                 <th class="px-4 py-3">Device</th>
                                 <th class="px-4 py-3">Owner / Department</th>
@@ -179,11 +184,11 @@
                                     data-remote-device
                                     data-device-id="{{ $asset->id }}"
                                     data-live-status="checking"
-                                    class="transition hover:bg-emerald-50/30"
+                                    class="group transition hover:bg-emerald-50/40"
                                 >
                                     <td class="px-4 py-3">
                                         <div class="flex min-w-0 items-center gap-3">
-                                            <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                                            <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition group-hover:bg-emerald-100 group-hover:text-emerald-700">
                                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                                     <rect x="3" y="4" width="18" height="13" rx="2" />
                                                     <path d="M8 21h8m-4-4v4" stroke-linecap="round" />
@@ -201,7 +206,12 @@
                                         <p class="max-w-[180px] truncate font-medium text-slate-700">{{ $asset->user?->name ?: 'Unassigned' }}</p>
                                         <p class="mt-0.5 max-w-[180px] truncate text-xs text-slate-400">{{ $asset->department?->name ?: 'No department' }}</p>
                                     </td>
-                                    <td class="px-4 py-3 font-mono text-xs text-slate-600">{{ $asset->ip_address ?: '—' }}</td>
+                                    <td class="px-4 py-3">
+                                        <p class="font-mono text-xs font-semibold text-slate-700">{{ $asset->ip_address ?: '—' }}</p>
+                                        <p class="mt-0.5 text-[10px] text-slate-400">
+                                            {{ $asset->last_synced_at ? 'Synced ' . $asset->last_synced_at->diffForHumans() : 'No sync timestamp' }}
+                                        </p>
+                                    </td>
                                     <td class="px-4 py-3">
                                         <span
                                             data-status-badge="{{ $asset->id }}"
@@ -228,7 +238,7 @@
                                             @if ($hasRustdesk)
                                                 <a
                                                     href="{{ $rustdeskUriFor($asset) }}"
-                                                    class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                                                    class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-3.5 text-xs font-bold text-white shadow-sm shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:from-emerald-700 hover:to-emerald-600"
                                                 >
                                                     Connect
                                                     <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -338,15 +348,25 @@
                 devices: config.devices || [],
                 pingUrl: config.pingUrl || '',
                 liveFilter: 'all',
-                onlineCount: 0,
-                offlineCount: 0,
-                checkingCount: (config.devices || []).length,
+                started: false,
+                deviceStatuses: {},
+                get onlineCount() {
+                    return Object.values(this.deviceStatuses).filter((status) => status === 'online').length;
+                },
+                get offlineCount() {
+                    return Object.values(this.deviceStatuses).filter((status) => status === 'offline').length;
+                },
+                get checkingCount() {
+                    return Math.max(0, this.devices.length - Object.keys(this.deviceStatuses).length);
+                },
                 get visibleCount() {
                     if (this.liveFilter === 'online') return this.onlineCount;
                     if (this.liveFilter === 'offline') return this.offlineCount;
                     return this.devices.length;
                 },
                 init() {
+                    if (this.started) return;
+                    this.started = true;
                     this.devices.forEach((device) => this.checkDevice(device));
                 },
                 setLiveFilter(filter) {
@@ -380,6 +400,11 @@
                     }
                 },
                 updateDeviceStatus(id, status) {
+                    this.deviceStatuses = {
+                        ...this.deviceStatuses,
+                        [id]: status,
+                    };
+
                     document.querySelectorAll(`[data-device-id="${id}"]`).forEach((element) => {
                         element.dataset.liveStatus = status;
                     });
@@ -396,12 +421,6 @@
                         text.textContent = status;
                     });
 
-                    if (status === 'online') {
-                        this.onlineCount++;
-                    } else {
-                        this.offlineCount++;
-                    }
-                    this.checkingCount = Math.max(0, this.checkingCount - 1);
                     this.applyLiveFilter();
                 },
             };
