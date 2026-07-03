@@ -20,6 +20,28 @@
     ];
 
     $isSoftwareLicense = $title === 'Software License';
+    $isMonitorCategory = $title === 'Monitor';
+    $searchPlaceholder = match (true) {
+        $isSoftwareLicense => 'Name, product key, asset code',
+        $isMonitorCategory => 'Name, hostname, serial, asset code',
+        default => 'Name, hostname, IP, asset code',
+    };
+    $technicalColumnLabel = $isMonitorCategory ? 'Connection' : 'IP Address';
+    $technicalValue = function ($asset) use ($isMonitorCategory) {
+        if (! $isMonitorCategory) {
+            return $asset->ip_address;
+        }
+
+        foreach (explode('|', (string) $asset->specs) as $specPart) {
+            [$key, $value] = array_pad(explode(':', $specPart, 2), 2, null);
+
+            if (strcasecmp(trim((string) $key), 'connection') === 0 && filled(trim((string) $value))) {
+                return trim((string) $value);
+            }
+        }
+
+        return null;
+    };
     $activeFilterCount = collect([$search, $factory, $departmentId, $location, $status, $lifecycleStatus, $brand])
         ->filter(fn ($value) => filled($value))
         ->count();
@@ -127,7 +149,7 @@
                             type="search"
                             name="search"
                             value="{{ $search }}"
-                            placeholder="{{ $isSoftwareLicense ? 'Name, product key, asset code' : 'Name, hostname, IP, asset code' }}"
+                            placeholder="{{ $searchPlaceholder }}"
                             class="h-10 w-full rounded-lg border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                         >
                     </div>
@@ -271,7 +293,7 @@
                                     <th class="w-[17%] px-4 py-3">Device</th>
                                     <th class="w-[13%] px-4 py-3">Asset Code</th>
                                     <th class="w-[13%] px-4 py-3">Brand / Model</th>
-                                    <th class="w-[13%] px-4 py-3">IP Address</th>
+                                    <th class="w-[13%] px-4 py-3">{{ $technicalColumnLabel }}</th>
                                     <th class="w-[10%] px-4 py-3">Location</th>
                                     <th class="w-[10%] px-4 py-3">Department</th>
                                     <th class="w-[8%] px-4 py-3">Condition</th>
@@ -303,6 +325,7 @@
                                     $showHostname = filled($asset->hostname)
                                         && strcasecmp(trim((string) $asset->hostname), trim((string) $deviceName)) !== 0;
                                     $locationValue = $asset->location ?: ($asset->factory ?: '-');
+                                    $technicalFieldValue = $technicalValue($asset);
                                 @endphp
                                 <tr class="group align-middle transition-colors hover:bg-emerald-50/30">
                                     @if ($isSoftwareLicense)
@@ -350,8 +373,8 @@
                                             <span class="block truncate text-slate-700">{{ $asset->brand ?? '-' }}</span>
                                             <span class="mt-0.5 block truncate text-xs text-slate-500">{{ $asset->model ?? '-' }}</span>
                                         </td>
-                                        <td class="truncate px-4 py-3.5 font-mono text-xs text-slate-500" title="{{ $asset->ip_address }}">
-                                            {{ $asset->ip_address ?? '-' }}
+                                        <td class="truncate px-4 py-3.5 font-mono text-xs text-slate-500" title="{{ $technicalFieldValue }}">
+                                            {{ $technicalFieldValue ?? '-' }}
                                         </td>
                                         <td class="px-4 py-3.5 text-slate-600">{{ $locationValue }}</td>
                                         <td class="px-4 py-3.5 text-slate-600">{{ $asset->department->name ?? '-' }}</td>
@@ -466,6 +489,7 @@
                             $showHostname = filled($asset->hostname)
                                 && strcasecmp(trim((string) $asset->hostname), trim((string) $deviceName)) !== 0;
                             $locationValue = $asset->location ?: ($asset->factory ?: '-');
+                            $technicalFieldValue = $technicalValue($asset);
                         @endphp
                         <article class="p-4">
                             <div class="flex items-start justify-between gap-3">
@@ -513,8 +537,8 @@
                                         <dd class="mt-1 font-medium text-slate-700">{{ $asset->brand ?? '-' }} / {{ $asset->model ?? '-' }}</dd>
                                     </div>
                                     <div>
-                                        <dt class="text-slate-400">IP Address</dt>
-                                        <dd class="mt-1 truncate font-mono text-slate-600">{{ $asset->ip_address ?? '-' }}</dd>
+                                        <dt class="text-slate-400">{{ $technicalColumnLabel }}</dt>
+                                        <dd class="mt-1 truncate font-mono text-slate-600">{{ $technicalFieldValue ?? '-' }}</dd>
                                     </div>
                                     <div>
                                         <dt class="text-slate-400">Location</dt>

@@ -104,4 +104,30 @@ class AssetCategoryIndexTest extends TestCase
             ->assertOk()
             ->assertSeeText('Searchable Workstation');
     }
+
+    public function test_monitor_inventory_shows_connection_instead_of_ip_address(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        Asset::create([
+            'asset_code' => 'MON-DISPLAY-01',
+            'name' => 'Dell P2419H',
+            'category' => 'Monitor',
+            'specs' => 'Connection: DisplayPort | Identity Source: serial',
+            'status' => Asset::STATUS_IN_USE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.assets.monitor'))
+            ->assertOk()
+            ->assertSeeText('Connection')
+            ->assertDontSeeText('IP Address');
+
+        $visibleText = strip_tags($response->getContent());
+
+        // The page renders one desktop row and one mobile card.
+        $this->assertSame(2, substr_count($visibleText, 'DisplayPort'));
+    }
 }
