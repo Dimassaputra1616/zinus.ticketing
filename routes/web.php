@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RemoteSystemController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketAttachmentController;
 use App\Http\Controllers\UserController;
@@ -439,26 +440,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/reports/export', [App\Http\Controllers\ReportController::class, 'export'])->name('reports.export');
 
     // Remote System
-    Route::get('/remote-system', function () {
-        $assets = \App\Models\Asset::query()
-            ->remoteEndpoints()
-            ->with(['user', 'department'])
-            ->orderByDesc('updated_at')
-            ->get();
-        return view('remote-system.index', compact('assets'));
-    })->name('remote-system.index');
-
-    Route::get('/remote-system/ping', function (\Illuminate\Http\Request $request) {
-        $ip = $request->get('ip');
-        if (!$ip || !filter_var($ip, FILTER_VALIDATE_IP)) {
-            return response()->json(['status' => 'offline']);
-        }
-
-        // Timeout 1s, count 1
-        exec(sprintf('ping -c 1 -W 1 %s', escapeshellarg($ip)), $output, $result);
-
-        return response()->json(['status' => $result === 0 ? 'online' : 'offline']);
-    })->name('remote-system.ping');
+    Route::get('/remote-system', [RemoteSystemController::class, 'index'])->name('remote-system.index');
+    Route::get('/remote-system/ping', [RemoteSystemController::class, 'ping'])->name('remote-system.ping');
 });
 
 require __DIR__.'/auth.php';
