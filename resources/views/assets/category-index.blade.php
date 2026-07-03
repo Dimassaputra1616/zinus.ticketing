@@ -127,7 +127,7 @@
                             type="search"
                             name="search"
                             value="{{ $search }}"
-                            placeholder="Name, hostname, serial, asset code"
+                            placeholder="{{ $isSoftwareLicense ? 'Name, product key, asset code' : 'Name, hostname, IP, asset code' }}"
                             class="h-10 w-full rounded-lg border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                         >
                     </div>
@@ -271,7 +271,7 @@
                                     <th class="w-[17%] px-4 py-3">Device</th>
                                     <th class="w-[13%] px-4 py-3">Asset Code</th>
                                     <th class="w-[13%] px-4 py-3">Brand / Model</th>
-                                    <th class="w-[13%] px-4 py-3">Serial Number</th>
+                                    <th class="w-[13%] px-4 py-3">IP Address</th>
                                     <th class="w-[10%] px-4 py-3">Location</th>
                                     <th class="w-[10%] px-4 py-3">Department</th>
                                     <th class="w-[8%] px-4 py-3">Condition</th>
@@ -350,8 +350,8 @@
                                             <span class="block truncate text-slate-700">{{ $asset->brand ?? '-' }}</span>
                                             <span class="mt-0.5 block truncate text-xs text-slate-500">{{ $asset->model ?? '-' }}</span>
                                         </td>
-                                        <td class="truncate px-4 py-3.5 font-mono text-xs text-slate-500" title="{{ $asset->serial_number }}">
-                                            {{ $asset->serial_number ?? '-' }}
+                                        <td class="truncate px-4 py-3.5 font-mono text-xs text-slate-500" title="{{ $asset->ip_address }}">
+                                            {{ $asset->ip_address ?? '-' }}
                                         </td>
                                         <td class="px-4 py-3.5 text-slate-600">{{ $locationValue }}</td>
                                         <td class="px-4 py-3.5 text-slate-600">{{ $asset->department->name ?? '-' }}</td>
@@ -513,8 +513,8 @@
                                         <dd class="mt-1 font-medium text-slate-700">{{ $asset->brand ?? '-' }} / {{ $asset->model ?? '-' }}</dd>
                                     </div>
                                     <div>
-                                        <dt class="text-slate-400">Serial Number</dt>
-                                        <dd class="mt-1 truncate font-mono text-slate-600">{{ $asset->serial_number ?? '-' }}</dd>
+                                        <dt class="text-slate-400">IP Address</dt>
+                                        <dd class="mt-1 truncate font-mono text-slate-600">{{ $asset->ip_address ?? '-' }}</dd>
                                     </div>
                                     <div>
                                         <dt class="text-slate-400">Location</dt>

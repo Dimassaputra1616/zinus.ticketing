@@ -143,6 +143,45 @@ class AssetRelationTest extends TestCase
             ->assertSee(route('admin.assets.relations.detach', $relation), false);
     }
 
+    public function test_monitor_detail_renders_monitor_specific_technical_inventory(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $monitor = $this->asset('MON-001', 'Desk Monitor', 'Monitor');
+        $monitor->update([
+            'hostname' => 'office-pc-P2419H',
+            'serial_number' => 'DISPLAY-001',
+            'brand' => 'Dell',
+            'model' => 'P2419H',
+            'specs' => 'Connection: HDMI | Instance: DISPLAY\\DEL40A9\\1&UID4352 | Identity Source: serial | Identity Verified: Yes | Size: 52 x 29 cm',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('assets.show', $monitor))
+            ->assertOk();
+
+        $technicalInventoryHtml = \Illuminate\Support\Str::between(
+            $response->getContent(),
+            'Technical Inventory',
+            'Ownership & Commercials'
+        );
+
+        $this->assertStringContainsString('Connection', $technicalInventoryHtml);
+        $this->assertStringContainsString('HDMI', $technicalInventoryHtml);
+        $this->assertStringContainsString('Screen Size', $technicalInventoryHtml);
+        $this->assertStringContainsString('52 x 29 cm', $technicalInventoryHtml);
+        $this->assertStringContainsString('Display Instance', $technicalInventoryHtml);
+        $this->assertStringContainsString('DISPLAY\\DEL40A9\\1&amp;UID4352', $technicalInventoryHtml);
+        $this->assertStringContainsString('Identity Source', $technicalInventoryHtml);
+        $this->assertStringContainsString('Identity Verified', $technicalInventoryHtml);
+        $this->assertStringNotContainsString('>CPU<', $technicalInventoryHtml);
+        $this->assertStringNotContainsString('>RAM<', $technicalInventoryHtml);
+        $this->assertStringNotContainsString('>Storage<', $technicalInventoryHtml);
+        $this->assertStringNotContainsString('Operating System', $technicalInventoryHtml);
+        $this->assertStringNotContainsString('IP Address', $technicalInventoryHtml);
+        $this->assertStringNotContainsString('RustDesk ID', $technicalInventoryHtml);
+        $this->assertStringNotContainsString('Sub Category', $technicalInventoryHtml);
+    }
+
     private function asset(string $code, string $name, string $category): Asset
     {
         return Asset::create([

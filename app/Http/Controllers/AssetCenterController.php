@@ -663,6 +663,7 @@ class AssetCenterController extends Controller
                   ->orWhere('asset_code', 'like', "%{$search}%")
                   ->orWhere('serial_number', 'like', "%{$search}%")
                   ->orWhere('hostname', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%")
                   ->orWhere('brand', 'like', "%{$search}%")
                   ->orWhere('model', 'like', "%{$search}%");
             });

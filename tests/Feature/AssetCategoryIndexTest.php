@@ -56,4 +56,52 @@ class AssetCategoryIndexTest extends TestCase
             ->assertSeeText('Accounting Workstation')
             ->assertSeeText('PC-ZDI-ACC-001');
     }
+
+    public function test_ip_address_replaces_serial_number_in_responsive_inventory_views(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        Asset::create([
+            'asset_code' => 'PC-NETWORK-01',
+            'name' => 'Network Workstation',
+            'category' => 'PC',
+            'serial_number' => 'SERIAL-SHOULD-NOT-BE-SHOWN',
+            'ip_address' => '192.168.10.25',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.assets.pc'))
+            ->assertOk()
+            ->assertSeeText('IP Address')
+            ->assertDontSeeText('Serial Number')
+            ->assertDontSeeText('SERIAL-SHOULD-NOT-BE-SHOWN');
+
+        $visibleText = strip_tags($response->getContent());
+
+        // The page renders one desktop row and one mobile card.
+        $this->assertSame(2, substr_count($visibleText, '192.168.10.25'));
+    }
+
+    public function test_inventory_can_be_searched_by_ip_address(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        Asset::create([
+            'asset_code' => 'PC-IP-SEARCH-01',
+            'name' => 'Searchable Workstation',
+            'category' => 'PC',
+            'ip_address' => '10.20.30.40',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.pc', ['search' => '10.20.30.40']))
+            ->assertOk()
+            ->assertSeeText('Searchable Workstation');
+    }
 }

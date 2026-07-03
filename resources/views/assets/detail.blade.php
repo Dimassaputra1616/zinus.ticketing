@@ -100,6 +100,15 @@
     $osValue = $asset->os_name ?: $specFallback('os', 'operating system');
     $ipValue = $asset->ip_address ?: $specFallback('ip', 'ip address');
     $rawUserValue = $specFallback('user', 'username', 'logged user');
+    $isMonitorCategory = \Illuminate\Support\Str::contains(
+        \Illuminate\Support\Str::lower((string) $asset->category),
+        'monitor'
+    );
+    $monitorConnection = $specFallback('connection');
+    $monitorSize = $specFallback('size', 'screen size', 'display size');
+    $monitorInstance = $specFallback('instance', 'instance name', 'display instance');
+    $monitorIdentitySource = $specFallback('identity source');
+    $monitorIdentityVerified = $specFallback('identity verified');
     $attachedMonitorLinks = $attachedAssets
         ->filter(fn ($child) => \Illuminate\Support\Str::contains(\Illuminate\Support\Str::lower((string) $child->category), 'monitor'))
         ->map(fn ($child) => [
@@ -109,25 +118,45 @@
         ->filter(fn ($link) => filled($link['label']))
         ->values();
 
-    $trackedFields = [
-        $asset->asset_code,
-        $asset->name,
-        $asset->category,
-        $asset->serial_number,
-        $asset->brand,
-        $asset->model,
-        $asset->department_id,
-        $asset->location,
-        $asset->condition,
-        $asset->lifecycle_status,
-        $asset->warranty_until ?: $asset->warranty_expired,
-        $cpuValue,
-        $ramValue,
-        $storageValue,
-        $osValue,
-        $ipValue,
-        $asset->notes,
-    ];
+    $trackedFields = $isMonitorCategory
+        ? [
+            $asset->asset_code,
+            $asset->name,
+            $asset->category,
+            $asset->serial_number,
+            $asset->brand,
+            $asset->model,
+            $monitorConnection,
+            $monitorSize,
+            $monitorInstance,
+            $monitorIdentitySource,
+            $monitorIdentityVerified,
+            $asset->department_id,
+            $asset->location,
+            $asset->condition,
+            $asset->lifecycle_status,
+            $asset->warranty_until ?: $asset->warranty_expired,
+            $asset->notes,
+        ]
+        : [
+            $asset->asset_code,
+            $asset->name,
+            $asset->category,
+            $asset->serial_number,
+            $asset->brand,
+            $asset->model,
+            $asset->department_id,
+            $asset->location,
+            $asset->condition,
+            $asset->lifecycle_status,
+            $asset->warranty_until ?: $asset->warranty_expired,
+            $cpuValue,
+            $ramValue,
+            $storageValue,
+            $osValue,
+            $ipValue,
+            $asset->notes,
+        ];
     $filledFields = collect($trackedFields)->filter(fn ($field) => filled($field))->count();
     $dataCompleteness = (int) round(($filledFields / max(count($trackedFields), 1)) * 100);
 
@@ -136,20 +165,34 @@
         ['label' => 'Serial Number', 'value' => $asset->serial_number, 'mono' => true, 'copy' => true],
         ['label' => 'Hostname', 'value' => $asset->hostname, 'mono' => true, 'copy' => true],
         ['label' => 'Category', 'value' => $asset->category],
-        ['label' => 'Sub Category', 'value' => $asset->sub_category],
         ['label' => 'Source', 'value' => $sourceLabel],
     ];
+    if (! $isMonitorCategory || filled($asset->sub_category)) {
+        array_splice($identityFields, 4, 0, [[
+            'label' => 'Sub Category',
+            'value' => $asset->sub_category,
+        ]]);
+    }
 
-    $hardwareFields = [
-        ['label' => 'Brand / Model', 'value' => $brandModel],
-        ['label' => 'CPU', 'value' => $cpuValue],
-        ['label' => 'RAM', 'value' => $ramValue],
-        ['label' => 'Storage', 'value' => $storageValue],
-        ['label' => 'Operating System', 'value' => $osValue],
-        ['label' => 'IP Address', 'value' => $ipValue, 'mono' => true, 'copy' => true],
-        ['label' => 'RustDesk ID', 'value' => $asset->rustdesk_id, 'mono' => true, 'copy' => true],
-    ];
-    if ($attachedMonitorLinks->isNotEmpty()) {
+    $hardwareFields = $isMonitorCategory
+        ? [
+            ['label' => 'Brand / Model', 'value' => $brandModel],
+            ['label' => 'Connection', 'value' => $monitorConnection],
+            ['label' => 'Screen Size', 'value' => $monitorSize],
+            ['label' => 'Display Instance', 'value' => $monitorInstance, 'mono' => true, 'copy' => true],
+            ['label' => 'Identity Source', 'value' => $monitorIdentitySource],
+            ['label' => 'Identity Verified', 'value' => $monitorIdentityVerified],
+        ]
+        : [
+            ['label' => 'Brand / Model', 'value' => $brandModel],
+            ['label' => 'CPU', 'value' => $cpuValue],
+            ['label' => 'RAM', 'value' => $ramValue],
+            ['label' => 'Storage', 'value' => $storageValue],
+            ['label' => 'Operating System', 'value' => $osValue],
+            ['label' => 'IP Address', 'value' => $ipValue, 'mono' => true, 'copy' => true],
+            ['label' => 'RustDesk ID', 'value' => $asset->rustdesk_id, 'mono' => true, 'copy' => true],
+        ];
+    if (! $isMonitorCategory && $attachedMonitorLinks->isNotEmpty()) {
         $hardwareFields[] = ['label' => 'Attached Monitor', 'links' => $attachedMonitorLinks, 'mono' => true];
     }
 
