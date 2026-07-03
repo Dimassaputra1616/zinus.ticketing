@@ -542,7 +542,7 @@
                                                     @endforeach
                                                 </div>
                                             @else
-                                                <div class="truncate">
+                                                <div class="break-words">
                                                     {{ $formatValue($field['value'] ?? null) }}
                                                 </div>
                                             @endif
@@ -573,7 +573,7 @@
                                 <div class="flex min-h-[54px] items-center justify-between gap-4 border-b border-slate-100 py-3">
                                     <div class="min-w-0">
                                         <div class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">{{ $field['label'] }}</div>
-                                        <div class="mt-1 truncate text-sm font-semibold text-slate-900" title="{{ $formatValue($field['value']) }}">{{ $formatValue($field['value']) }}</div>
+                                        <div class="mt-1 break-words text-sm font-semibold text-slate-900" title="{{ $formatValue($field['value']) }}">{{ $formatValue($field['value']) }}</div>
                                     </div>
                                 </div>
                             @endforeach
