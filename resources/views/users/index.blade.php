@@ -551,7 +551,26 @@
                 confirmData: { name: '', action: '' },
                 errors: {},
                 toasts: [],
-                initPage() {},
+                initPage() {
+                    this.$nextTick(() => {
+                        this.$refs.tableContainer?.addEventListener('click', (event) => {
+                            const link = event.target?.closest?.('a[href]');
+                            if (!link) return;
+
+                            const target = new URL(link.href, window.location.origin);
+                            if (!target.searchParams.has('page')) return;
+
+                            event.preventDefault();
+                            this.refreshTable(target.toString(), 'push');
+                        });
+                    });
+
+                    window.addEventListener('popstate', () => {
+                        const target = new URL(window.location.href);
+                        this.searchTerm = target.searchParams.get('q') || '';
+                        this.refreshTable(target.toString());
+                    });
+                },
                 generateToastId() {
                     return safeUUID();
                 },
@@ -743,12 +762,27 @@
                         this.addToast('Terjadi kesalahan jaringan', 'error');
                     }
                 },
-                async refreshTable(url = null) {
-                    const target = new URL(url || window.location.href);
-                    target.searchParams.set('fragment', '1');
+                async refreshTable(url = null, historyMode = null) {
+                    const pageUrl = new URL(url || window.location.href);
+                    pageUrl.searchParams.delete('fragment');
+                    pageUrl.searchParams.delete('autocomplete');
+
+                    const fragmentUrl = new URL(pageUrl);
+                    fragmentUrl.searchParams.set('fragment', '1');
+
                     try {
-                        const res = await fetch(target.toString(), { headers: { 'Accept': 'application/json' } });
-                        if (!res.ok) return;
+                        const res = await fetch(fragmentUrl.toString(), {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            credentials: 'same-origin',
+                        });
+                        const isJson = res.headers.get('content-type')?.includes('application/json');
+                        if (!res.ok || !isJson) {
+                            throw new Error(`Unexpected fragment response (${res.status})`);
+                        }
+
                         const data = await res.json();
                         if (data.table) {
                             this.$refs.tableContainer.innerHTML = data.table;
@@ -756,8 +790,18 @@
                                 window.Alpine.initTree(this.$refs.tableContainer);
                             }
                         }
+
+                        if (historyMode === 'push') {
+                            history.pushState({}, '', pageUrl.toString());
+                        } else if (historyMode === 'replace') {
+                            history.replaceState({}, '', pageUrl.toString());
+                        }
+
+                        return true;
                     } catch (e) {
                         console.error(e);
+                        this.addToast('Gagal memuat daftar user.', 'error');
+                        return false;
                     }
                 },
                 async submitSearch() {
@@ -768,8 +812,8 @@
                         target.searchParams.delete('q');
                     }
                     target.searchParams.delete('page');
-                    await this.refreshTable(target.toString());
-                    history.replaceState({}, '', target.toString().replace('fragment=1', '').replace('&&', '&'));
+                    target.searchParams.delete('fragment');
+                    await this.refreshTable(target.toString(), 'replace');
                 },
                 queueTypeahead() {
                     clearTimeout(this.searchTimer);

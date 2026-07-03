@@ -17,6 +17,13 @@ class UserController extends Controller
             abort(403, 'Akses ditolak - hanya untuk admin IT');
         }
 
+        if ($request->boolean('fragment') && ! $request->expectsJson()) {
+            $cleanQuery = $request->query();
+            unset($cleanQuery['fragment'], $cleanQuery['autocomplete']);
+
+            return redirect()->route('users.index', $cleanQuery);
+        }
+
         $search = trim((string) $request->query('q', ''));
         $perPage = 10;
 
@@ -44,6 +51,9 @@ class UserController extends Controller
             ]);
         }
 
+        $paginationQuery = $request->query();
+        unset($paginationQuery['page'], $paginationQuery['fragment'], $paginationQuery['autocomplete']);
+
         $users = $usersQuery
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
@@ -54,7 +64,7 @@ class UserController extends Controller
             })
             ->orderBy('name')
             ->paginate($perPage)
-            ->withQueryString();
+            ->appends($paginationQuery);
 
         if ($request->boolean('fragment')) {
             $table = view('users.partials.table', compact('users'))->render();
