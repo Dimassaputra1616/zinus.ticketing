@@ -11,6 +11,20 @@ class AssetCategoryIndexTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_asset_pages_use_the_shared_application_topbar(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        foreach (['admin.assets.overview', 'admin.assets.pc', 'admin.assets.manual.index'] as $route) {
+            $this->actingAs($admin)
+                ->get(route($route))
+                ->assertOk()
+                ->assertSee('badge-shine', false)
+                ->assertSeeText(__('messages.title_manage_assets'))
+                ->assertSeeText(__('messages.desc_manage_assets'));
+        }
+    }
+
     public function test_every_asset_category_index_renders_its_expected_inventory_column(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

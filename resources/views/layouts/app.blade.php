@@ -942,15 +942,17 @@
 
                 {{-- Mobile nav drawer removed since we use Bottom Nav now --}}
 
-                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.conversations.*') || request()->routeIs('remote-system.*') || request()->routeIs('admin.settings.index') || request()->routeIs('tutorials.*') || request()->routeIs('admin.tutorials.*'))
+                @if (request()->routeIs('dashboard') || request()->routeIs('tickets.mine') || request()->routeIs('tickets.index') || request()->routeIs('tickets.show') || request()->routeIs('user.tickets.show') || request()->routeIs('users.*') || request()->routeIs('loans.*') || request()->routeIs('assets.*') || request()->routeIs('admin.assets.*') || request()->routeIs('admin.conversations.*') || request()->routeIs('remote-system.*') || request()->routeIs('admin.settings.index') || request()->routeIs('tutorials.*') || request()->routeIs('admin.tutorials.*') || request()->routeIs('profile.edit'))
                     @php
                         $topbarTitle = match (true) {
                             request()->routeIs('tickets.show') => __('messages.title_ticket_detail'),
+                            request()->routeIs('user.tickets.show') => __('messages.title_ticket_detail'),
                             request()->routeIs('tickets.mine') => __('messages.title_my_tickets'),
                             request()->routeIs('tickets.index') => __('messages.title_ticket_list'),
                             request()->routeIs('users.*') => __('messages.title_manage_users'),
                             request()->routeIs('loans.*') => __('messages.title_loan_log'),
                             request()->routeIs('assets.*') => __('messages.title_manage_assets'),
+                            request()->routeIs('admin.assets.*') => __('messages.title_manage_assets'),
                             request()->routeIs('admin.conversations.index') => __('messages.title_live_chat'),
                             request()->routeIs('admin.conversations.show') => 'Detail Percakapan',
                             request()->routeIs('remote-system.*') => __('messages.title_remote_system'),
@@ -960,20 +962,24 @@
                             request()->routeIs('admin.tutorials.index') => 'Manajemen Tutorial',
                             request()->routeIs('admin.tutorials.create') => 'Tambah Tutorial',
                             request()->routeIs('admin.tutorials.edit') => 'Edit Tutorial',
+                            request()->routeIs('profile.edit') => __('Profile'),
                             default => __('messages.dashboard'),
                         };
                         $topbarDescription = match (true) {
                             request()->routeIs('tickets.show') => __('messages.desc_ticket_detail'),
+                            request()->routeIs('user.tickets.show') => __('messages.desc_ticket_detail'),
                             request()->routeIs('tickets.mine') => __('messages.desc_my_tickets'),
                             request()->routeIs('tickets.index') => __('messages.desc_ticket_list'),
                             request()->routeIs('users.*') => __('messages.desc_manage_users'),
                             request()->routeIs('loans.*') => __('messages.desc_loan_log'),
                             request()->routeIs('assets.*') => __('messages.desc_manage_assets'),
+                            request()->routeIs('admin.assets.*') => __('messages.desc_manage_assets'),
                             request()->routeIs('admin.conversations.*') => __('messages.desc_live_chat'),
                             request()->routeIs('remote-system.*') => __('messages.desc_remote_system'),
                             request()->routeIs('admin.settings.index') => __('messages.desc_master_config'),
                             request()->routeIs('tutorials.*') => 'Kelola edukasi IT mandiri untuk mempermudah operasional.',
                             request()->routeIs('admin.tutorials.*') => 'Kelola daftar panduan dan tutorial IT system.',
+                            request()->routeIs('profile.edit') => 'Kelola informasi akun dan keamanan profil Anda.',
                             default => __('messages.desc_ticket_management'),
                         };
                     @endphp
