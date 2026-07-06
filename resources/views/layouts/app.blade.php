@@ -699,10 +699,46 @@
                         @if ($item['route'] === 'assets.index')
                             @php
                                 $isAssetCenterActive = request()->is('admin/assets*') || request()->is('admin/assets/*');
+                                $assetCenterItems = [
+                                    ['route' => 'admin.assets.overview', 'label' => 'Dashboard (Overview)'],
+                                    ['route' => 'admin.assets.pc', 'label' => 'PC'],
+                                    ['route' => 'admin.assets.laptop', 'label' => 'Laptop'],
+                                    ['route' => 'admin.assets.monitor', 'label' => 'Monitor'],
+                                    ['route' => 'admin.assets.printer-scanner', 'label' => 'Printer & Scanner'],
+                                    ['route' => 'admin.assets.network-device', 'label' => 'Network Device'],
+                                    ['route' => 'admin.assets.cctv', 'label' => 'CCTV'],
+                                    ['route' => 'admin.assets.peripheral', 'label' => 'Peripheral'],
+                                    ['route' => 'admin.assets.software-license', 'label' => 'Software License'],
+                                    ['route' => 'admin.assets.assignment', 'label' => 'Mutation / Assignment'],
+                                    ['route' => 'admin.assets.audit-log', 'label' => 'Audit Log'],
+                                    ['route' => 'admin.assets.import-export', 'label' => 'Import / Export'],
+                                ];
                             @endphp
-                            <div x-data="{ open: {{ $isAssetCenterActive ? 'true' : 'false' }} }" class="w-full">
+                            <div
+                                x-data="{
+                                    inlineOpen: {{ $isAssetCenterActive ? 'true' : 'false' }},
+                                    flyoutOpen: false,
+                                    flyoutTop: 16,
+                                    flyoutLeft: 82
+                                }"
+                                x-effect="if (!sidebarCollapsed) flyoutOpen = false"
+                                class="w-full"
+                            >
                                 <button
-                                    @click="open = !open"
+                                    type="button"
+                                    @click="
+                                        if (sidebarCollapsed) {
+                                            const rect = $el.getBoundingClientRect();
+                                            flyoutTop = Math.max(16, Math.min(rect.top - 8, window.innerHeight - 520));
+                                            flyoutLeft = rect.right + 10;
+                                            flyoutOpen = !flyoutOpen;
+                                        } else {
+                                            inlineOpen = !inlineOpen;
+                                        }
+                                    "
+                                    :title="sidebarCollapsed ? 'Buka menu Asset Center' : (inlineOpen ? 'Tutup menu Asset Center' : 'Buka menu Asset Center')"
+                                    :aria-expanded="(sidebarCollapsed ? flyoutOpen : inlineOpen).toString()"
+                                    :aria-controls="sidebarCollapsed ? 'asset-center-flyout' : 'asset-center-submenu'"
                                     @class([
                                         'w-full group flex items-center rounded-lg py-3 text-[14px] font-medium transition-all duration-150 border-l-[3px]',
                                         'opacity-80 hover:text-white hover:opacity-100' => ! $isAssetCenterActive,
@@ -726,7 +762,7 @@
                                     <span class="flex-1 text-left whitespace-nowrap overflow-hidden transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>Asset Center</span>
                                     <svg
                                         class="h-4 w-4 transition-transform duration-200"
-                                        :class="open ? 'rotate-180' : ''"
+                                        :class="inlineOpen ? 'rotate-180' : ''"
                                         x-show="!sidebarCollapsed"
                                         viewBox="0 0 20 20"
                                         fill="currentColor"
@@ -735,49 +771,79 @@
                                     </svg>
                                 </button>
                                 <div
-                                    x-show="open && !sidebarCollapsed"
+                                    id="asset-center-submenu"
+                                    x-show="inlineOpen && !sidebarCollapsed"
                                     x-transition:enter="transition ease-out duration-100"
                                     x-transition:enter-start="transform opacity-0 scale-95"
                                     x-transition:enter-end="transform opacity-100 scale-100"
                                     class="mt-1 space-y-1 pl-9 text-xs"
                                 >
-                                    <a href="{{ route('admin.assets.overview') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.overview') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Dashboard (Overview)
-                                    </a>
-                                    <a href="{{ route('admin.assets.pc') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.pc') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        PC
-                                    </a>
-                                    <a href="{{ route('admin.assets.laptop') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.laptop') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Laptop
-                                    </a>
-                                    <a href="{{ route('admin.assets.monitor') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.monitor') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Monitor
-                                    </a>
-                                    <a href="{{ route('admin.assets.printer-scanner') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.printer-scanner') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Printer & Scanner
-                                    </a>
-                                    <a href="{{ route('admin.assets.network-device') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.network-device') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Network Device
-                                    </a>
-                                    <a href="{{ route('admin.assets.cctv') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.cctv') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        CCTV
-                                    </a>
-                                    <a href="{{ route('admin.assets.peripheral') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.peripheral') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Peripheral
-                                    </a>
-                                    <a href="{{ route('admin.assets.software-license') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.software-license') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Software License
-                                    </a>
-                                    <a href="{{ route('admin.assets.assignment') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.assignment') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Mutation / Assignment
-                                    </a>
-                                    <a href="{{ route('admin.assets.audit-log') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.audit-log') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Audit Log
-                                    </a>
-                                    <a href="{{ route('admin.assets.import-export') }}" class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs('admin.assets.import-export') ? 'text-white font-semibold' : 'text-emerald-100/70' }}">
-                                        Import / Export
-                                    </a>
+                                    @foreach ($assetCenterItems as $assetCenterItem)
+                                        <a
+                                            href="{{ route($assetCenterItem['route']) }}"
+                                            class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs($assetCenterItem['route']) ? 'text-white font-semibold' : 'text-emerald-100/70' }}"
+                                        >
+                                            {{ $assetCenterItem['label'] }}
+                                        </a>
+                                    @endforeach
                                 </div>
+
+                                <template x-teleport="body">
+                                    <div
+                                        id="asset-center-flyout"
+                                        x-show="flyoutOpen && sidebarCollapsed"
+                                        x-cloak
+                                        @click.outside="flyoutOpen = false"
+                                        @keydown.escape.window="flyoutOpen = false"
+                                        x-transition:enter="transition ease-out duration-[180ms]"
+                                        x-transition:enter-start="opacity-0 -translate-x-2 scale-95"
+                                        x-transition:enter-end="opacity-100 translate-x-0 scale-100"
+                                        x-transition:leave="transition ease-in duration-[120ms]"
+                                        x-transition:leave-start="opacity-100 translate-x-0 scale-100"
+                                        x-transition:leave-end="opacity-0 -translate-x-2 scale-95"
+                                        :style="`top: ${flyoutTop}px; left: ${flyoutLeft}px;`"
+                                        class="fixed z-[70] w-64 overflow-hidden rounded-2xl border border-emerald-100/80 bg-white/95 shadow-2xl shadow-emerald-950/20 ring-1 ring-black/5 backdrop-blur-xl"
+                                        role="menu"
+                                        aria-label="Asset Center"
+                                    >
+                                        <div class="border-b border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-4 py-3">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div>
+                                                    <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-600">Workspace</p>
+                                                    <p class="mt-0.5 text-sm font-semibold text-slate-900">Asset Center</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    @click="flyoutOpen = false"
+                                                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white hover:text-slate-700"
+                                                    aria-label="Tutup menu Asset Center"
+                                                >
+                                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                                        <path d="M5 5l10 10M15 5 5 15" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <nav class="max-h-[min(430px,calc(100vh-5rem))] space-y-1 overflow-y-auto p-2 custom-scrollbar">
+                                            @foreach ($assetCenterItems as $assetCenterItem)
+                                                <a
+                                                    href="{{ route($assetCenterItem['route']) }}"
+                                                    role="menuitem"
+                                                    class="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm transition {{ request()->routeIs($assetCenterItem['route']) ? 'bg-emerald-50 font-semibold text-emerald-800 ring-1 ring-emerald-100' : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-700' }}"
+                                                >
+                                                    <span>{{ $assetCenterItem['label'] }}</span>
+                                                    @if (request()->routeIs($assetCenterItem['route']))
+                                                        <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 shadow-sm shadow-emerald-300"></span>
+                                                    @else
+                                                        <svg class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="m8 5 5 5-5 5" />
+                                                        </svg>
+                                                    @endif
+                                                </a>
+                                            @endforeach
+                                        </nav>
+                                    </div>
+                                </template>
                             </div>
                         @else
                             @php

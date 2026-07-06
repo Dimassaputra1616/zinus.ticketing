@@ -25,6 +25,20 @@ class AssetCategoryIndexTest extends TestCase
         }
     }
 
+    public function test_collapsed_asset_center_button_opens_the_flyout_menu(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.pc'))
+            ->assertOk()
+            ->assertSee('x-teleport="body"', false)
+            ->assertSee('x-show="flyoutOpen && sidebarCollapsed"', false)
+            ->assertSee('role="menu"', false)
+            ->assertSee('href="' . route('admin.assets.overview') . '"', false)
+            ->assertSee('href="' . route('admin.assets.import-export') . '"', false);
+    }
+
     public function test_every_asset_category_index_renders_its_expected_inventory_column(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
