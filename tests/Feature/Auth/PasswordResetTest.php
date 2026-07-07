@@ -34,6 +34,32 @@ class PasswordResetTest extends TestCase
         Notification::assertSentTo($user, ResetPassword::class);
     }
 
+    public function test_reset_password_notification_uses_zinus_mail_template(): void
+    {
+        $user = User::factory()->make([
+            'name' => 'Dimas Saputra',
+            'email' => 'dimas@zinus.com',
+        ]);
+
+        $mail = (new ResetPassword('sample-token'))->toMail($user);
+
+        $this->assertSame('Reset Password Portal IT Zinus', $mail->subject);
+        $this->assertSame([
+            'html' => 'emails.auth.password-reset',
+            'text' => 'emails.auth.password-reset-text',
+        ], $mail->view);
+        $this->assertSame('Dimas Saputra', $mail->viewData['displayName']);
+        $this->assertSame('dimas@zinus.com', $mail->viewData['email']);
+        $this->assertStringContainsString('/reset-password/sample-token', $mail->viewData['resetUrl']);
+        $this->assertStringContainsString('email=dimas%40zinus.com', $mail->viewData['resetUrl']);
+        $this->assertSame(60, $mail->viewData['expiresIn']);
+
+        $this->view($mail->view['html'], $mail->viewData)
+            ->assertSee('Reset password akun Anda')
+            ->assertSee('Password Recovery')
+            ->assertSee('Dimas Saputra');
+    }
+
     public function test_reset_password_screen_can_be_rendered(): void
     {
         Notification::fake();
