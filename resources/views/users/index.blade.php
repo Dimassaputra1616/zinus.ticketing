@@ -102,15 +102,18 @@
             subtitle="{{ __('messages.user_list_subtitle') }}"
             class="shadow-md border-ink-100/80 bg-white/95 [&>div:first-child]:!border-b [&>div:first-child]:!px-5 [&>div:first-child]:!py-3 [&_h3]:text-lg [&_h3]:font-semibold space-y-4"
         >
-            <form class="flex flex-col gap-3 text-sm sm:flex-row sm:items-center" @submit.prevent="submitSearch">
-                <label class="text-2xs font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('messages.search_user') }}</label>
-                <div class="relative flex items-center" @click.away="suggestionsOpen = false">
+            <form class="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-4 text-sm shadow-inner shadow-white/70 lg:flex-row lg:items-center lg:justify-between" @submit.prevent="submitSearch">
+                <div>
+                    <label class="text-2xs font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('messages.search_user') }}</label>
+                    <p class="mt-1 text-xs text-slate-500">Cari nama, email, role, atau status approval.</p>
+                </div>
+                <div class="relative flex w-full items-center lg:max-w-xl" @click.away="suggestionsOpen = false">
                     <input
                         type="search"
                         name="q"
                         x-model="searchTerm"
                         placeholder="{{ __('messages.search_user_placeholder') }}"
-                        class="w-full sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-2 pr-20 text-sm shadow-sm focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 appearance-none"
+                        class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-28 text-sm shadow-sm transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 appearance-none"
                         @input="queueTypeahead"
                         @focus="suggestionsOpen = true; fetchSuggestions()"
                     >
@@ -122,7 +125,7 @@
                     >
                         ×
                     </button>
-                    <x-ui.button type="submit" size="sm" variant="primary" class="absolute right-1">{{ __('messages.search_button') }}</x-ui.button>
+                    <x-ui.button type="submit" size="sm" variant="primary" class="absolute right-1.5 h-9 rounded-xl">{{ __('messages.search_button') }}</x-ui.button>
 
                     <div
                         x-show="suggestionsOpen && (suggestionsLoading || suggestions.length || searchTerm)"
