@@ -41,6 +41,8 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'user',
+            'approval_status' => User::APPROVAL_PENDING,
         ]);
 
         User::where('is_admin', 1)
@@ -49,8 +51,10 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
+        Auth::guard('web')->logout();
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect()
+            ->route('registration.pending')
+            ->with('registered_email', $user->email);
     }
 }

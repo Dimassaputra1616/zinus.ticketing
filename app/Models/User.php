@@ -14,6 +14,12 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
+    public const APPROVAL_PENDING = 'pending';
+
+    public const APPROVAL_APPROVED = 'approved';
+
+    public const APPROVAL_REJECTED = 'rejected';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -24,6 +30,11 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'approval_status',
+        'approved_at',
+        'approved_by',
+        'rejected_at',
+        'rejected_by',
         'is_admin',
     ];
 
@@ -47,6 +58,8 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'email_verified_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
             'is_admin' => 'boolean',
             'is_super_admin' => 'boolean',
         ];
@@ -100,5 +113,40 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return (bool) $this->is_super_admin;
+    }
+
+    public function isApproved(): bool
+    {
+        return ($this->approval_status ?: self::APPROVAL_APPROVED) === self::APPROVAL_APPROVED;
+    }
+
+    public function isPendingApproval(): bool
+    {
+        return $this->approval_status === self::APPROVAL_PENDING;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->approval_status === self::APPROVAL_REJECTED;
+    }
+
+    public function approve(?self $approver = null): void
+    {
+        $this->forceFill([
+            'approval_status' => self::APPROVAL_APPROVED,
+            'approved_at' => now(),
+            'approved_by' => $approver?->id,
+            'rejected_at' => null,
+            'rejected_by' => null,
+        ])->save();
+    }
+
+    public function reject(?self $rejector = null): void
+    {
+        $this->forceFill([
+            'approval_status' => self::APPROVAL_REJECTED,
+            'rejected_at' => now(),
+            'rejected_by' => $rejector?->id,
+        ])->save();
     }
 }

@@ -17,6 +17,7 @@
             :badges="[
                 ['label' => __('messages.admin_count', ['count' => $adminCount]), 'dot' => '#10b981'],
                 ['label' => __('messages.user_count', ['count' => $staffCount]), 'dot' => '#38bdf8'],
+                ['label' => __('messages.pending_account_count', ['count' => $pendingCount]), 'dot' => '#f59e0b'],
                 ['label' => __('messages.total_count', ['count' => $totalUsers]), 'dot' => '#fbbf24'],
             ]"
         >
@@ -144,7 +145,10 @@
                                                 <p class="font-semibold text-slate-800" x-text="item.name"></p>
                                                 <p class="text-xs text-slate-500" x-text="item.email"></p>
                                             </div>
-                                            <span class="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600" x-text="item.role"></span>
+                                            <div class="text-right">
+                                                <span class="block text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600" x-text="item.role"></span>
+                                                <span class="block text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600" x-text="item.approval_status || 'approved'"></span>
+                                            </div>
                                         </button>
                                     </li>
                                 </template>
@@ -879,6 +883,33 @@
                             return;
                         }
                         this.addToast(data.message || 'Role diperbarui');
+                        this.refreshTable();
+                    } catch (e) {
+                        this.addToast('Terjadi kesalahan jaringan', 'error');
+                    }
+                },
+                async submitApproval(action, fallbackMessage = 'Status akun diperbarui') {
+                    if (!action) return;
+                    const formData = new FormData();
+                    formData.append('_token', this.csrf);
+                    try {
+                        const res = await fetch(action, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': this.csrf,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            credentials: 'same-origin',
+                            body: formData,
+                        });
+                        const isJson = res.headers.get('content-type')?.includes('application/json');
+                        const data = isJson ? await res.json().catch(() => ({})) : {};
+                        if (!res.ok || !isJson) {
+                            this.addToast(data.message || `Gagal memperbarui approval (status ${res.status})`, 'error');
+                            return;
+                        }
+                        this.addToast(data.message || fallbackMessage);
                         this.refreshTable();
                     } catch (e) {
                         this.addToast('Terjadi kesalahan jaringan', 'error');

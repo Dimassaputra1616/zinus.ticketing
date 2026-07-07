@@ -49,6 +49,21 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $user = Auth::user();
+
+        if ($user && ! $user->isApproved()) {
+            Auth::guard('web')->logout();
+            RateLimiter::hit($this->throttleKey());
+
+            $message = $user->isRejected()
+                ? __('messages.account_rejected')
+                : __('messages.account_pending_approval');
+
+            throw ValidationException::withMessages([
+                'email' => $message,
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

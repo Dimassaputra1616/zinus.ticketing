@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,7 +17,7 @@ class RegistrationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_new_users_can_register(): void
+    public function test_new_users_can_register_and_wait_for_admin_approval(): void
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
@@ -25,8 +26,15 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertGuest();
+        $response
+            ->assertRedirect(route('registration.pending'))
+            ->assertSessionHas('registered_email', 'test@zinus.com');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@zinus.com',
+            'approval_status' => User::APPROVAL_PENDING,
+        ]);
     }
 
     public function test_registration_requires_company_email_domain(): void
@@ -44,7 +52,7 @@ class RegistrationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_registration_allows_approved_external_admin_email(): void
+    public function test_registration_allows_approved_external_admin_email_but_still_requires_approval(): void
     {
         config(['company.external_email_allowlist' => ['dimassputra1616@gmail.com']]);
 
@@ -55,7 +63,11 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertGuest();
+        $response->assertRedirect(route('registration.pending'));
+        $this->assertDatabaseHas('users', [
+            'email' => 'dimassputra1616@gmail.com',
+            'approval_status' => User::APPROVAL_PENDING,
+        ]);
     }
 }

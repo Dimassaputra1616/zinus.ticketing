@@ -333,9 +333,9 @@ Route::get('/dashboard', function (Request $request) {
     $viewName = $hasDashboardAccess ? 'dashboard-admin' : 'dashboard';
 
     return view($viewName, $viewData);
-})->middleware('auth')->name('dashboard');
+})->middleware(['auth', 'approved'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'approved'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -363,7 +363,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // ✅ ROUTE UNTUK ADMIN (login / dashboard)
-Route::middleware(['auth', 'admin'])->group(function () {
+Route::middleware(['auth', 'approved', 'admin'])->group(function () {
     Route::get('/admin/settings', App\Livewire\Admin\Settings\Index::class)
         ->middleware('super_admin')
         ->name('admin.settings.index');
@@ -373,6 +373,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/users', [UserController::class, 'store'])->name('users.store');
     Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::post('/admin/users/{user}/role', [UserController::class, 'updateRole'])->name('users.updateRole');
+    Route::post('/admin/users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
+    Route::post('/admin/users/{user}/reject', [UserController::class, 'reject'])->name('users.reject');
     Route::post('/admin/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.resetPassword');
     Route::post('/loans/{loan}/status', [App\Http\Controllers\LoanController::class, 'updateStatus'])->name('loans.updateStatus');
     Route::delete('/loans/{loan}', [App\Http\Controllers\LoanController::class, 'destroy'])->name('loans.destroy');

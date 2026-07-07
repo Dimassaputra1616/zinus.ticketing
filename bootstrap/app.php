@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Configuration\Exceptions;
 use App\Http\Middleware\AdminMiddleware; // ✅ penting!
+use App\Http\Middleware\EnsureUserIsApproved;
 use App\Http\Middleware\VerifyAssetSyncToken;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ✅ daftar alias middleware admin di sini
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'approved' => EnsureUserIsApproved::class,
             'super_admin' => \App\Http\Middleware\SuperAdminMiddleware::class,
             'asset.sync' => VerifyAssetSyncToken::class,
         ]);

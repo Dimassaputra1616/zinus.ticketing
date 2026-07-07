@@ -1,10 +1,19 @@
 @php
     $isSuperAdmin = auth()->user()?->is_super_admin;
+    $isAdmin = auth()->user()?->isAdmin();
 @endphp
 
 <div class="space-y-4">
     <div class="md:hidden space-y-3">
         @forelse ($users as $u)
+            @php
+                $approvalStatus = $u->approval_status ?: \App\Models\User::APPROVAL_APPROVED;
+                $approvalMeta = match ($approvalStatus) {
+                    \App\Models\User::APPROVAL_PENDING => ['label' => 'Menunggu Approval', 'class' => 'border-amber-200 bg-amber-50 text-amber-700', 'dot' => 'bg-amber-500'],
+                    \App\Models\User::APPROVAL_REJECTED => ['label' => 'Ditolak', 'class' => 'border-rose-200 bg-rose-50 text-rose-700', 'dot' => 'bg-rose-500'],
+                    default => ['label' => 'Approved', 'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700', 'dot' => 'bg-emerald-500'],
+                };
+            @endphp
             <article class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
@@ -16,6 +25,11 @@
                         <span class="h-2 w-2 rounded-full {{ $u->role === 'admin' ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
                         {{ strtoupper($u->role) }}
                     </span>
+                </div>
+
+                <div class="mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] {{ $approvalMeta['class'] }}">
+                    <span class="h-2 w-2 rounded-full {{ $approvalMeta['dot'] }}"></span>
+                    {{ $approvalMeta['label'] }}
                 </div>
 
                 <div class="mt-3 space-y-2">
@@ -36,6 +50,32 @@
                         </div>
                     @endif
                 </div>
+
+                @if ($isAdmin)
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        @if ($approvalStatus !== \App\Models\User::APPROVAL_APPROVED)
+                            <x-ui.button
+                                type="button"
+                                size="sm"
+                                class="w-full sm:w-auto bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
+                                @click.prevent="submitApproval({{ Js::from(route('users.approve', $u)) }}, 'Akun disetujui')"
+                            >
+                                Approve
+                            </x-ui.button>
+                        @endif
+                        @if ($approvalStatus !== \App\Models\User::APPROVAL_REJECTED)
+                            <x-ui.button
+                                type="button"
+                                size="sm"
+                                class="w-full sm:w-auto border border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100"
+                                @click.prevent="submitApproval({{ Js::from(route('users.reject', $u)) }}, 'Akun ditolak')"
+                                x-bind:disabled="authId === {{ $u->id }}"
+                            >
+                                Reject
+                            </x-ui.button>
+                        @endif
+                    </div>
+                @endif
 
                 @if ($isSuperAdmin)
                     <div class="mt-3 flex flex-wrap gap-2">
@@ -82,11 +122,20 @@
                         <th class="px-3 py-3 text-left font-semibold">Nama</th>
                         <th class="px-3 py-3 text-left font-semibold">Email</th>
                         <th class="px-3 py-3 text-left font-semibold">Role</th>
+                        <th class="px-3 py-3 text-left font-semibold">Approval</th>
                         <th class="px-3 py-3 text-left font-semibold">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="text-slate-800">
                     @forelse ($users as $u)
+                        @php
+                            $approvalStatus = $u->approval_status ?: \App\Models\User::APPROVAL_APPROVED;
+                            $approvalMeta = match ($approvalStatus) {
+                                \App\Models\User::APPROVAL_PENDING => ['label' => 'Menunggu Approval', 'class' => 'border-amber-200 bg-amber-50 text-amber-700', 'dot' => 'bg-amber-500'],
+                                \App\Models\User::APPROVAL_REJECTED => ['label' => 'Ditolak', 'class' => 'border-rose-200 bg-rose-50 text-rose-700', 'dot' => 'bg-rose-500'],
+                                default => ['label' => 'Approved', 'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700', 'dot' => 'bg-emerald-500'],
+                            };
+                        @endphp
                         <tr class="transition-colors duration-200 ease-[cubic-bezier(.22,.61,.36,1)] border-b border-gray-200 hover:bg-slate-50 align-middle">
                             <td class="px-3 py-2.5">{{ ($users->firstItem() ?? 0) + $loop->index }}</td>
                             <td class="px-3 py-2.5">
@@ -111,7 +160,38 @@
                                     @endif
                                 </div>
                             </td>
+                            <td class="px-3 py-2.5">
+                                <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] {{ $approvalMeta['class'] }}">
+                                    <span class="h-2 w-2 rounded-full {{ $approvalMeta['dot'] }}"></span>
+                                    {{ $approvalMeta['label'] }}
+                                </span>
+                            </td>
                             <td class="px-3 py-2.5 align-middle">
+                                @if ($isAdmin)
+                                    <div class="mb-2 flex items-center gap-2 flex-wrap">
+                                        @if ($approvalStatus !== \App\Models\User::APPROVAL_APPROVED)
+                                            <x-ui.button
+                                                type="button"
+                                                size="sm"
+                                                class="bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
+                                                @click.prevent="submitApproval({{ Js::from(route('users.approve', $u)) }}, 'Akun disetujui')"
+                                            >
+                                                Approve
+                                            </x-ui.button>
+                                        @endif
+                                        @if ($approvalStatus !== \App\Models\User::APPROVAL_REJECTED)
+                                            <x-ui.button
+                                                type="button"
+                                                size="sm"
+                                                class="border border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100"
+                                                @click.prevent="submitApproval({{ Js::from(route('users.reject', $u)) }}, 'Akun ditolak')"
+                                                x-bind:disabled="authId === {{ $u->id }}"
+                                            >
+                                                Reject
+                                            </x-ui.button>
+                                        @endif
+                                    </div>
+                                @endif
                                 @if ($isSuperAdmin)
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <x-ui.button
@@ -146,7 +226,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-3 py-4 text-center text-sm text-slate-500">Belum ada user ditemukan.</td>
+                            <td colspan="6" class="px-3 py-4 text-center text-sm text-slate-500">Belum ada user ditemukan.</td>
                         </tr>
                     @endforelse
                 </tbody>

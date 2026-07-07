@@ -25,6 +25,11 @@ class UserEmailPolicyTest extends TestCase
             ->assertRedirect(route('users.index'));
 
         $this->assertDatabaseHas('users', ['email' => 'staff@zinus.com']);
+        $this->assertDatabaseHas('users', [
+            'email' => 'staff@zinus.com',
+            'approval_status' => User::APPROVAL_APPROVED,
+            'approved_by' => $admin->id,
+        ]);
     }
 
     public function test_admin_cannot_create_user_with_unapproved_personal_email(): void

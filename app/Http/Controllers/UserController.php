@@ -32,6 +32,7 @@ class UserController extends Controller
 
         $totalUsers = (clone $usersQuery)->count();
         $adminCount = (clone $usersQuery)->where('role', 'admin')->count();
+        $pendingCount = (clone $usersQuery)->where('approval_status', User::APPROVAL_PENDING)->count();
         $staffCount = $totalUsers - $adminCount;
 
         if ($request->boolean('autocomplete')) {
@@ -40,12 +41,13 @@ class UserController extends Controller
                     $query->where(function ($inner) use ($search) {
                         $inner->where('name', 'like', '%' . $search . '%')
                             ->orWhere('email', 'like', '%' . $search . '%')
-                            ->orWhere('role', 'like', '%' . $search . '%');
+                            ->orWhere('role', 'like', '%' . $search . '%')
+                            ->orWhere('approval_status', 'like', '%' . $search . '%');
                     });
                 })
                 ->orderBy('name')
                 ->limit(6)
-                ->get(['id', 'name', 'email', 'role']);
+                ->get(['id', 'name', 'email', 'role', 'approval_status']);
 
             return response()->json([
                 'suggestions' => $suggestions,
@@ -60,9 +62,11 @@ class UserController extends Controller
                 $query->where(function ($inner) use ($search) {
                     $inner->where('name', 'like', '%' . $search . '%')
                         ->orWhere('email', 'like', '%' . $search . '%')
-                        ->orWhere('role', 'like', '%' . $search . '%');
+                        ->orWhere('role', 'like', '%' . $search . '%')
+                        ->orWhere('approval_status', 'like', '%' . $search . '%');
                 });
             })
+            ->orderByRaw("CASE approval_status WHEN 'pending' THEN 0 WHEN 'rejected' THEN 1 ELSE 2 END")
             ->orderBy('name')
             ->paginate($perPage)
             ->appends($paginationQuery);
@@ -75,7 +79,7 @@ class UserController extends Controller
             ]);
         }
 
-        return view('users.index', compact('users', 'search', 'totalUsers', 'adminCount', 'staffCount'));
+        return view('users.index', compact('users', 'search', 'totalUsers', 'adminCount', 'staffCount', 'pendingCount'));
     }
 
     public function store(Request $request)
@@ -94,6 +98,9 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
+            'approval_status' => User::APPROVAL_APPROVED,
+            'approved_at' => now(),
+            'approved_by' => $authUser?->id,
         ]);
 
         User::query()
@@ -142,6 +149,64 @@ class UserController extends Controller
         }
 
         return redirect()->route('users.index')->with('ok', 'Role user berhasil diperbarui.');
+    }
+
+    public function approve(Request $request, User $user)
+    {
+        $authUser = Auth::user();
+
+        if (! $authUser || ! $authUser->isAdmin()) {
+            abort(403, 'Akses ditolak - hanya untuk admin IT');
+        }
+
+        $user->approve($authUser);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'message' => "Akun {$user->name} berhasil disetujui.",
+                'user' => [
+                    'id' => $user->id,
+                    'approval_status' => $user->approval_status,
+                    'approved_at' => $user->approved_at,
+                ],
+            ]);
+        }
+
+        return redirect()->route('users.index')->with('ok', "Akun {$user->name} berhasil disetujui.");
+    }
+
+    public function reject(Request $request, User $user)
+    {
+        $authUser = Auth::user();
+
+        if (! $authUser || ! $authUser->isAdmin()) {
+            abort(403, 'Akses ditolak - hanya untuk admin IT');
+        }
+
+        if ($user->id === $authUser->id) {
+            $message = 'Tidak dapat menolak akun yang sedang login.';
+
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return redirect()->route('users.index')->withErrors(['approval' => $message]);
+        }
+
+        $user->reject($authUser);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'message' => "Akun {$user->name} berhasil ditolak.",
+                'user' => [
+                    'id' => $user->id,
+                    'approval_status' => $user->approval_status,
+                    'rejected_at' => $user->rejected_at,
+                ],
+            ]);
+        }
+
+        return redirect()->route('users.index')->with('ok', "Akun {$user->name} berhasil ditolak.");
     }
 
     public function destroy(Request $request, $userId)
