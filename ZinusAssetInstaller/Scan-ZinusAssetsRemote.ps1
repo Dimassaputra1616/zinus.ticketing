@@ -14,6 +14,7 @@ param(
     [int]$WsManPort = 5985,
     [int]$PortTimeoutMs = 1000,
     [switch]$SkipPreflight,
+    [switch]$NoFailExit,
     [System.Management.Automation.PSCredential]$Credential
 )
 
@@ -549,7 +550,16 @@ $collector = {
             }
         }
 
-        return $results
+        # WMI can expose duplicate/stale entries for the same physical monitor.
+        # The API accepts at most 12 monitors per asset, so de-duplicate by the
+        # generated identity and keep the payload within that contract.
+        $uniqueResults = @(
+            $results |
+                Group-Object -Property asset_code |
+                ForEach-Object { $_.Group | Select-Object -First 1 }
+        )
+
+        return @($uniqueResults | Select-Object -First 12)
     }
 
     $hostname = $env:COMPUTERNAME
@@ -606,7 +616,7 @@ $collector = {
         storage_gb           = $storageGb
         storage_detail       = $storageDetail
         disks                = $disks
-        monitors             = Get-ConnectedMonitors -ParentHostname $hostname
+        monitors             = @(Get-ConnectedMonitors -ParentHostname $hostname)
         serial_number        = $serialNumber
         identity_source      = $identity.identity_source
         is_identity_verified = $identity.is_identity_verified
@@ -704,6 +714,9 @@ $workerScript = {
         if (-not $payload) {
             return New-ScanResult -Computer $target -Status "failed" -Message "Invoke-Command returned no data."
         }
+
+        # Defensive API boundary: never send more than the server-side maximum.
+        $payload.monitors = @($payload.monitors | Select-Object -First 12)
 
         $jsonBody = $payload | Select-Object `
             factory,
@@ -805,7 +818,10 @@ while ($runspaces.Count -gt 0) {
             $r.PowerShell.Dispose()
         }
     }
-    $runspaces = @($runspaces | Where-Object { -not $_.AsyncResult.IsCompleted })
+    # Remove only jobs collected in this iteration. A job can finish between
+    # the completed snapshot above and this filter; checking IsCompleted again
+    # would drop that result without ever calling EndInvoke.
+    $runspaces = @($runspaces | Where-Object { $completed -notcontains $_ })
     if ($runspaces.Count -gt 0) {
         Start-Sleep -Milliseconds 200
     }
@@ -823,6 +839,6 @@ $results | Export-Csv -Path $resultFullPath -NoTypeInformation -Encoding UTF8
 Write-Host "Remote scan results saved to $resultFullPath" -ForegroundColor Cyan
 
 $failedCount = @($results | Where-Object { $_.status -eq "failed" }).Count
-if ($failedCount -gt 0) {
+if ($failedCount -gt 0 -and -not $NoFailExit) {
     exit 1
 }

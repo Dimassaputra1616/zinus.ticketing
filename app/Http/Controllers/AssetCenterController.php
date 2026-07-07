@@ -25,10 +25,8 @@ class AssetCenterController extends Controller
         $this->middleware(['auth', 'admin']);
     }
 
-    public function overview()
+    public function overview(Request $request)
     {
-        $totalAssets = Asset::count();
-
         // Specific category counts
         $totalPc = Asset::whereIn('category', ['PC', 'PC / Laptop', 'PC/Laptop'])->count();
         $totalLaptop = Asset::whereIn('category', ['Laptop', 'pc-laptop'])->count();
@@ -39,45 +37,39 @@ class AssetCenterController extends Controller
         $totalPeripheral = Asset::whereIn('category', ['Peripheral', 'Keyboard', 'Mouse', 'UPS', 'Projector', 'peripheral'])->count();
         $totalLicense = Asset::whereIn('category', ['Software License', 'License', 'software-license'])->count();
 
-        // Relationship statistics
-        $attachedCount = AssetRelation::whereNull('ended_at')->count();
-        // Spare assets: not attached to any parent PC/Laptop (excluding PC/Laptops themselves)
-        $spareCount = Asset::whereNotIn('category', ['PC', 'Laptop', 'PC / Laptop', 'PC/Laptop', 'pc-laptop'])
-            ->whereDoesntHave('activeParentRelation')
-            ->count();
-        $inRepairCount = Asset::where('lifecycle_status', 'in_repair')->count();
+        $filters = [
+            'search' => $request->query('search'),
+            'factory' => $request->query('factory'),
+            'department' => $request->integer('department') ?: null,
+            'category' => $request->query('category'),
+            'status' => $request->query('status'),
+        ];
+        $perPage = max(10, min((int) $request->query('per_page', 10), 100));
+        $assets = $this->assetService
+            ->filteredQuery($filters)
+            ->paginate($perPage)
+            ->withQueryString();
 
-        // Source type counts
-        $agentCount = Asset::where('source_type', 'agent')->orWhereNull('source_type')->count();
-        $manualCount = Asset::where('source_type', 'manual')->count();
+        $filterFactories = collect([
+            'Zinus F1 Bogor',
+            'Zinus F2 Karawang',
+            'Zinus F3 Tangerang',
+        ])->merge(
+            Asset::query()
+                ->whereNotNull('factory')
+                ->where('factory', '!=', '')
+                ->distinct()
+                ->orderBy('factory')
+                ->pluck('factory')
+        )->unique()->values();
 
-        // Status counts
-        $statusCounts = Asset::select('status', DB::raw('count(*) as total'))
-            ->groupBy('status')
-            ->pluck('total', 'status')
-            ->toArray();
-
-        // Top categories
-        $categories = Asset::select('category', DB::raw('count(*) as total'))
-            ->groupBy('category')
-            ->orderByDesc('total')
-            ->take(5)
-            ->get();
-
-        // Top factories
-        $factories = Asset::select('factory', DB::raw('count(*) as total'))
-            ->whereNotNull('factory')
-            ->groupBy('factory')
-            ->orderByDesc('total')
-            ->get();
-
-        // Top departments
-        $departments = Asset::select('departments.name', DB::raw('count(*) as total'))
-            ->join('departments', 'assets.department_id', '=', 'departments.id')
-            ->groupBy('departments.name')
-            ->orderByDesc('total')
-            ->take(5)
-            ->get();
+        $filterCategories = Asset::query()
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+        $filterDepartments = Department::orderBy('name')->get();
 
         // Recent activity
         $recentLogs = AssetLog::with(['asset', 'actor'])
@@ -93,7 +85,6 @@ class AssetCenterController extends Controller
             ->get();
 
         return view('assets.overview', compact(
-            'totalAssets',
             'totalPc',
             'totalLaptop',
             'totalMonitor',
@@ -102,17 +93,14 @@ class AssetCenterController extends Controller
             'totalCctv',
             'totalPeripheral',
             'totalLicense',
-            'attachedCount',
-            'spareCount',
-            'inRepairCount',
-            'agentCount',
-            'manualCount',
-            'statusCounts',
-            'categories',
-            'factories',
-            'departments',
             'recentLogs',
-            'recentlyAttached'
+            'recentlyAttached',
+            'assets',
+            'filters',
+            'perPage',
+            'filterFactories',
+            'filterCategories',
+            'filterDepartments'
         ));
     }
 

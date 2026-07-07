@@ -31,6 +31,9 @@ Remoting.
 - `Scan-ZinusSegments.ps1` dan `RUN-SCAN-SEGMENTS.cmd` - mode remote scan
   berdasarkan IP segment, default untuk segment `10.62.38`, `10.62.39`, dan
   `10.62.36`.
+- `Invoke-ZinusAssetAutomation.ps1` dan `RUN-AUTO-ASSET-SCAN.cmd` - alur massal
+  satu klik: discovery, bootstrap WinRM, verifikasi, lalu scan hanya PC yang
+  siap.
 - `RUN-DEPLOY-ALL.cmd` - wrapper bulk deploy yang membaca `computers.txt`,
   meminta token dan credential admin, lalu menjalankan deployer.
 - `Deploy-ZinusAssetSync.ps1` - helper bulk deployment memakai PowerShell
@@ -84,6 +87,34 @@ Contoh isi `install-config.json`:
 
 File `install-config.json` berisi secret. Simpan hanya di share folder internal
 yang aksesnya dibatasi untuk admin/IT deployment.
+
+## Automation Massal Discovery Sampai Asset Sync
+
+Gunakan launcher ini agar IT tidak perlu memeriksa PC atau IP satu per satu:
+
+```cmd
+RUN-AUTO-ASSET-SCAN.cmd
+```
+
+Launcher meminta elevasi Administrator secara otomatis, lalu:
+
+1. mencari perangkat yang online pada semua segment;
+2. melewati IP yang mati;
+3. mengaktifkan WinRM lewat PsExec pada perangkat yang dapat dijangkau;
+4. memeriksa ulang port WinRM `5985`;
+5. menarik dan mengirim aset hanya dari PC yang sudah siap.
+
+Masukkan satu credential Administrator yang berlaku pada seluruh PC target dan
+Asset Sync token saat diminta. Hasil utama disimpan di:
+
+```text
+.\zinus-auto-scan-results.csv
+.\zinus-auto-needs-policy-or-agent.csv
+```
+
+File kedua berisi perangkat yang tidak bisa dibootstrap dari jaringan beserta
+penyebabnya. Perangkat yang menutup SMB `445` dan WinRM `5985` sekaligus harus
+dibuka lewat GPO/domain, RMM, Intune/SCCM/PDQ, atau pemasangan agent terpusat.
 
 ## Opsi Discovery Ala GLPI - Tanpa WinRM/Agent
 

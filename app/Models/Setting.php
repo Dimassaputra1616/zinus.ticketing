@@ -32,6 +32,10 @@ class Setting extends Model
      */
     public static function get($key, $default = null)
     {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('settings')) {
+            return $default;
+        }
+
         return \Illuminate\Support\Facades\Cache::rememberForever("setting_{$key}", function () use ($key, $default) {
             $setting = self::where('key', $key)->first();
             return $setting ? $setting->typed_value : $default;

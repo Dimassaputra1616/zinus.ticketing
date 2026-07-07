@@ -101,7 +101,7 @@
 
             <!-- Content -->
             <div class="p-8 md:p-12 prose prose-slate max-w-none prose-headings:text-[#0C1F2C] prose-a:text-[#118A58] prose-img:rounded-2xl prose-img:shadow-lg">
-                {!! nl2br($tutorial->content) !!}
+                {!! nl2br(e($tutorial->content)) !!}
             </div>
 
             <!-- Footer -->

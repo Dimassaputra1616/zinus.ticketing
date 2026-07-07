@@ -332,7 +332,7 @@
         <div class="mx-auto max-w-7xl space-y-5 px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-                    <a href="{{ route('admin.assets.overview') }}" class="hover:text-emerald-700">Asset Center</a>
+                    <a href="{{ route('assets.index') }}" class="hover:text-emerald-700">Asset Center</a>
                     <span>/</span>
                     <a href="{{ $asset->source_type === 'manual' ? route('admin.assets.manual.index') : route('assets.index') }}" class="hover:text-emerald-700">{{ $sourceLabel }}</a>
                     <span>/</span>

@@ -12,7 +12,7 @@
 
             <div class="relative" x-data="{ show: false }">
                 <x-text-input id="password" class="block mt-1 w-full pr-12"
-                                :type="show ? 'text' : 'password'"
+                                x-bind:type="show ? 'text' : 'password'"
                                 name="password"
                                 required autocomplete="current-password" />
                 <button

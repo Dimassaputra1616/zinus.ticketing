@@ -15,7 +15,7 @@ class AssetCategoryIndexTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
 
-        foreach (['admin.assets.overview', 'admin.assets.pc', 'admin.assets.manual.index'] as $route) {
+        foreach (['assets.index', 'admin.assets.pc', 'admin.assets.manual.index'] as $route) {
             $this->actingAs($admin)
                 ->get(route($route))
                 ->assertOk()
@@ -35,8 +35,64 @@ class AssetCategoryIndexTest extends TestCase
             ->assertSee('x-teleport="body"', false)
             ->assertSee('x-show="flyoutOpen && sidebarCollapsed"', false)
             ->assertSee('role="menu"', false)
-            ->assertSee('href="' . route('admin.assets.overview') . '"', false)
+            ->assertSee('href="' . route('assets.index') . '"', false)
             ->assertSee('href="' . route('admin.assets.import-export') . '"', false);
+    }
+
+    public function test_legacy_asset_overview_redirects_to_the_unified_dashboard(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.overview'))
+            ->assertRedirect(route('assets.index'));
+    }
+
+    public function test_unified_asset_dashboard_lists_agent_and_manual_assets_from_every_category(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        Asset::create([
+            'asset_code' => 'AGENT-PC-001',
+            'name' => 'Agent Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_IN_USE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        Asset::create([
+            'asset_code' => 'MANUAL-CCTV-001',
+            'name' => 'Manual CCTV',
+            'category' => 'CCTV',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'manual',
+            'sync_source' => 'manual',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('assets.index'))
+            ->assertOk()
+            ->assertSeeText('Agent Workstation')
+            ->assertSeeText('Manual CCTV')
+            ->assertSee('<option value="CCTV"', false)
+            ->assertSeeText('IT Asset Inventory')
+            ->assertDontSeeText('TOTAL ASSETS')
+            ->assertDontSeeText('Currently assigned or in use')
+            ->assertDontSeeText('Available for assignment')
+            ->assertDontSeeText('Offline for maintenance')
+            ->assertDontSee('id="tour-chat-widget"', false);
+
+        $content = $response->getContent();
+        $inventoryPosition = strpos($content, 'IT Asset Inventory');
+        $categoryPosition = strpos($content, 'CMDB Asset Categories');
+        $relationsPosition = strpos($content, 'Recent Connected CMDB Relations');
+
+        $this->assertNotFalse($inventoryPosition);
+        $this->assertNotFalse($categoryPosition);
+        $this->assertNotFalse($relationsPosition);
+        $this->assertLessThan($inventoryPosition, $categoryPosition);
+        $this->assertLessThan($inventoryPosition, $relationsPosition);
     }
 
     public function test_every_asset_category_index_renders_its_expected_inventory_column(): void

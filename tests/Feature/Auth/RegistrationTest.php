@@ -20,7 +20,37 @@ class RegistrationTest extends TestCase
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test@zinus.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_registration_requires_company_email_domain(): void
+    {
+        config(['company.external_email_allowlist' => []]);
+
+        $response = $this->post('/register', [
+            'name' => 'External User',
+            'email' => 'external@gmail.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
+    public function test_registration_allows_approved_external_admin_email(): void
+    {
+        config(['company.external_email_allowlist' => ['dimassputra1616@gmail.com']]);
+
+        $response = $this->post('/register', [
+            'name' => 'Dimas Saputra',
+            'email' => 'dimassputra1616@gmail.com',
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);

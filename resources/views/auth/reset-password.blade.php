@@ -16,7 +16,7 @@
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
             <div class="relative" x-data="{ show: false }">
-                <x-text-input id="password" class="block mt-1 w-full pr-12" :type="show ? 'text' : 'password'" name="password" required autocomplete="new-password" />
+                <x-text-input id="password" class="block mt-1 w-full pr-12" x-bind:type="show ? 'text' : 'password'" name="password" required autocomplete="new-password" />
                 <button
                     type="button"
                     class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
@@ -45,7 +45,7 @@
 
             <div class="relative" x-data="{ show: false }">
                 <x-text-input id="password_confirmation" class="block mt-1 w-full pr-12"
-                                :type="show ? 'text' : 'password'"
+                                x-bind:type="show ? 'text' : 'password'"
                                 name="password_confirmation" required autocomplete="new-password" />
                 <button
                     type="button"

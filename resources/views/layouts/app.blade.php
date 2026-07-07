@@ -700,7 +700,7 @@
                             @php
                                 $isAssetCenterActive = request()->is('admin/assets*') || request()->is('admin/assets/*');
                                 $assetCenterItems = [
-                                    ['route' => 'admin.assets.overview', 'label' => 'Dashboard (Overview)'],
+                                    ['route' => 'assets.index', 'label' => 'Dashboard'],
                                     ['route' => 'admin.assets.pc', 'label' => 'PC'],
                                     ['route' => 'admin.assets.laptop', 'label' => 'Laptop'],
                                     ['route' => 'admin.assets.monitor', 'label' => 'Monitor'],
@@ -1309,7 +1309,9 @@
             </main>
         
         @auth
-            <livewire:chat-widget />
+            @unless (request()->routeIs('assets.index'))
+                <livewire:chat-widget />
+            @endunless
         @endauth
 
         <script>

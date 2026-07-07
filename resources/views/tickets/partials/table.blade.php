@@ -33,7 +33,7 @@
                         href="{{ route('tickets.export', request()->query()) }}"
                         class="inline-flex items-center gap-2 rounded-2xl border border-[#C5E5D0] bg-white px-4 py-2 text-sm font-semibold text-[#0C1F2C] shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(18,130,76,0.12)]"
                     >
-                        <svg class="h-4.5 w-4.5 text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="h-4 w-4 text-[#12824C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                             <polyline points="7 10 12 15 17 10" />
                             <line x1="12" y1="15" x2="12" y2="3" />

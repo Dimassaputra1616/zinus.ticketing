@@ -12,6 +12,7 @@ param(
     [switch]$SkipTrustedHosts,
     [switch]$EnableLocalAccountRemoteAdmin,
     [switch]$ForceBootstrap,
+    [switch]$NoFailExit,
     [Parameter(Mandatory = $true)]
     [System.Management.Automation.PSCredential]$Credential
 )
@@ -201,6 +202,7 @@ function New-RemoteBootstrapCommand {
 
     $remoteScript = @"
 `$ErrorActionPreference = 'Stop'
+`$ProgressPreference = 'SilentlyContinue'
 
 try {
     Set-Service -Name WinRM -StartupType Automatic -ErrorAction SilentlyContinue
@@ -223,8 +225,12 @@ try {
 }
 
 if ($localAdminPolicy) {
-    New-Item -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'LocalAccountTokenFilterPolicy' -PropertyType DWord -Value 1 -Force | Out-Null
+    try {
+        New-Item -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'LocalAccountTokenFilterPolicy' -PropertyType DWord -Value 1 -Force | Out-Null
+    } catch {
+        Write-Warning "WinRM aktif, tetapi LocalAccountTokenFilterPolicy tidak dapat diubah: `$(`$_.Exception.Message)"
+    }
 }
 
 Write-Output 'WinRM bootstrap completed'
@@ -242,12 +248,33 @@ function Invoke-PsExecBootstrap {
         [string]$EncodedCommand
     )
 
-    $output = & $PsExec "\\$Computer" "-accepteula" "-nobanner" "-n" "10" "-h" "-u" $UserName "-p" $Password "powershell.exe" "-NoProfile" "-ExecutionPolicy" "Bypass" "-EncodedCommand" $EncodedCommand 2>&1
-    $exitCode = $LASTEXITCODE
+    # PsExec writes normal connection progress to stderr. With the script-wide
+    # ErrorActionPreference=Stop, PowerShell 5.1 can otherwise abort on a line
+    # such as "Connecting to ..." before the actual exit code is collected.
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        # Authenticate to the target with the supplied admin credential, but
+        # run the bootstrap process as LocalSystem. This avoids error 1385 on
+        # targets that allow remote administration but deny interactive logon
+        # for the supplied account.
+        $output = & $PsExec "\\$Computer" "-accepteula" "-nobanner" "-n" "10" "-s" "-u" $UserName "-p" $Password "powershell.exe" "-NoProfile" "-ExecutionPolicy" "Bypass" "-EncodedCommand" $EncodedCommand 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
 
     [pscustomobject]@{
         ExitCode = $exitCode
-        Output   = (($output | Out-String).Trim())
+        Output   = ((@(
+            $output | ForEach-Object {
+                if ($_ -is [System.Management.Automation.ErrorRecord]) {
+                    $_.Exception.Message
+                } else {
+                    [string]$_
+                }
+            }
+        ) -join [Environment]::NewLine).Trim())
     }
 }
 
@@ -299,8 +326,11 @@ foreach ($target in $targets) {
         Start-Sleep -Seconds 3
         $portOpenAfter = Test-TcpPort -Computer $target -Port $WsManPort -TimeoutMs $PortTimeoutMs
 
-        if ($psexecResult.ExitCode -eq 0 -and $portOpenAfter) {
+        if ($portOpenAfter) {
             $message = "WinRM aktif dan port $WsManPort terbuka."
+            if ($psexecResult.ExitCode -ne 0) {
+                $message += " PsExec exit code $($psexecResult.ExitCode), tetapi aktivasi WinRM berhasil."
+            }
             Write-Host "Success: $target - $message" -ForegroundColor Green
             $results += New-BootstrapResult -Computer $target -Status "success" -Message $message
             continue
@@ -328,6 +358,6 @@ $results | Export-Csv -Path $resultFullPath -NoTypeInformation -Encoding UTF8
 Write-Host "Bootstrap results saved to $resultFullPath" -ForegroundColor Cyan
 
 $failedCount = @($results | Where-Object { $_.status -eq "failed" }).Count
-if ($failedCount -gt 0) {
+if ($failedCount -gt 0 -and -not $NoFailExit) {
     exit 1
 }

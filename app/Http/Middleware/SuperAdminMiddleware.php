@@ -15,7 +15,10 @@ class SuperAdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && (auth()->user()->isSuperAdmin() || auth()->user()->email === 'dimassputra1616@gmail.com')) {
+        $allowedExternalEmails = config('company.external_email_allowlist', []);
+        $currentEmail = strtolower((string) auth()->user()?->email);
+
+        if (auth()->check() && (auth()->user()->isSuperAdmin() || in_array($currentEmail, $allowedExternalEmails, true))) {
             return $next($request);
         }
 

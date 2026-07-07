@@ -54,6 +54,11 @@ class TutorialController extends Controller
         return view('admin.tutorials.form', compact('categories', 'tutorial'));
     }
 
+    public function show(Tutorial $tutorial)
+    {
+        return view('tutorials.show', compact('tutorial'));
+    }
+
     public function update(Request $request, Tutorial $tutorial)
     {
         $validated = $request->validate([

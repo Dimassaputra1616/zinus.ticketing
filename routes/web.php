@@ -333,7 +333,7 @@ Route::get('/dashboard', function (Request $request) {
     $viewName = $hasDashboardAccess ? 'dashboard-admin' : 'dashboard';
 
     return view($viewName, $viewData);
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware('auth')->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -376,15 +376,15 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.resetPassword');
     Route::post('/loans/{loan}/status', [App\Http\Controllers\LoanController::class, 'updateStatus'])->name('loans.updateStatus');
     Route::delete('/loans/{loan}', [App\Http\Controllers\LoanController::class, 'destroy'])->name('loans.destroy');
-    Route::get('/admin/assets', [App\Http\Controllers\AssetController::class, 'index'])->name('assets.index');
+    Route::get('/admin/assets', [App\Http\Controllers\AssetCenterController::class, 'overview'])->name('assets.index');
     Route::get('/admin/assets/locations', [App\Http\Controllers\AssetController::class, 'locations'])->name('assets.locations');
     Route::get('/admin/assets/departments', [App\Http\Controllers\AssetController::class, 'departments'])->name('assets.departments');
     Route::get('/admin/assets/user-assets', [App\Http\Controllers\AssetController::class, 'userAssets'])->name('assets.userAssets');
     Route::get('/admin/assets/detail', [App\Http\Controllers\AssetController::class, 'assetDetail'])->name('assets.detail');
     Route::get('/admin/assets/create', [App\Http\Controllers\AssetController::class, 'create'])->name('assets.create');
 
-    // Asset Center specific routes
-    Route::get('/admin/assets/overview', [App\Http\Controllers\AssetCenterController::class, 'overview'])->name('admin.assets.overview');
+    // Legacy Asset Center overview URL now resolves to the unified asset dashboard.
+    Route::redirect('/admin/assets/overview', '/admin/assets')->name('admin.assets.overview');
 
     // Category Pages
     Route::redirect('/admin/assets/pc-laptop', '/admin/assets/pc');

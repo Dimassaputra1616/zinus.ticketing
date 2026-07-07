@@ -22,3 +22,7 @@ IT Support Center Ticketing system for Zinus Dream Indonesia.
 3. **No Unasked Changes:** JANGAN mengubah kode atau CSS tanpa instruksi spesifik "ratain" (alignment), perbaikan bug, atau penambahan fitur baru.
 4. **Auth Compliance:** Selalu pastikan pengecekan user menggunakan `Auth::user()`.
 5. **Context First:** Sebelum melakukan riset mendalam, cek file `CHANGELOG.md` atau `README.md` untuk gambaran besar.
+
+##nih akun login admin nya:
+email:dimassputra1616@gmail.com
+password:0838jangan

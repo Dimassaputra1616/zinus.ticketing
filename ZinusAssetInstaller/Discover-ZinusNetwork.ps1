@@ -491,7 +491,10 @@ while ($runspaces.Count -gt 0) {
             $r.PowerShell.Dispose()
         }
     }
-    $runspaces = @($runspaces | Where-Object { -not $_.AsyncResult.IsCompleted })
+    # Remove only jobs collected in this iteration. A job can finish between
+    # the completed snapshot above and this filter; checking IsCompleted again
+    # would drop that result without ever calling EndInvoke.
+    $runspaces = @($runspaces | Where-Object { $completed -notcontains $_ })
     if ($runspaces.Count -gt 0) {
         Start-Sleep -Milliseconds 100
     }

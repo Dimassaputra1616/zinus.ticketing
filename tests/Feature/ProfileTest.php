@@ -29,7 +29,7 @@ class ProfileTest extends TestCase
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
-                'email' => 'test@example.com',
+                'email' => 'test@zinus.com',
             ]);
 
         $response
@@ -39,11 +39,28 @@ class ProfileTest extends TestCase
         $user->refresh();
 
         $this->assertSame('Test User', $user->name);
-        $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
+        $this->assertSame('test@zinus.com', $user->email);
+        $this->assertNotNull($user->email_verified_at);
     }
 
-    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
+    public function test_profile_email_change_requires_company_domain(): void
+    {
+        config(['company.external_email_allowlist' => []]);
+
+        $user = User::factory()->create(['email' => 'staff@zinus.com']);
+
+        $this
+            ->actingAs($user)
+            ->patch('/profile', [
+                'name' => 'Test User',
+                'email' => 'personal@gmail.com',
+            ])
+            ->assertSessionHasErrors('email');
+
+        $this->assertSame('staff@zinus.com', $user->refresh()->email);
+    }
+
+    public function test_email_verification_status_is_not_reset_by_profile_update(): void
     {
         $user = User::factory()->create();
 
@@ -51,7 +68,7 @@ class ProfileTest extends TestCase
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
-                'email' => $user->email,
+                'email' => 'profile-update@zinus.com',
             ]);
 
         $response

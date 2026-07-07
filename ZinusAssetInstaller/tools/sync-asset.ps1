@@ -546,7 +546,16 @@ function Get-ConnectedMonitors {
         }
     }
 
-    return $results
+    # WMI can expose duplicate/stale entries for the same physical monitor.
+    # The API accepts at most 12 monitors per asset, so de-duplicate by the
+    # generated identity and keep the payload within that contract.
+    $uniqueResults = @(
+        $results |
+            Group-Object -Property asset_code |
+            ForEach-Object { $_.Group | Select-Object -First 1 }
+    )
+
+    return @($uniqueResults | Select-Object -First 12)
 }
 
 function Get-RustDesktopId {
@@ -756,7 +765,7 @@ $identity = Get-AssetIdentity -SerialNumber $serialNumber -Uuid $systemUuid -Hos
 $brand = Normalize-AssetValue -Value $csInfo.Manufacturer -Placeholders $commonPlaceholders
 $model = Normalize-AssetValue -Value $csInfo.Model -Placeholders $commonPlaceholders
 $category = Get-CategoryFromChassis
-$monitors = Get-ConnectedMonitors -ParentHostname $hostname -CommonPlaceholders $commonPlaceholders -SerialPlaceholders $serialPlaceholders
+$monitors = @(Get-ConnectedMonitors -ParentHostname $hostname -CommonPlaceholders $commonPlaceholders -SerialPlaceholders $serialPlaceholders)
 
 try {
     $baseboard = Get-CimInstance Win32_BaseBoard -ErrorAction SilentlyContinue | Select-Object -First 1
