@@ -56,6 +56,8 @@ class AssetBastController extends Controller
 
         if ($request->filled('loan_id')) {
             $selectedLoan = BorrowLog::with(['asset', 'user.department', 'department'])
+                ->whereIn('status', [BorrowLog::STATUS_APPROVED, BorrowLog::STATUS_RETURNED])
+                ->whereNotNull('asset_id')
                 ->find($request->integer('loan_id'));
             $selectedAsset = $selectedLoan?->asset;
         }
@@ -68,12 +70,6 @@ class AssetBastController extends Controller
             'assets' => Asset::orderBy('name')->get(['id', 'asset_code', 'name', 'serial_number', 'category', 'department_id', 'user_id']),
             'users' => User::orderBy('name')->get(['id', 'name', 'email', 'department_id']),
             'departments' => Department::orderBy('name')->get(['id', 'name']),
-            'loans' => BorrowLog::with(['asset', 'user'])
-                ->whereIn('status', [BorrowLog::STATUS_APPROVED, BorrowLog::STATUS_RETURNED])
-                ->whereNotNull('asset_id')
-                ->latest()
-                ->limit(100)
-                ->get(),
             'selectedAsset' => $selectedAsset,
             'selectedLoan' => $selectedLoan,
             'documentNumber' => $this->nextDocumentNumber(),

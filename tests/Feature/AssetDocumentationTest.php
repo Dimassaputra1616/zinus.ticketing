@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Asset;
 use App\Models\AssetBast;
 use App\Models\AssetInspection;
+use App\Models\BorrowLog;
 use App\Models\Department;
+use App\Models\Device;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -100,7 +102,50 @@ class AssetDocumentationTest extends TestCase
             ->assertSee('name="condition_summary"', false)
             ->assertSee('value="Good"', false)
             ->assertSee('Minor Issue')
-            ->assertSee('selected.dataset.recipientEmail', false);
+            ->assertSee('selected.dataset.recipientEmail', false)
+            ->assertDontSee('name="borrow_log_id"', false)
+            ->assertDontSee('Linked Loan');
+    }
+
+    public function test_bast_create_from_approved_loan_keeps_loan_link_context(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $department = Department::create(['name' => 'IT']);
+        $recipient = User::factory()->create([
+            'department_id' => $department->id,
+            'name' => 'Dimas Saputra',
+            'email' => 'dimas@example.test',
+        ]);
+        $asset = $this->asset('PC-LOAN-001', 'Loan PC', 'PC', [
+            'department_id' => $department->id,
+            'user_id' => $recipient->id,
+        ]);
+        $device = Device::create([
+            'name' => 'Loan PC',
+            'code' => 'DEV-LOAN-001',
+            'category' => 'PC',
+            'status' => 'available',
+        ]);
+        $loan = BorrowLog::create([
+            'user_id' => $recipient->id,
+            'department_id' => $department->id,
+            'device_id' => $device->id,
+            'asset_id' => $asset->id,
+            'asset_code' => $asset->asset_code,
+            'start_date' => '2026-07-08',
+            'end_date' => '2026-07-09',
+            'reason' => 'Peminjaman untuk meeting.',
+            'status' => BorrowLog::STATUS_APPROVED,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.bast.create', ['loan_id' => $loan->id]))
+            ->assertOk()
+            ->assertSee('Linked Loan')
+            ->assertSee('name="borrow_log_id"', false)
+            ->assertSee('value="'.$loan->id.'"', false)
+            ->assertSee('#'.$loan->id.' - Dimas Saputra - Loan PC')
+            ->assertSee('value="dimas@example.test"', false);
     }
 
     public function test_admin_can_create_inspection_and_view_report(): void

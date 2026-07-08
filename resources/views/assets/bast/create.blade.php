@@ -99,17 +99,15 @@
                                 @endforeach
                             </select>
                         </label>
-                        <label class="block">
-                            <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Linked Loan</span>
-                            <select name="borrow_log_id" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                <option value="">No loan link</option>
-                                @foreach ($loans as $loan)
-                                    <option value="{{ $loan->id }}" @selected((int) old('borrow_log_id', $selectedLoan?->id) === $loan->id)>
-                                        #{{ $loan->id }} - {{ $loan->user?->name ?? 'User' }} - {{ $loan->asset?->name ?? 'Asset' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </label>
+                        @if ($selectedLoan)
+                            <label class="block md:col-span-2">
+                                <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Linked Loan</span>
+                                <input type="hidden" name="borrow_log_id" value="{{ old('borrow_log_id', $selectedLoan->id) }}">
+                                <div class="mt-1 flex min-h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700 shadow-sm">
+                                    #{{ $selectedLoan->id }} - {{ $selectedLoan->user?->name ?? 'User' }} - {{ $selectedLoan->asset?->name ?? 'Asset' }}
+                                </div>
+                            </label>
+                        @endif
                         <label class="block">
                             <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Type</span>
                             <select name="bast_type" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500" required>
