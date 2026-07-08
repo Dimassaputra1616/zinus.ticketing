@@ -3,8 +3,10 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\PasswordResetCodeNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -12,7 +14,7 @@ class PasswordResetTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_reset_password_link_screen_can_be_rendered(): void
+    public function test_reset_password_code_request_screen_can_be_rendered(): void
     {
         $response = $this->get('/forgot-password');
 
@@ -20,47 +22,69 @@ class PasswordResetTest extends TestCase
             ->assertStatus(200)
             ->assertSeeText(__('messages.back_to_login'))
             ->assertSee('href="'.route('login').'"', false)
-            ->assertSeeText(__('messages.send_reset_link'));
+            ->assertSeeText('Kirim Kode Verifikasi');
     }
 
-    public function test_reset_password_link_can_be_requested(): void
+    public function test_reset_password_code_can_be_requested(): void
     {
         Notification::fake();
 
         $user = User::factory()->create();
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+        $this->post('/forgot-password', ['email' => $user->email])
+            ->assertRedirect(route('password.code', ['email' => $user->email]));
 
-        Notification::assertSentTo($user, ResetPassword::class);
+        Notification::assertSentTo($user, PasswordResetCodeNotification::class);
+
+        $record = DB::table('password_reset_tokens')->where('email', $user->email)->first();
+
+        $this->assertNotNull($record);
+        $this->assertSame(0, (int) $record->attempts);
+        $this->assertNotNull($record->expires_at);
     }
 
-    public function test_reset_password_notification_uses_zinus_mail_template(): void
+    public function test_reset_password_code_notification_uses_zinus_mail_template(): void
     {
         $user = User::factory()->make([
             'name' => 'Dimas Saputra',
             'email' => 'dimas@zinus.com',
         ]);
 
-        $mail = (new ResetPassword('sample-token'))->toMail($user);
+        $mail = (new PasswordResetCodeNotification('123456'))->toMail($user);
 
-        $this->assertSame('Reset Password Portal IT Zinus', $mail->subject);
+        $this->assertSame('Kode Reset Password Portal IT Zinus', $mail->subject);
         $this->assertSame([
             'html' => 'emails.auth.password-reset',
             'text' => 'emails.auth.password-reset-text',
         ], $mail->view);
         $this->assertSame('Dimas Saputra', $mail->viewData['displayName']);
         $this->assertSame('dimas@zinus.com', $mail->viewData['email']);
-        $this->assertStringContainsString('/reset-password/sample-token', $mail->viewData['resetUrl']);
-        $this->assertStringContainsString('email=dimas%40zinus.com', $mail->viewData['resetUrl']);
-        $this->assertSame(60, $mail->viewData['expiresIn']);
+        $this->assertSame('123456', $mail->viewData['code']);
+        $this->assertSame(10, $mail->viewData['expiresIn']);
 
         $this->view($mail->view['html'], $mail->viewData)
-            ->assertSee('Reset password akun Anda')
-            ->assertSee('Password Recovery')
+            ->assertSee('Kode reset password')
+            ->assertSee('Verification Code')
+            ->assertSee('123456')
             ->assertSee('Dimas Saputra');
     }
 
-    public function test_reset_password_screen_can_be_rendered(): void
+    public function test_reset_password_code_screen_can_be_rendered(): void
+    {
+        $this->get(route('password.code', ['email' => 'dimas@example.test']))
+            ->assertOk()
+            ->assertSeeText('Masukkan kode email')
+            ->assertSee('value="dimas@example.test"', false);
+    }
+
+    public function test_reset_password_screen_requires_verified_code(): void
+    {
+        $this->get(route('password.reset'))
+            ->assertRedirect(route('password.request'))
+            ->assertSessionHasErrors('email');
+    }
+
+    public function test_password_can_be_reset_with_valid_code(): void
     {
         Notification::fake();
 
@@ -68,16 +92,34 @@ class PasswordResetTest extends TestCase
 
         $this->post('/forgot-password', ['email' => $user->email]);
 
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-            $response = $this->get('/reset-password/'.$notification->token);
+        Notification::assertSentTo($user, PasswordResetCodeNotification::class, function ($notification) use ($user) {
+            $this->post(route('password.code.verify'), [
+                'email' => $user->email,
+                'code' => $notification->code,
+            ])->assertRedirect(route('password.reset'));
 
-            $response->assertStatus(200);
+            $this->get(route('password.reset'))
+                ->assertOk()
+                ->assertSee('value="'.$user->email.'"', false);
+
+            $this->post(route('password.store'), [
+                'email' => $user->email,
+                'password' => 'new-password-123',
+                'password_confirmation' => 'new-password-123',
+            ])
+                ->assertSessionHasNoErrors()
+                ->assertRedirect(route('login'));
+
+            $user->refresh();
+
+            $this->assertTrue(Hash::check('new-password-123', $user->password));
+            $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
 
             return true;
         });
     }
 
-    public function test_password_can_be_reset_with_valid_token(): void
+    public function test_invalid_reset_code_increments_attempts(): void
     {
         Notification::fake();
 
@@ -85,17 +127,15 @@ class PasswordResetTest extends TestCase
 
         $this->post('/forgot-password', ['email' => $user->email]);
 
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-            $response = $this->post('/reset-password', [
-                'token' => $notification->token,
+        Notification::assertSentTo($user, PasswordResetCodeNotification::class, function () use ($user) {
+            $this->post(route('password.code.verify'), [
                 'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
-            ]);
+                'code' => '000000',
+            ])->assertSessionHasErrors('code');
 
-            $response
-                ->assertSessionHasNoErrors()
-                ->assertRedirect(route('login'));
+            $record = DB::table('password_reset_tokens')->where('email', $user->email)->first();
+
+            $this->assertSame(1, (int) $record->attempts);
 
             return true;
         });

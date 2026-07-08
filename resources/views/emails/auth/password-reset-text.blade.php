@@ -1,15 +1,15 @@
-Reset Password Portal IT Zinus
+Kode Reset Password Portal IT Zinus
 
 Halo {{ $displayName }},
 
 Kami menerima permintaan untuk mengganti password akun Portal IT Anda.
 
-Reset password melalui link berikut:
-{{ $resetUrl }}
+Kode verifikasi Anda:
+{{ $code }}
 
-Link ini berlaku selama {{ $expiresIn }} menit.
+Kode ini berlaku selama {{ $expiresIn }} menit.
 
-Jika Anda tidak meminta reset password, abaikan email ini. Password lama tidak akan berubah sampai Anda membuat password baru lewat link di atas.
+Jika Anda tidak meminta reset password, abaikan email ini. Password lama tidak akan berubah tanpa kode verifikasi ini.
 
 Butuh bantuan? Hubungi {{ $supportEmail }}.
 

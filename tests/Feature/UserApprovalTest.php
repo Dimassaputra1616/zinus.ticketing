@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class UserApprovalTest extends TestCase
@@ -94,6 +95,30 @@ class UserApprovalTest extends TestCase
         $this->assertStringContainsString('Hapus', $table);
         $this->assertStringNotContainsString('Reset PW', $table);
         $this->assertStringNotContainsString('Reset Password', $table);
+    }
+
+    public function test_super_admin_can_reset_user_password_manually(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'admin',
+            'is_admin' => true,
+            'is_super_admin' => true,
+        ]);
+        $user = User::factory()->create();
+
+        $this->actingAs($superAdmin)
+            ->postJson(route('users.resetPassword', $user), [
+                'password' => 'manual-reset-123',
+                'password_confirmation' => 'manual-reset-123',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'message' => "Password {$user->name} berhasil direset.",
+            ]);
+
+        $user->refresh();
+
+        $this->assertTrue(Hash::check('manual-reset-123', $user->password));
     }
 
     public function test_admin_cannot_approve_non_pending_user(): void

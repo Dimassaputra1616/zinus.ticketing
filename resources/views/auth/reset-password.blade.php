@@ -1,22 +1,39 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('password.store') }}">
+    <div class="space-y-7">
+        <div class="rounded-3xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
+            <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">Password baru</p>
+            <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">Buat password baru</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
+                Kode verifikasi sudah valid untuk <span class="font-semibold text-slate-900">{{ $email }}</span>. Silakan buat password baru.
+            </p>
+        </div>
+
+        <x-auth-session-status
+            class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 shadow-sm"
+            :status="session('status')"
+        />
+
+        <form method="POST" action="{{ route('password.store') }}" class="space-y-5">
         @csrf
 
-        <!-- Password Reset Token -->
-        <input type="hidden" name="token" value="{{ $request->route('token') }}">
+        <input type="hidden" name="email" value="{{ old('email', $email) }}">
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
+        <div class="space-y-2">
+            <x-input-label for="email_display" value="Email" />
+            <input
+                id="email_display"
+                class="block h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600 shadow-sm"
+                type="email"
+                value="{{ old('email', $email) }}"
+                disabled
+            >
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
+        <div class="space-y-2">
             <x-input-label for="password" :value="__('Password')" />
             <div class="relative" x-data="{ show: false }">
-                <x-text-input id="password" class="block mt-1 w-full pr-12" x-bind:type="show ? 'text' : 'password'" name="password" required autocomplete="new-password" />
+                <x-text-input id="password" class="block h-12 w-full rounded-2xl pr-12" x-bind:type="show ? 'text' : 'password'" name="password" required autocomplete="new-password" autofocus />
                 <button
                     type="button"
                     class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
@@ -39,12 +56,11 @@
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <!-- Confirm Password -->
-        <div class="mt-4">
+        <div class="space-y-2">
             <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
 
             <div class="relative" x-data="{ show: false }">
-                <x-text-input id="password_confirmation" class="block mt-1 w-full pr-12"
+                <x-text-input id="password_confirmation" class="block h-12 w-full rounded-2xl pr-12"
                                 x-bind:type="show ? 'text' : 'password'"
                                 name="password_confirmation" required autocomplete="new-password" />
                 <button
@@ -70,10 +86,21 @@
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Reset Password') }}
-            </x-primary-button>
+        <div class="grid gap-3 sm:grid-cols-[0.9fr_1.4fr] sm:items-center">
+            <a
+                href="{{ route('password.code', ['email' => old('email', $email)]) }}"
+                class="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+            >
+                Kembali ke Kode
+            </a>
+
+            <button
+                type="submit"
+                class="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0B2F26] via-emerald-700 to-[#12824C] px-5 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-emerald-900/25 transition hover:-translate-y-0.5 hover:shadow-emerald-900/35 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+            >
+                Simpan Password Baru
+            </button>
         </div>
     </form>
+    </div>
 </x-guest-layout>

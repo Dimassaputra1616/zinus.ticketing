@@ -8,7 +8,7 @@
 </head>
 <body style="margin:0;padding:0;background:#eef7f3;color:#10251f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
-        Permintaan reset password untuk akun Portal IT Zinus Anda. Link berlaku {{ $expiresIn }} menit.
+        Kode reset password untuk akun Portal IT Zinus Anda. Kode berlaku {{ $expiresIn }} menit.
     </div>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:#eef7f3;margin:0;padding:32px 12px;">
@@ -30,20 +30,20 @@
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td style="padding:34px 36px 30px;background:linear-gradient(135deg,#0b3b2f 0%,#11865b 52%,#7be6b6 100%);">
-                                        <span style="display:inline-block;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.16);color:#d9fff0;font-size:11px;line-height:14px;font-weight:900;letter-spacing:2px;text-transform:uppercase;border:1px solid rgba(255,255,255,.26);">Password Recovery</span>
-                                        <h1 style="margin:18px 0 10px;color:#ffffff;font-size:32px;line-height:39px;font-weight:900;letter-spacing:-.8px;">Reset password akun Anda</h1>
-                                        <p style="margin:0;color:#d9fff0;font-size:15px;line-height:24px;">Halo {{ $displayName }}, kami menerima permintaan untuk mengganti password akun Portal IT Anda.</p>
+                                        <span style="display:inline-block;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.16);color:#d9fff0;font-size:11px;line-height:14px;font-weight:900;letter-spacing:2px;text-transform:uppercase;border:1px solid rgba(255,255,255,.26);">Verification Code</span>
+                                        <h1 style="margin:18px 0 10px;color:#ffffff;font-size:32px;line-height:39px;font-weight:900;letter-spacing:-.8px;">Kode reset password</h1>
+                                        <p style="margin:0;color:#d9fff0;font-size:15px;line-height:24px;">Halo {{ $displayName }}, gunakan kode berikut untuk mengganti password akun Portal IT Anda.</p>
                                     </td>
                                 </tr>
 
                                 <tr>
                                     <td style="padding:34px 36px 8px;">
-                                        <p style="margin:0 0 22px;color:#425466;font-size:15px;line-height:25px;">Klik tombol di bawah untuk membuat password baru. Demi keamanan, link ini hanya aktif selama <strong style="color:#123c32;">{{ $expiresIn }} menit</strong>.</p>
+                                        <p style="margin:0 0 22px;color:#425466;font-size:15px;line-height:25px;">Masukkan kode ini di halaman reset password. Demi keamanan, kode hanya aktif selama <strong style="color:#123c32;">{{ $expiresIn }} menit</strong>.</p>
 
                                         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 26px;">
                                             <tr>
-                                                <td align="center" bgcolor="#101827" style="border-radius:16px;box-shadow:0 14px 30px rgba(16,24,39,.22);">
-                                                    <a href="{{ $resetUrl }}" style="display:inline-block;padding:16px 28px;border-radius:16px;background:#101827;color:#ffffff;text-decoration:none;font-size:13px;line-height:16px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;">Reset Password</a>
+                                                <td align="center" bgcolor="#101827" style="border-radius:18px;box-shadow:0 14px 30px rgba(16,24,39,.22);">
+                                                    <div style="display:inline-block;padding:18px 28px;border-radius:18px;background:#101827;color:#ffffff;text-decoration:none;font-size:28px;line-height:32px;font-weight:900;letter-spacing:8px;">{{ $code }}</div>
                                                 </td>
                                             </tr>
                                         </table>
@@ -52,15 +52,10 @@
                                             <tr>
                                                 <td style="padding:18px 20px;">
                                                     <p style="margin:0 0 6px;color:#0f6d3f;font-size:12px;line-height:16px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;">Catatan keamanan</p>
-                                                    <p style="margin:0;color:#425466;font-size:14px;line-height:23px;">Jika Anda tidak meminta reset password, abaikan email ini. Password lama tidak akan berubah sampai Anda membuat password baru lewat link di atas.</p>
+                                                    <p style="margin:0;color:#425466;font-size:14px;line-height:23px;">Jika Anda tidak meminta reset password, abaikan email ini. Password lama tidak akan berubah tanpa kode verifikasi ini.</p>
                                                 </td>
                                             </tr>
                                         </table>
-
-                                        <p style="margin:0 0 10px;color:#6b7c8f;font-size:13px;line-height:21px;">Tombol tidak bisa diklik? Salin link berikut ke browser:</p>
-                                        <p style="margin:0;padding:14px 16px;background:#f8fafc;border:1px solid #e5edf3;border-radius:14px;color:#24455d;font-size:12px;line-height:19px;word-break:break-all;">
-                                            <a href="{{ $resetUrl }}" style="color:#0f6d3f;text-decoration:underline;">{{ $resetUrl }}</a>
-                                        </p>
                                     </td>
                                 </tr>
 

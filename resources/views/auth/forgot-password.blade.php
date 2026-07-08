@@ -16,9 +16,9 @@
                     <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700 ring-1 ring-emerald-200/70">
                         {{ __('messages.reset_password') }}
                     </span>
-                    <h3 class="mt-3 text-xl font-black tracking-tight text-slate-950">Pulihkan akses akun</h3>
+                    <h3 class="mt-3 text-xl font-black tracking-tight text-slate-950">Kirim kode reset password</h3>
                     <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
-                        {{ __('messages.forgot_password_intro') }}
+                        Masukkan email akun Anda. Sistem akan mengirim kode verifikasi 6 digit yang berlaku selama 10 menit.
                     </p>
                 </div>
             </div>
@@ -37,7 +37,7 @@
             <div class="space-y-2.5">
                 <div class="flex items-center justify-between gap-3">
                     <x-input-label for="email" :value="__('messages.email')" class="text-sm font-bold text-slate-800" />
-                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Secure reset</span>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Kode 6 digit</span>
                 </div>
                 <label class="group relative block">
                     <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-emerald-600">
@@ -62,7 +62,7 @@
                     <svg class="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M18 10A8 8 0 1 1 2 10a8 8 0 0 1 16 0ZM9 8a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0V8Zm1-4a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 10 4Z" clip-rule="evenodd" />
                     </svg>
-                    <span>{{ __('messages.forgot_password_email_help') }}</span>
+                    <span>Kode hanya dikirim bila email terdaftar. Periksa inbox atau folder spam jika belum terlihat.</span>
                 </p>
                 <x-input-error :messages="$errors->get('email')" class="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600" />
             </div>
@@ -83,7 +83,7 @@
                     type="submit"
                     class="group inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0B2F26] via-emerald-700 to-[#12824C] px-5 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-emerald-900/25 transition hover:-translate-y-0.5 hover:shadow-emerald-900/35 focus:outline-none focus:ring-4 focus:ring-emerald-200"
                 >
-                    <span>{{ __('messages.send_reset_link') }}</span>
+                    <span>Kirim Kode Verifikasi</span>
                     <svg class="h-4 w-4 transition group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M5 12h14" />
                         <path d="m12 5 7 7-7 7" />
