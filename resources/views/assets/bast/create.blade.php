@@ -137,14 +137,24 @@
                     </div>
                 </div>
 
-                <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" data-bast-recipient-form>
                     <div class="grid gap-4 md:grid-cols-2">
                         <label class="block">
                             <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Recipient User</span>
-                            <select name="recipient_user_id" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <select
+                                name="recipient_user_id"
+                                data-recipient-user-select
+                                class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                            >
                                 <option value="">Manual recipient</option>
                                 @foreach ($users as $user)
-                                    <option value="{{ $user->id }}" @selected((int) old('recipient_user_id', $prefillUser?->id) === $user->id)>
+                                    <option
+                                        value="{{ $user->id }}"
+                                        data-recipient-name="{{ $user->name }}"
+                                        data-recipient-email="{{ $user->email }}"
+                                        data-department-id="{{ $user->department_id }}"
+                                        @selected((int) old('recipient_user_id', $prefillUser?->id) === $user->id)
+                                    >
                                         {{ $user->name }} - {{ $user->email }}
                                     </option>
                                 @endforeach
@@ -152,7 +162,11 @@
                         </label>
                         <label class="block">
                             <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Department</span>
-                            <select name="department_id" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <select
+                                name="department_id"
+                                data-recipient-department-select
+                                class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                            >
                                 <option value="">Follow asset/user department</option>
                                 @foreach ($departments as $department)
                                     <option value="{{ $department->id }}" @selected((int) old('department_id', $selectedLoan?->department_id ?? $prefillUser?->department_id ?? $selectedAsset?->department_id) === $department->id)>
@@ -166,6 +180,7 @@
                             <input
                                 type="text"
                                 name="recipient_name"
+                                data-recipient-name-input
                                 value="{{ old('recipient_name', $prefillUser?->name) }}"
                                 class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                                 required
@@ -176,6 +191,7 @@
                             <input
                                 type="email"
                                 name="recipient_email"
+                                data-recipient-email-input
                                 value="{{ old('recipient_email', $prefillUser?->email) }}"
                                 class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                             >
@@ -246,4 +262,36 @@
             </form>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('[data-bast-recipient-form]').forEach(form => {
+                    const userSelect = form.querySelector('[data-recipient-user-select]');
+                    const nameInput = form.querySelector('[data-recipient-name-input]');
+                    const emailInput = form.querySelector('[data-recipient-email-input]');
+                    const departmentSelect = form.querySelector('[data-recipient-department-select]');
+
+                    if (!userSelect) return;
+
+                    userSelect.addEventListener('change', () => {
+                        const selected = userSelect.selectedOptions[0];
+
+                        if (!selected || !selected.value) {
+                            if (nameInput) nameInput.value = '';
+                            if (emailInput) emailInput.value = '';
+                            return;
+                        }
+
+                        if (nameInput) nameInput.value = selected.dataset.recipientName || '';
+                        if (emailInput) emailInput.value = selected.dataset.recipientEmail || '';
+
+                        if (departmentSelect && selected.dataset.departmentId) {
+                            departmentSelect.value = selected.dataset.departmentId;
+                        }
+                    });
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

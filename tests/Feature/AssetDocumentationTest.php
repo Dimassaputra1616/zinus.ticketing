@@ -80,6 +80,26 @@ class AssetDocumentationTest extends TestCase
             ->assertSee('Foto 1');
     }
 
+    public function test_bast_create_form_exposes_recipient_autofill_data(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $department = Department::create(['name' => 'IT']);
+        User::factory()->create([
+            'department_id' => $department->id,
+            'name' => 'Dimas Saputra',
+            'email' => 'dimas@example.test',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.bast.create'))
+            ->assertOk()
+            ->assertSee('data-recipient-user-select', false)
+            ->assertSee('data-recipient-name="Dimas Saputra"', false)
+            ->assertSee('data-recipient-email="dimas@example.test"', false)
+            ->assertSee('data-department-id="'.$department->id.'"', false)
+            ->assertSee('selected.dataset.recipientEmail', false);
+    }
+
     public function test_admin_can_create_inspection_and_view_report(): void
     {
         Storage::fake('public');
