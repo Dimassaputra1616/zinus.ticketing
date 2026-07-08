@@ -1,9 +1,15 @@
 @php
     $typeLabels = [
-        'handover' => 'Handover',
-        'return' => 'Return',
-        'replacement' => 'Replacement',
-        'loan' => 'Loan',
+        'handover' => 'Serah Terima',
+        'return' => 'Pengembalian',
+        'replacement' => 'Penggantian',
+        'loan' => 'Peminjaman',
+    ];
+    $statusLabels = [
+        'draft' => 'Draft',
+        'issued' => 'Diterbitkan',
+        'signed' => 'Ditandatangani',
+        'void' => 'Dibatalkan',
     ];
     $snapshot = $bast->asset_snapshot ?? [];
     $appName = setting('app_name', 'Zinus Dream');
@@ -13,7 +19,7 @@
     $brandColor = setting('theme_color', '#12824C');
     $brandStrong = setting('theme_color_strong', '#0F6D3F');
     $brandSoft = setting('theme_color_secondary', '#53B77A');
-    $statusLabel = ucwords(str_replace('_', ' ', $bast->status));
+    $statusLabel = $statusLabels[$bast->status] ?? ucwords(str_replace('_', ' ', $bast->status));
     $typeLabel = $typeLabels[$bast->bast_type] ?? ucwords(str_replace('_', ' ', $bast->bast_type));
 @endphp
 
@@ -140,61 +146,32 @@
             font-weight: 900;
         }
         .title-panel {
-            background: #f8fbfa;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            margin-top: 22px;
-            padding: 18px 20px;
-            position: relative;
-        }
-        .title-panel:before {
-            background: var(--brand);
-            border-radius: 999px;
-            content: "";
-            height: calc(100% - 24px);
-            left: 0;
-            position: absolute;
-            top: 12px;
-            width: 4px;
+            border-bottom: 1.5px solid #1e293b;
+            margin-top: 24px;
+            padding: 0 0 12px;
+            text-align: center;
         }
         h1 {
-            font-size: 21px;
+            font-size: 20px;
             font-weight: 900;
-            letter-spacing: 0.07em;
+            letter-spacing: 0.06em;
             line-height: 1.25;
             margin: 0;
             text-transform: uppercase;
         }
-        .doc-row {
-            align-items: center;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .pill {
-            border-radius: 999px;
-            display: inline-flex;
-            font-size: 10px;
-            font-weight: 900;
-            letter-spacing: 0.08em;
-            padding: 5px 9px;
-            text-transform: uppercase;
-        }
-        .pill-brand {
-            background: rgba(18, 130, 76, 0.1);
-            color: var(--brand-strong);
-        }
-        .pill-neutral {
-            background: #eef2f7;
+        .document-number {
             color: #334155;
+            font-size: 12px;
+            margin-top: 7px;
+        }
+        .document-number strong {
+            color: #0f172a;
         }
         .statement {
-            border-left: 3px solid var(--brand);
-            color: #334155;
-            line-height: 1.7;
+            color: #1e293b;
+            line-height: 1.75;
             margin: 18px 0 16px;
-            padding: 2px 0 2px 12px;
+            text-align: justify;
         }
         .section {
             margin-top: 16px;
@@ -268,6 +245,13 @@
         }
         .responsibility-card p + p {
             margin-top: 7px;
+        }
+        .responsibility-card ol {
+            margin: 7px 0 0;
+            padding-left: 18px;
+        }
+        .responsibility-card li + li {
+            margin-top: 4px;
         }
         .signature-grid {
             display: grid;
@@ -366,47 +350,45 @@
 
             <section class="title-panel">
                 <h1>Berita Acara Serah Terima Asset</h1>
-                <div class="doc-row">
-                    <span class="pill pill-brand">{{ $bast->document_number }}</span>
-                    <span class="pill pill-neutral">{{ $typeLabel }}</span>
-                    <span class="pill pill-neutral">{{ $statusLabel }}</span>
+                <div class="document-number">
+                    Nomor: <strong>{{ $bast->document_number }}</strong>
                 </div>
             </section>
 
             <p class="statement">
-                Pada tanggal {{ optional($bast->bast_date)->format('d M Y') }}, telah dilakukan proses
-                <strong>{{ strtolower($typeLabel) }}</strong> asset IT dengan detail, kondisi, dan penerima sebagaimana tercatat pada dokumen ini.
-                Penerima menyatakan telah menerima asset dan memahami tanggung jawab penggunaan asset tersebut.
+                Pada tanggal {{ optional($bast->bast_date)->format('d M Y') }}, pihak IT dan
+                <strong>{{ $bast->recipient_name }}</strong> telah melakukan proses
+                <strong>{{ strtolower($typeLabel) }}</strong> asset IT. Asset diterima sesuai data dan kondisi yang tercantum dalam berita acara ini untuk digunakan sebagai fasilitas kerja.
             </p>
 
             <div class="two-columns">
                 <section class="section">
                     <div class="section-header">
                         <span class="section-dot"></span>
-                        <span class="section-title">Asset</span>
+                        <span class="section-title">Data Asset</span>
                     </div>
                     <table class="data-table">
-                        <tr><th>Asset Code</th><td>{{ $snapshot['asset_code'] ?? $bast->asset?->asset_code ?? '-' }}</td></tr>
-                        <tr><th>Name</th><td>{{ $snapshot['name'] ?? $bast->asset?->name ?? '-' }}</td></tr>
-                        <tr><th>Category</th><td>{{ $snapshot['category'] ?? $bast->asset?->category ?? '-' }}</td></tr>
-                        <tr><th>Serial No.</th><td>{{ $snapshot['serial_number'] ?? $bast->asset?->serial_number ?? '-' }}</td></tr>
+                        <tr><th>Kode Asset</th><td>{{ $snapshot['asset_code'] ?? $bast->asset?->asset_code ?? '-' }}</td></tr>
+                        <tr><th>Nama Asset</th><td>{{ $snapshot['name'] ?? $bast->asset?->name ?? '-' }}</td></tr>
+                        <tr><th>Kategori</th><td>{{ $snapshot['category'] ?? $bast->asset?->category ?? '-' }}</td></tr>
+                        <tr><th>Serial Number</th><td>{{ $snapshot['serial_number'] ?? $bast->asset?->serial_number ?? '-' }}</td></tr>
                         <tr><th>Hostname</th><td>{{ $snapshot['hostname'] ?? $bast->asset?->hostname ?? '-' }}</td></tr>
-                        <tr><th>Brand / Model</th><td>{{ trim(($snapshot['brand'] ?? '') . ' ' . ($snapshot['model'] ?? '')) ?: '-' }}</td></tr>
+                        <tr><th>Merek / Model</th><td>{{ trim(($snapshot['brand'] ?? '') . ' ' . ($snapshot['model'] ?? '')) ?: '-' }}</td></tr>
                     </table>
                 </section>
 
                 <section class="section">
                     <div class="section-header">
                         <span class="section-dot"></span>
-                        <span class="section-title">Recipient</span>
+                        <span class="section-title">Penerima</span>
                     </div>
                     <table class="data-table">
-                        <tr><th>Name</th><td>{{ $bast->recipient_name }}</td></tr>
+                        <tr><th>Nama</th><td>{{ $bast->recipient_name }}</td></tr>
                         <tr><th>Email</th><td>{{ $bast->recipient_email ?: '-' }}</td></tr>
-                        <tr><th>Department</th><td>{{ $bast->recipient_department ?: $bast->department?->name ?: '-' }}</td></tr>
-                        <tr><th>Location</th><td>{{ $bast->handover_location ?: ($snapshot['location'] ?? '-') }}</td></tr>
-                        <tr><th>Condition</th><td>{{ $bast->condition_summary ?: ($snapshot['condition'] ?? '-') }}</td></tr>
-                        <tr><th>Owner</th><td>{{ $snapshot['assigned_user'] ?? '-' }}</td></tr>
+                        <tr><th>Departemen</th><td>{{ $bast->recipient_department ?: $bast->department?->name ?: '-' }}</td></tr>
+                        <tr><th>Lokasi</th><td>{{ $bast->handover_location ?: ($snapshot['location'] ?? '-') }}</td></tr>
+                        <tr><th>Kondisi</th><td>{{ $bast->condition_summary ?: ($snapshot['condition'] ?? '-') }}</td></tr>
+                        <tr><th>User Terdaftar</th><td>{{ $snapshot['assigned_user'] ?? '-' }}</td></tr>
                     </table>
                 </section>
             </div>
@@ -414,11 +396,11 @@
             <section class="section">
                 <div class="section-header">
                     <span class="section-dot"></span>
-                    <span class="section-title">Accessories And Notes</span>
+                    <span class="section-title">Kelengkapan dan Catatan</span>
                 </div>
                 <table class="data-table">
-                    <tr><th>Accessories</th><td>{{ count($bast->accessories ?? []) ? implode(', ', $bast->accessories) : '-' }}</td></tr>
-                    <tr><th>Notes</th><td>{!! nl2br(e($bast->notes ?: '-')) !!}</td></tr>
+                    <tr><th>Kelengkapan</th><td>{{ count($bast->accessories ?? []) ? implode(', ', $bast->accessories) : '-' }}</td></tr>
+                    <tr><th>Catatan</th><td>{!! nl2br(e($bast->notes ?: '-')) !!}</td></tr>
                 </table>
             </section>
 
@@ -428,15 +410,13 @@
                     <span class="section-title">Pernyataan Tanggung Jawab Asset</span>
                 </div>
                 <div class="responsibility-card">
-                    <p>
-                        Penerima bertanggung jawab penuh untuk menjaga, menggunakan, dan merawat asset perusahaan sesuai kebutuhan kerja serta kebijakan IT yang berlaku.
-                    </p>
-                    <p>
-                        Asset tidak boleh dipindahtangankan, dipinjamkan, diubah konfigurasi utamanya, atau digunakan di luar kepentingan pekerjaan tanpa persetujuan dari IT.
-                    </p>
-                    <p>
-                        Apabila terjadi kerusakan, kehilangan, pergantian pengguna, atau asset sudah tidak digunakan, penerima wajib segera melaporkan kepada IT dan mengembalikan asset saat diminta.
-                    </p>
+                    <p>Dengan menandatangani berita acara ini, penerima menyetujui ketentuan berikut:</p>
+                    <ol>
+                        <li>Asset digunakan untuk kebutuhan pekerjaan dan wajib dijaga dengan baik.</li>
+                        <li>Pemindahan, peminjaman, atau perubahan konfigurasi asset harus mendapat persetujuan IT.</li>
+                        <li>Kerusakan, kehilangan, atau perubahan pengguna wajib segera dilaporkan kepada IT.</li>
+                        <li>Asset dikembalikan kepada IT apabila sudah tidak digunakan atau saat diminta oleh perusahaan.</li>
+                    </ol>
                 </div>
             </section>
 
