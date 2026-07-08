@@ -112,6 +112,16 @@ class Asset extends Model
         return $this->hasMany(AssetLog::class);
     }
 
+    public function basts(): HasMany
+    {
+        return $this->hasMany(AssetBast::class);
+    }
+
+    public function inspections(): HasMany
+    {
+        return $this->hasMany(AssetInspection::class);
+    }
+
     public function childRelations(): HasMany
     {
         return $this->hasMany(AssetRelation::class, 'parent_asset_id');

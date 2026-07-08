@@ -414,6 +414,20 @@ Route::middleware(['auth', 'approved', 'admin'])->group(function () {
     Route::post('/admin/assets/import', [App\Http\Controllers\AssetCenterController::class, 'import'])->name('admin.assets.import');
     Route::get('/admin/assets/export', [App\Http\Controllers\AssetCenterController::class, 'export'])->name('admin.assets.export');
 
+    Route::get('/admin/assets/bast', [App\Http\Controllers\AssetBastController::class, 'index'])->name('admin.assets.bast.index');
+    Route::get('/admin/assets/bast/create', [App\Http\Controllers\AssetBastController::class, 'create'])->name('admin.assets.bast.create');
+    Route::post('/admin/assets/bast', [App\Http\Controllers\AssetBastController::class, 'store'])->name('admin.assets.bast.store');
+    Route::get('/admin/assets/bast/{bast}', [App\Http\Controllers\AssetBastController::class, 'show'])->name('admin.assets.bast.show')->whereNumber('bast');
+    Route::get('/admin/assets/bast/{bast}/print', [App\Http\Controllers\AssetBastController::class, 'print'])->name('admin.assets.bast.print')->whereNumber('bast');
+
+    Route::get('/admin/assets/inspections', [App\Http\Controllers\AssetInspectionController::class, 'index'])->name('admin.assets.inspections.index');
+    Route::get('/admin/assets/inspections/create', [App\Http\Controllers\AssetInspectionController::class, 'create'])->name('admin.assets.inspections.create');
+    Route::post('/admin/assets/inspections', [App\Http\Controllers\AssetInspectionController::class, 'store'])->name('admin.assets.inspections.store');
+    Route::get('/admin/assets/inspections/{inspection}', [App\Http\Controllers\AssetInspectionController::class, 'show'])->name('admin.assets.inspections.show')->whereNumber('inspection');
+    Route::get('/admin/assets/inspections/{inspection}/print', [App\Http\Controllers\AssetInspectionController::class, 'print'])->name('admin.assets.inspections.print')->whereNumber('inspection');
+
+    Route::get('/admin/assets/reports', [App\Http\Controllers\AssetReportController::class, 'index'])->name('admin.assets.reports.index');
+
     // Asset Relationship routes
     Route::post('/admin/assets/{asset}/relations', [App\Http\Controllers\AssetCenterController::class, 'attachRelation'])->name('admin.assets.relations.attach')->whereNumber('asset');
     Route::post('/admin/assets/{asset}/relations/parent', [App\Http\Controllers\AssetCenterController::class, 'attachParentRelation'])->name('admin.assets.relations.attach-parent')->whereNumber('asset');

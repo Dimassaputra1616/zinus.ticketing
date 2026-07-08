@@ -123,6 +123,24 @@
                                         </form>
                                     @endforeach
                                 @endif
+                                @if (($log->asset_id || $log->asset) && in_array($log->status, [\App\Models\BorrowLog::STATUS_APPROVED, \App\Models\BorrowLog::STATUS_RETURNED], true))
+                                    <x-ui.button
+                                        href="{{ route('admin.assets.bast.create', ['loan_id' => $log->id]) }}"
+                                        size="sm"
+                                        variant="ghost"
+                                        class="text-xs inline-flex items-center gap-1"
+                                        title="Buat BAST dari peminjaman ini"
+                                        aria-label="Buat BAST dari peminjaman ini"
+                                    >
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                                            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                                            <path d="M9 15h6" />
+                                            <path d="M9 18h4" />
+                                        </svg>
+                                        <span>BAST</span>
+                                    </x-ui.button>
+                                @endif
                                 <form method="POST" action="{{ route('loans.destroy', $log) }}" data-confirm="Hapus log peminjaman ini?" class="loan-delete-form">
                                     @csrf
                                     @method('DELETE')
@@ -270,6 +288,24 @@
                             </x-ui.button>
                         </form>
                     @endforeach
+                @endif
+                @if (($log->asset_id || $log->asset) && in_array($log->status, [\App\Models\BorrowLog::STATUS_APPROVED, \App\Models\BorrowLog::STATUS_RETURNED], true))
+                    <x-ui.button
+                        href="{{ route('admin.assets.bast.create', ['loan_id' => $log->id]) }}"
+                        size="sm"
+                        variant="ghost"
+                        class="text-xs inline-flex items-center gap-1"
+                        title="Buat BAST dari peminjaman ini"
+                        aria-label="Buat BAST dari peminjaman ini"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                            <path d="M9 15h6" />
+                            <path d="M9 18h4" />
+                        </svg>
+                        <span>BAST</span>
+                    </x-ui.button>
                 @endif
                 <form method="POST" action="{{ route('loans.destroy', $log) }}" data-confirm="Hapus log peminjaman ini?" class="loan-delete-form">
                     @csrf

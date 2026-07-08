@@ -711,6 +711,9 @@
                                     ['route' => 'admin.assets.software-license', 'label' => 'Software License'],
                                     ['route' => 'admin.assets.assignment', 'label' => 'Mutation / Assignment'],
                                     ['route' => 'admin.assets.audit-log', 'label' => 'Audit Log'],
+                                    ['route' => 'admin.assets.bast.index', 'label' => 'BAST'],
+                                    ['route' => 'admin.assets.inspections.index', 'label' => 'Inspection'],
+                                    ['route' => 'admin.assets.reports.index', 'label' => 'Reports'],
                                     ['route' => 'admin.assets.import-export', 'label' => 'Import / Export'],
                                 ];
                             @endphp
@@ -1184,7 +1187,10 @@
                         'admin.assets.network-device',
                         'admin.assets.cctv',
                         'admin.assets.peripheral',
-                        'admin.assets.software-license'
+                        'admin.assets.software-license',
+                        'admin.assets.bast.*',
+                        'admin.assets.inspections.*',
+                        'admin.assets.reports.*'
                     );
                 @endphp
                 <section class="flex-1 w-full">
