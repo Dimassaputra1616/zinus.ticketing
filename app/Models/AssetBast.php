@@ -20,6 +20,15 @@ class AssetBast extends Model
     public const STATUS_SIGNED = 'signed';
     public const STATUS_VOID = 'void';
 
+    public const CONDITION_SUMMARY_OPTIONS = [
+        'good' => 'Good',
+        'minor_issue' => 'Minor Issue',
+        'damaged' => 'Damaged',
+        'repair' => 'In Repair',
+        'disposed' => 'Disposed',
+        'lost' => 'Lost',
+    ];
+
     public const TYPES = [
         self::TYPE_HANDOVER,
         self::TYPE_RETURN,

@@ -12,6 +12,8 @@
         'void' => 'Void',
     ];
     $accessoryOptions = ['Charger', 'Power Cable', 'Adapter', 'Mouse', 'Keyboard', 'Bag', 'Docking', 'Manual'];
+    $conditionOptions = \App\Models\AssetBast::CONDITION_SUMMARY_OPTIONS;
+    $selectedConditionSummary = old('condition_summary', $conditionOptions[$selectedAsset?->condition] ?? null);
     $selectedAccessories = (array) old('accessories', []);
     $prefillUser = $selectedLoan?->user ?? $selectedAsset?->user;
     $prefillType = $selectedLoan
@@ -203,13 +205,15 @@
                     <div class="grid gap-4">
                         <label class="block">
                             <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Condition Summary</span>
-                            <input
-                                type="text"
+                            <select
                                 name="condition_summary"
-                                value="{{ old('condition_summary', $selectedAsset?->condition ? ucwords(str_replace('_', ' ', $selectedAsset->condition)) : null) }}"
-                                placeholder="Good, normal usage marks..."
                                 class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                             >
+                                <option value="">Select condition</option>
+                                @foreach ($conditionOptions as $label)
+                                    <option value="{{ $label }}" @selected($selectedConditionSummary === $label)>{{ $label }}</option>
+                                @endforeach
+                            </select>
                         </label>
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Accessories</p>

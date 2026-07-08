@@ -94,7 +94,7 @@ class AssetBastController extends Controller
             'recipient_name' => ['required', 'string', 'max:255'],
             'recipient_email' => ['nullable', 'email', 'max:255'],
             'handover_location' => ['nullable', 'string', 'max:255'],
-            'condition_summary' => ['nullable', 'string', 'max:255'],
+            'condition_summary' => ['nullable', Rule::in(array_values(AssetBast::CONDITION_SUMMARY_OPTIONS))],
             'accessories' => ['nullable', 'array'],
             'accessories.*' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:5000'],

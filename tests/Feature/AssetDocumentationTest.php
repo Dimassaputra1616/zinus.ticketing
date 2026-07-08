@@ -97,6 +97,9 @@ class AssetDocumentationTest extends TestCase
             ->assertSee('data-recipient-name="Dimas Saputra"', false)
             ->assertSee('data-recipient-email="dimas@example.test"', false)
             ->assertSee('data-department-id="'.$department->id.'"', false)
+            ->assertSee('name="condition_summary"', false)
+            ->assertSee('value="Good"', false)
+            ->assertSee('Minor Issue')
             ->assertSee('selected.dataset.recipientEmail', false);
     }
 
