@@ -2,28 +2,29 @@
     <x-slot name="cardTop">
         <a
             href="{{ route('password.code', ['email' => old('email', $email)]) }}"
-            class="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-emerald-700"
+            class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 transition hover:text-emerald-700 sm:text-sm"
         >
             <span aria-hidden="true">&lt;</span>
             <span>Back to code</span>
         </a>
     </x-slot>
+    <x-slot name="compactCard">true</x-slot>
 
-    <div class="space-y-7">
-        <div class="rounded-3xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
-            <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">Password baru</p>
-            <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">Buat password baru</h3>
-            <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
+    <div class="space-y-5 sm:space-y-7">
+        <div class="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm sm:rounded-3xl sm:p-5">
+            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700 sm:tracking-[0.22em]">Password baru</p>
+            <h3 class="mt-2 text-lg font-black tracking-tight text-slate-950 sm:text-xl">Buat password baru</h3>
+            <p class="mt-1 text-sm leading-relaxed text-slate-600 sm:mt-1.5">
                 Kode verifikasi sudah valid untuk <span class="font-semibold text-slate-900">{{ $email }}</span>. Silakan buat password baru.
             </p>
         </div>
 
         <x-auth-session-status
-            class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 shadow-sm"
+            class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm"
             :status="session('status')"
         />
 
-        <form method="POST" action="{{ route('password.store') }}" class="space-y-5">
+        <form method="POST" action="{{ route('password.store') }}" class="space-y-4 sm:space-y-5">
         @csrf
 
         <input type="hidden" name="email" value="{{ old('email', $email) }}">

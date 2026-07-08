@@ -2,28 +2,29 @@
     <x-slot name="cardTop">
         <a
             href="{{ route('password.request') }}"
-            class="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-emerald-700"
+            class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 transition hover:text-emerald-700 sm:text-sm"
         >
             <span aria-hidden="true">&lt;</span>
             <span>Back to email</span>
         </a>
     </x-slot>
+    <x-slot name="compactCard">true</x-slot>
 
-    <div class="space-y-7">
-        <div class="rounded-3xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
-            <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">Verifikasi reset</p>
-            <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">Masukkan kode email</h3>
-            <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
+    <div class="space-y-5 sm:space-y-7">
+        <div class="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm sm:rounded-3xl sm:p-5">
+            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700 sm:tracking-[0.22em]">Verifikasi reset</p>
+            <h3 class="mt-2 text-lg font-black tracking-tight text-slate-950 sm:text-xl">Masukkan kode email</h3>
+            <p class="mt-1 text-sm leading-relaxed text-slate-600 sm:mt-1.5">
                 Kode 6 digit dikirim ke email yang Anda masukkan. Kode berlaku 10 menit dan maksimal salah 5 kali.
             </p>
         </div>
 
         <x-auth-session-status
-            class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 shadow-sm"
+            class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm"
             :status="session('status')"
         />
 
-        <form method="POST" action="{{ route('password.code.verify') }}" class="space-y-5">
+        <form method="POST" action="{{ route('password.code.verify') }}" class="space-y-4 sm:space-y-5">
             @csrf
 
             <div class="space-y-2">
@@ -44,7 +45,7 @@
                 <x-input-label for="code" value="Kode Verifikasi" />
                 <input
                     id="code"
-                    class="h-14 w-full rounded-2xl border border-slate-200 bg-white/90 px-4 text-center text-2xl font-black tracking-[0.32em] text-slate-950 shadow-sm outline-none transition placeholder:text-slate-300 hover:border-emerald-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                    class="h-12 w-full rounded-2xl border border-slate-200 bg-white/90 px-4 text-center text-xl font-black tracking-[0.28em] text-slate-950 shadow-sm outline-none transition placeholder:text-slate-300 hover:border-emerald-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 sm:h-14 sm:text-2xl sm:tracking-[0.32em]"
                     type="text"
                     inputmode="numeric"
                     pattern="[0-9]{6}"

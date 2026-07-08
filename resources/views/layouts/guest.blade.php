@@ -72,15 +72,19 @@
                     </div>
 
                     {{-- Login Card --}}
-                    <div class="rounded-3xl border border-emerald-900/10 bg-white/95 px-8 py-10 sm:px-10 sm:py-12 shadow-[0_30px_70px_-45px_rgba(7,45,33,0.95)] backdrop-blur">
+                    @php($isCompactCard = isset($compactCard))
+                    <div
+                        class="rounded-3xl border border-emerald-900/10 bg-white/95 shadow-[0_30px_70px_-45px_rgba(7,45,33,0.95)] backdrop-blur {{ $isCompactCard ? 'px-5 py-7 sm:px-10 sm:py-12' : 'px-8 py-10 sm:px-10 sm:py-12' }}"
+                        data-auth-card="{{ $isCompactCard ? 'compact' : 'default' }}"
+                    >
                         @isset($cardTop)
-                            <div class="mb-6 flex items-center justify-start">
+                            <div class="{{ $isCompactCard ? 'mb-4 sm:mb-6' : 'mb-6' }} flex items-center justify-start">
                                 {{ $cardTop }}
                             </div>
                         @endisset
 
                         {{-- Mobile-only branding --}}
-                        <div class="mb-6 flex items-center justify-center gap-3 lg:hidden">
+                        <div class="{{ $isCompactCard ? 'hidden' : 'mb-6 flex' }} items-center justify-center gap-3 lg:hidden">
                             <img src="{{ asset('favicon.png') }}" alt="Zinus" class="h-10 w-10 rounded-xl shadow-lg">
                             <div class="leading-tight">
                                 <p class="text-[9px] font-bold uppercase tracking-[0.3em] text-emerald-600/70">Zinus Dream</p>
@@ -88,9 +92,9 @@
                             </div>
                         </div>
 
-                        <div class="mb-8 text-center">
-                            <h2 class="text-2xl font-semibold text-[#0B2F26]">Masuk ke Portal IT</h2>
-                            <p class="mt-2 text-sm text-emerald-700/80">Gunakan akun perusahaan Anda untuk memulai</p>
+                        <div class="{{ $isCompactCard ? 'mb-5 sm:mb-8' : 'mb-8' }} text-center">
+                            <h2 class="{{ $isCompactCard ? 'text-xl sm:text-2xl' : 'text-2xl' }} font-semibold text-[#0B2F26]">Masuk ke Portal IT</h2>
+                            <p class="{{ $isCompactCard ? 'mt-1 text-xs sm:mt-2 sm:text-sm' : 'mt-2 text-sm' }} text-emerald-700/80">Gunakan akun perusahaan Anda untuk memulai</p>
                         </div>
 
                         {{ $slot }}

@@ -21,6 +21,7 @@ class PasswordResetTest extends TestCase
         $response
             ->assertStatus(200)
             ->assertSeeText('Back to login')
+            ->assertSee('data-auth-card="compact"', false)
             ->assertSeeInOrder(['Back to login', 'Masuk ke Portal IT', 'Kirim kode reset password'])
             ->assertSee('href="'.route('login').'"', false)
             ->assertSeeText('Kirim Kode Verifikasi');
@@ -75,6 +76,7 @@ class PasswordResetTest extends TestCase
         $this->get(route('password.code', ['email' => 'dimas@example.test']))
             ->assertOk()
             ->assertSeeText('Back to email')
+            ->assertSee('data-auth-card="compact"', false)
             ->assertSeeInOrder(['Back to email', 'Masuk ke Portal IT', 'Masukkan kode email'])
             ->assertSeeText('Masukkan kode email')
             ->assertSee('value="dimas@example.test"', false);
@@ -104,6 +106,7 @@ class PasswordResetTest extends TestCase
             $this->get(route('password.reset'))
                 ->assertOk()
                 ->assertSeeText('Back to code')
+                ->assertSee('data-auth-card="compact"', false)
                 ->assertSeeInOrder(['Back to code', 'Masuk ke Portal IT', 'Buat password baru'])
                 ->assertSee('value="'.$user->email.'"', false);
 

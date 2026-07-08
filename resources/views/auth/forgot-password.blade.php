@@ -2,21 +2,22 @@
     <x-slot name="cardTop">
         <a
             href="{{ route('login') }}"
-            class="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-emerald-700"
+            class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 transition hover:text-emerald-700 sm:text-sm"
         >
             <span aria-hidden="true">&lt;</span>
             <span>Back to login</span>
         </a>
     </x-slot>
+    <x-slot name="compactCard">true</x-slot>
 
-    <div class="space-y-7">
-        <div class="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 shadow-sm">
+    <div class="space-y-5 sm:space-y-7">
+        <div class="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-4 shadow-sm sm:rounded-3xl sm:p-5">
             <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-emerald-300/20 blur-2xl"></div>
             <div class="absolute -bottom-12 left-6 h-24 w-24 rounded-full bg-cyan-300/10 blur-2xl"></div>
 
             <div class="relative flex items-start gap-4">
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-lg shadow-emerald-900/10 ring-1 ring-emerald-100">
-                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-lg shadow-emerald-900/10 ring-1 ring-emerald-100 sm:h-12 sm:w-12">
+                    <svg class="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="4" y="10" width="16" height="10" rx="2" />
                         <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                         <path d="M12 14v2" />
@@ -26,8 +27,8 @@
                     <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700 ring-1 ring-emerald-200/70">
                         {{ __('messages.reset_password') }}
                     </span>
-                    <h3 class="mt-3 text-xl font-black tracking-tight text-slate-950">Kirim kode reset password</h3>
-                    <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
+                    <h3 class="mt-2 text-lg font-black tracking-tight text-slate-950 sm:mt-3 sm:text-xl">Kirim kode reset password</h3>
+                    <p class="mt-1 text-sm leading-relaxed text-slate-600 sm:mt-1.5">
                         Masukkan email akun Anda. Sistem akan mengirim kode verifikasi 6 digit yang berlaku selama 10 menit.
                     </p>
                 </div>
@@ -36,11 +37,11 @@
 
         <!-- Session Status -->
         <x-auth-session-status
-            class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 shadow-sm"
+            class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm"
             :status="session('status')"
         />
 
-        <form method="POST" action="{{ route('password.email') }}" class="space-y-6">
+        <form method="POST" action="{{ route('password.email') }}" class="space-y-5 sm:space-y-6">
             @csrf
 
             <!-- Email Address -->
