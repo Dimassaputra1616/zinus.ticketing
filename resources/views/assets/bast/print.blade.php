@@ -254,6 +254,21 @@
             gap: 14px;
             grid-template-columns: 1fr 1fr;
         }
+        .responsibility-card {
+            background: #f8fbfa;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: #334155;
+            font-weight: 700;
+            line-height: 1.7;
+            padding: 12px 14px;
+        }
+        .responsibility-card p {
+            margin: 0;
+        }
+        .responsibility-card p + p {
+            margin-top: 7px;
+        }
         .signature-grid {
             display: grid;
             gap: 20px;
@@ -361,6 +376,7 @@
             <p class="statement">
                 Pada tanggal {{ optional($bast->bast_date)->format('d M Y') }}, telah dilakukan proses
                 <strong>{{ strtolower($typeLabel) }}</strong> asset IT dengan detail, kondisi, dan penerima sebagaimana tercatat pada dokumen ini.
+                Penerima menyatakan telah menerima asset dan memahami tanggung jawab penggunaan asset tersebut.
             </p>
 
             <div class="two-columns">
@@ -404,6 +420,24 @@
                     <tr><th>Accessories</th><td>{{ count($bast->accessories ?? []) ? implode(', ', $bast->accessories) : '-' }}</td></tr>
                     <tr><th>Notes</th><td>{!! nl2br(e($bast->notes ?: '-')) !!}</td></tr>
                 </table>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <span class="section-dot"></span>
+                    <span class="section-title">Pernyataan Tanggung Jawab Asset</span>
+                </div>
+                <div class="responsibility-card">
+                    <p>
+                        Penerima bertanggung jawab penuh untuk menjaga, menggunakan, dan merawat asset perusahaan sesuai kebutuhan kerja serta kebijakan IT yang berlaku.
+                    </p>
+                    <p>
+                        Asset tidak boleh dipindahtangankan, dipinjamkan, diubah konfigurasi utamanya, atau digunakan di luar kepentingan pekerjaan tanpa persetujuan dari IT.
+                    </p>
+                    <p>
+                        Apabila terjadi kerusakan, kehilangan, pergantian pengguna, atau asset sudah tidak digunakan, penerima wajib segera melaporkan kepada IT dan mengembalikan asset saat diminta.
+                    </p>
+                </div>
             </section>
 
             <div class="signature-grid">
