@@ -93,7 +93,6 @@ class AssetBastController extends Controller
             'bast_date' => ['required', 'date'],
             'recipient_name' => ['required', 'string', 'max:255'],
             'recipient_email' => ['nullable', 'email', 'max:255'],
-            'recipient_department' => ['nullable', 'string', 'max:255'],
             'handover_location' => ['nullable', 'string', 'max:255'],
             'condition_summary' => ['nullable', 'string', 'max:255'],
             'accessories' => ['nullable', 'array'],
@@ -107,11 +106,15 @@ class AssetBastController extends Controller
         $recipientUser = ! empty($validated['recipient_user_id'])
             ? User::with('department')->find($validated['recipient_user_id'])
             : null;
+        $departmentId = ($validated['department_id'] ?? null) ?: $recipientUser?->department_id ?: $asset->department_id;
+        $department = $departmentId
+            ? Department::find($departmentId)
+            : null;
 
         $validated['document_number'] = ($validated['document_number'] ?? null) ?: $this->nextDocumentNumber();
         $validated['recipient_email'] = ($validated['recipient_email'] ?? null) ?: $recipientUser?->email;
-        $validated['recipient_department'] = ($validated['recipient_department'] ?? null) ?: $recipientUser?->department?->name;
-        $validated['department_id'] = ($validated['department_id'] ?? null) ?: $recipientUser?->department_id ?: $asset->department_id;
+        $validated['department_id'] = $departmentId;
+        $validated['recipient_department'] = $department?->name;
         $validated['created_by'] = $request->user()?->id;
         $validated['signed_at'] = $validated['status'] === AssetBast::STATUS_SIGNED ? now() : null;
         $validated['asset_snapshot'] = $this->assetSnapshot($asset);

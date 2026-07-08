@@ -14,7 +14,6 @@
     $accessoryOptions = ['Charger', 'Power Cable', 'Adapter', 'Mouse', 'Keyboard', 'Bag', 'Docking', 'Manual'];
     $selectedAccessories = (array) old('accessories', []);
     $prefillUser = $selectedLoan?->user ?? $selectedAsset?->user;
-    $prefillDepartment = $selectedLoan?->department?->name ?? $selectedLoan?->user?->department?->name ?? $selectedAsset?->department?->name;
     $prefillType = $selectedLoan
         ? ($selectedLoan->status === \App\Models\BorrowLog::STATUS_RETURNED ? 'return' : 'loan')
         : 'handover';
@@ -178,15 +177,6 @@
                                 type="email"
                                 name="recipient_email"
                                 value="{{ old('recipient_email', $prefillUser?->email) }}"
-                                class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                            >
-                        </label>
-                        <label class="block md:col-span-2">
-                            <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Recipient Department Text</span>
-                            <input
-                                type="text"
-                                name="recipient_department"
-                                value="{{ old('recipient_department', $prefillDepartment) }}"
                                 class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                             >
                         </label>

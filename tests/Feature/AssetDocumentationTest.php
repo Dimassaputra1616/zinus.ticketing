@@ -46,7 +46,6 @@ class AssetDocumentationTest extends TestCase
                 'bast_date' => '2026-07-08',
                 'recipient_name' => 'Dimas Saputra',
                 'recipient_email' => 'dimas@example.test',
-                'recipient_department' => 'IT',
                 'handover_location' => 'IT Room',
                 'condition_summary' => 'Good',
                 'accessories' => ['Charger', 'Mouse'],
@@ -66,6 +65,7 @@ class AssetDocumentationTest extends TestCase
             'document_number' => 'BAST/202607/9001',
             'asset_id' => $asset->id,
             'recipient_name' => 'Dimas Saputra',
+            'recipient_department' => 'IT',
             'status' => AssetBast::STATUS_ISSUED,
         ]);
         $this->assertSame(['Charger', 'Mouse'], $bast->accessories);
