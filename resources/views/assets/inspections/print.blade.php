@@ -169,44 +169,6 @@
             margin-top: 18px;
             padding-top: 8px;
         }
-        .appendix {
-            page-break-before: always;
-        }
-        .appendix-title {
-            border-bottom: 1px solid #111827;
-            font-size: 15px;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            margin: 18px 0 12px;
-            padding-bottom: 8px;
-            text-transform: uppercase;
-        }
-        .photo-grid {
-            display: grid;
-            gap: 12px;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-        .photo-grid.one-photo {
-            grid-template-columns: minmax(0, 100mm);
-        }
-        .photo-item {
-            border: 1px solid #9ca3af;
-            break-inside: avoid;
-        }
-        .photo-item img {
-            display: block;
-            height: 80mm;
-            object-fit: contain;
-            width: 100%;
-        }
-        .photo-caption {
-            border-top: 1px solid #9ca3af;
-            color: #374151;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 5px 6px;
-            text-align: center;
-        }
         @page {
             margin: 0;
             size: A4;
@@ -310,6 +272,9 @@
             <table class="data-table">
                 <tr><th>Temuan</th><td>{!! nl2br(e($inspection->findings ?: '-')) !!}</td></tr>
                 <tr><th>Tindak Lanjut</th><td>{!! nl2br(e($inspection->action_required ?: '-')) !!}</td></tr>
+                @if (count($photos))
+                    <tr><th>Dokumentasi</th><td>{{ count($photos) }} foto tersimpan di sistem.</td></tr>
+                @endif
             </table>
         </section>
 
@@ -331,34 +296,5 @@
             <span>Generated {{ now()->format('d M Y H:i') }}</span>
         </footer>
     </main>
-
-    @if (count($photos))
-        <main class="page appendix">
-            <header class="letterhead">
-                <div class="brand">
-                    <img src="{{ $logoUrl }}" alt="{{ $appName }}">
-                    <div>
-                        <div class="brand-name">{{ $appName }}</div>
-                        <div class="brand-subtitle">Device Inspection Report</div>
-                    </div>
-                </div>
-                <div class="doc-meta">
-                    Nomor: {{ $inspection->inspection_number }}<br>
-                    Tanggal: {{ optional($inspection->inspection_date)->format('d M Y') }}
-                </div>
-            </header>
-
-            <div class="appendix-title">Lampiran Foto Inspection</div>
-            <div class="photo-grid {{ count($photos) === 1 ? 'one-photo' : '' }}">
-                @foreach ($photos as $photo)
-                    @php $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($photo['path']); @endphp
-                    <div class="photo-item">
-                        <img src="{{ $photoUrl }}" alt="Foto inspection {{ $loop->iteration }}">
-                        <div class="photo-caption">Foto {{ $loop->iteration }}</div>
-                    </div>
-                @endforeach
-            </div>
-        </main>
-    @endif
 </body>
 </html>

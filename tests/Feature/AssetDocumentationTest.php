@@ -77,8 +77,7 @@ class AssetDocumentationTest extends TestCase
             ->get(route('admin.assets.bast.print', $bast))
             ->assertOk()
             ->assertSee('Berita Acara Serah Terima Asset')
-            ->assertSee('Lampiran Foto Asset')
-            ->assertSee('Foto 1');
+            ->assertSee('1 foto tersimpan di sistem.');
     }
 
     public function test_admin_can_create_inspection_and_view_report(): void
@@ -143,8 +142,7 @@ class AssetDocumentationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.assets.inspections.print', $inspection))
             ->assertOk()
-            ->assertSee('Lampiran Foto Inspection')
-            ->assertSee('Foto 1');
+            ->assertSee('1 foto tersimpan di sistem.');
     }
 
     private function asset(string $code, string $name, string $category, array $overrides = []): Asset
