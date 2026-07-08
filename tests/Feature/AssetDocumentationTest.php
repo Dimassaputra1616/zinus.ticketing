@@ -143,8 +143,8 @@ class AssetDocumentationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.assets.inspections.print', $inspection))
             ->assertOk()
-            ->assertSee('Inspection Photo Attachment')
-            ->assertSee('Photo 1');
+            ->assertSee('Lampiran Foto Inspection')
+            ->assertSee('Foto 1');
     }
 
     private function asset(string $code, string $name, string $category, array $overrides = []): Asset
