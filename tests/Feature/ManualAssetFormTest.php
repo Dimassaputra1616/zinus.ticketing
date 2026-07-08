@@ -119,4 +119,35 @@ class ManualAssetFormTest extends TestCase
             'rustdesk_id' => '123456789',
         ]);
     }
+
+    public function test_admin_stays_on_manual_edit_page_after_updating_asset(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = Asset::create([
+            'asset_code' => 'PC-FIN-EDIT-001',
+            'name' => 'Finance Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'manual',
+            'sync_source' => 'manual',
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.assets.manual.update', $asset), [
+                'asset_code' => $asset->asset_code,
+                'name' => 'Finance Workstation Updated',
+                'category' => 'PC',
+                'status' => Asset::STATUS_IN_USE,
+                'condition' => 'good',
+                'lifecycle_status' => 'active',
+            ])
+            ->assertRedirect(route('admin.assets.manual.edit', $asset))
+            ->assertSessionHas('success', 'Manual asset updated successfully.');
+
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'name' => 'Finance Workstation Updated',
+            'status' => Asset::STATUS_IN_USE,
+        ]);
+    }
 }

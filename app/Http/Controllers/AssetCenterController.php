@@ -286,27 +286,7 @@ class AssetCenterController extends Controller
 
         $this->assetService->update($asset, $data, Auth::user());
 
-        // Redirect to category index page if possible
-        $cat = strtolower($data['category']);
-        if (str_contains($cat, 'pc')) {
-            return redirect()->route('admin.assets.pc')->with('success', 'Manual asset updated successfully.');
-        } elseif (str_contains($cat, 'laptop')) {
-            return redirect()->route('admin.assets.laptop')->with('success', 'Manual asset updated successfully.');
-        } elseif (str_contains($cat, 'monitor')) {
-            return redirect()->route('admin.assets.monitor')->with('success', 'Manual asset updated successfully.');
-        } elseif (str_contains($cat, 'printer') || str_contains($cat, 'scanner')) {
-            return redirect()->route('admin.assets.printer-scanner')->with('success', 'Manual asset updated successfully.');
-        } elseif (str_contains($cat, 'network') || str_contains($cat, 'router') || str_contains($cat, 'switch') || str_contains($cat, 'access')) {
-            return redirect()->route('admin.assets.network-device')->with('success', 'Manual asset updated successfully.');
-        } elseif (str_contains($cat, 'cctv') || str_contains($cat, 'nvr') || str_contains($cat, 'dvr')) {
-            return redirect()->route('admin.assets.cctv')->with('success', 'Manual asset updated successfully.');
-        } elseif (str_contains($cat, 'peripheral') || str_contains($cat, 'keyboard') || str_contains($cat, 'mouse') || str_contains($cat, 'ups') || str_contains($cat, 'projector')) {
-            return redirect()->route('admin.assets.peripheral')->with('success', 'Manual asset updated successfully.');
-        } elseif (str_contains($cat, 'license') || str_contains($cat, 'software')) {
-            return redirect()->route('admin.assets.software-license')->with('success', 'Manual asset updated successfully.');
-        }
-
-        return redirect()->route('admin.assets.manual.index')
+        return redirect()->route('admin.assets.manual.edit', $asset)
             ->with('success', 'Manual asset updated successfully.');
     }
 
@@ -773,6 +753,42 @@ class AssetCenterController extends Controller
             ->latest()
             ->get();
 
+        $mutationUserIds = $mutationHistory
+            ->flatMap(function (AssetLog $log) {
+                $changes = $log->metadata['changes'] ?? [];
+                $previous = $log->metadata['previous'] ?? [];
+
+                return [
+                    $changes['user_id'] ?? null,
+                    $previous['user_id'] ?? null,
+                ];
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        $mutationDepartmentIds = $mutationHistory
+            ->flatMap(function (AssetLog $log) {
+                $changes = $log->metadata['changes'] ?? [];
+                $previous = $log->metadata['previous'] ?? [];
+
+                return [
+                    $changes['department_id'] ?? null,
+                    $previous['department_id'] ?? null,
+                ];
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        $mutationUsers = User::whereKey($mutationUserIds)
+            ->get(['id', 'name'])
+            ->keyBy('id');
+
+        $mutationDepartments = Department::whereKey($mutationDepartmentIds)
+            ->get(['id', 'name'])
+            ->keyBy('id');
+
         return view('assets.detail', compact(
             'asset',
             'activeParentRelation',
@@ -782,6 +798,8 @@ class AssetCenterController extends Controller
             'attachableAssets',
             'attachableParents',
             'mutationHistory',
+            'mutationUsers',
+            'mutationDepartments',
             'isParentCategory'
         ));
     }

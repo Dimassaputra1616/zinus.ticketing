@@ -49,6 +49,64 @@ class UserApprovalTest extends TestCase
         $this->assertNotNull($pendingUser->rejected_at);
     }
 
+    public function test_approval_actions_are_hidden_for_approved_accounts(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        User::factory()->create([
+            'name' => 'Approved User',
+            'approval_status' => User::APPROVAL_APPROVED,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('users.index'))
+            ->assertOk()
+            ->assertDontSee('Reject');
+    }
+
+    public function test_admin_cannot_approve_non_pending_user(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $approvedUser = User::factory()->create([
+            'approval_status' => User::APPROVAL_APPROVED,
+            'approved_by' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson(route('users.approve', $approvedUser))
+            ->assertStatus(422)
+            ->assertJson([
+                'message' => 'Approval hanya tersedia untuk akun baru yang masih menunggu approval.',
+            ]);
+
+        $approvedUser->refresh();
+
+        $this->assertSame(User::APPROVAL_APPROVED, $approvedUser->approval_status);
+        $this->assertNull($approvedUser->approved_by);
+    }
+
+    public function test_admin_cannot_reject_non_pending_user(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $approvedUser = User::factory()->create([
+            'approval_status' => User::APPROVAL_APPROVED,
+            'rejected_at' => null,
+            'rejected_by' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson(route('users.reject', $approvedUser))
+            ->assertStatus(422)
+            ->assertJson([
+                'message' => 'Reject hanya tersedia untuk akun baru yang masih menunggu approval.',
+            ]);
+
+        $approvedUser->refresh();
+
+        $this->assertSame(User::APPROVAL_APPROVED, $approvedUser->approval_status);
+        $this->assertNull($approvedUser->rejected_at);
+        $this->assertNull($approvedUser->rejected_by);
+    }
+
     public function test_user_list_shows_pending_accounts_first(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

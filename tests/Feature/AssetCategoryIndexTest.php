@@ -211,6 +211,35 @@ class AssetCategoryIndexTest extends TestCase
             ->assertSeeText('Searchable Workstation');
     }
 
+    public function test_admin_stays_on_asset_edit_page_after_updating_asset(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = Asset::create([
+            'asset_code' => 'AGENT-PC-EDIT-001',
+            'name' => 'Agent Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('assets.update', $asset), [
+                'asset_code' => $asset->asset_code,
+                'name' => 'Agent Workstation Updated',
+                'category' => 'PC',
+                'status' => Asset::STATUS_IN_USE,
+            ])
+            ->assertRedirect(route('assets.edit', $asset))
+            ->assertSessionHas('success', 'Asset diperbarui.');
+
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'name' => 'Agent Workstation Updated',
+            'status' => Asset::STATUS_IN_USE,
+        ]);
+    }
+
     public function test_monitor_inventory_shows_connection_instead_of_ip_address(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

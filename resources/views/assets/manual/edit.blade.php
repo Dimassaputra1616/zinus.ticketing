@@ -8,6 +8,26 @@
 @endphp
 
 <x-app-layout>
+    @if (session('success'))
+        <div
+            x-data="{ open: true }"
+            x-init="setTimeout(() => open = false, 2500)"
+            x-show="open"
+            x-transition
+            class="fixed right-4 top-4 z-50 flex items-start gap-3 rounded-2xl bg-emerald-600 px-4 py-3 text-white shadow-xl shadow-emerald-500/30"
+        >
+            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white/15">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-semibold">Berhasil</p>
+                <p class="text-xs text-emerald-50">{{ session('success') }}</p>
+            </div>
+        </div>
+    @endif
+
     <div
         class="w-full space-y-6 pb-12 pt-6"
         x-data="{

@@ -129,7 +129,7 @@ class AssetController extends Controller
     {
         $this->assetService->update($asset, $request->validated(), $request->user());
 
-        return redirect()->route('assets.index')->with('success', 'Asset diperbarui.');
+        return redirect()->route('assets.edit', $asset)->with('success', 'Asset diperbarui.');
     }
 
     public function destroy(Asset $asset): RedirectResponse

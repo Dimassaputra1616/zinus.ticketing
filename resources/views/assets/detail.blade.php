@@ -33,12 +33,89 @@
     $formatDate = fn ($date) => $date ? $date->format('d M Y') : null;
     $formatDateTime = fn ($date) => $date ? $date->format('d M Y H:i') : 'Not set';
     $formatMoney = fn ($value) => filled($value) ? 'Rp ' . number_format((float) $value, 0, ',', '.') : null;
-    $formatLogValue = function ($value) {
-        if (is_array($value)) {
-            return json_encode($value);
+    $logFieldLabels = [
+        'asset_code' => 'Asset Code',
+        'sub_category' => 'Sub Category',
+        'serial_number' => 'Serial Number',
+        'ram_gb' => 'RAM',
+        'storage_gb' => 'Storage',
+        'os_name' => 'Operating System',
+        'ip_address' => 'IP Address',
+        'rustdesk_id' => 'RustDesk ID',
+        'department_id' => 'Department',
+        'user_id' => 'Assigned User',
+        'purchase_date' => 'Purchase Date',
+        'warranty_expired' => 'Warranty End',
+        'warranty_until' => 'Warranty Until',
+        'source_type' => 'Source',
+        'sync_source' => 'Sync Source',
+        'lifecycle_status' => 'Lifecycle',
+    ];
+    $formatLogField = fn ($field) => $logFieldLabels[$field] ?? \Illuminate\Support\Str::of($field)->replace('_', ' ')->title();
+    $formatLogEnum = fn ($value) => \Illuminate\Support\Str::of((string) $value)->replace('_', ' ')->title();
+    $formatLogDate = function ($value) {
+        if (! filled($value)) {
+            return 'Empty';
         }
 
-        return filled($value) ? (string) $value : 'Empty';
+        try {
+            return \Carbon\Carbon::parse($value)->format('d M Y');
+        } catch (\Throwable) {
+            return (string) $value;
+        }
+    };
+    $formatLogValue = function ($field, $value) use ($statusMeta, $conditionMeta, $lifecycleMeta, $formatMoney, $formatLogDate, $formatLogEnum, $mutationUsers, $mutationDepartments) {
+        if (is_array($value)) {
+            return empty($value) ? 'Empty' : json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'Yes' : 'No';
+        }
+
+        if (! filled($value)) {
+            return 'Empty';
+        }
+
+        $normalizedValue = strtolower((string) $value);
+
+        if ($field === 'status') {
+            return $statusMeta[$normalizedValue]['label'] ?? $formatLogEnum($value);
+        }
+
+        if ($field === 'condition') {
+            return $conditionMeta[$normalizedValue]['label'] ?? $formatLogEnum($value);
+        }
+
+        if ($field === 'lifecycle_status') {
+            return $lifecycleMeta[$normalizedValue]['label'] ?? $formatLogEnum($value);
+        }
+
+        if (in_array($field, ['source_type', 'sync_source'], true)) {
+            return $formatLogEnum($value);
+        }
+
+        if ($field === 'user_id') {
+            return $mutationUsers->get((int) $value)?->name ?? 'User #' . $value;
+        }
+
+        if ($field === 'department_id') {
+            return $mutationDepartments->get((int) $value)?->name ?? 'Department #' . $value;
+        }
+
+        if ($field === 'price') {
+            return $formatMoney($value) ?? 'Empty';
+        }
+
+        if (in_array($field, ['purchase_date', 'warranty_expired', 'warranty_until', 'last_synced_at'], true)) {
+            return $formatLogDate($value);
+        }
+
+        if ($field === 'ram_gb' || $field === 'storage_gb') {
+            return $value . ' GB';
+        }
+
+        return (string) $value;
     };
 
     $statusKey = strtolower((string) $asset->status);
@@ -828,9 +905,9 @@
                                         <div class="mt-3 grid gap-2 sm:grid-cols-2">
                                             @foreach ($changes as $field => $value)
                                                 <div class="rounded-lg border border-slate-200 bg-white p-3">
-                                                    <div class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">{{ \Illuminate\Support\Str::of($field)->replace('_', ' ')->title() }}</div>
-                                                    <div class="mt-1 text-xs text-slate-500">Before: <span class="font-semibold text-slate-700">{{ $formatLogValue($previous[$field] ?? null) }}</span></div>
-                                                    <div class="mt-0.5 text-xs text-slate-500">After: <span class="font-semibold text-slate-900">{{ $formatLogValue($value) }}</span></div>
+                                                    <div class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">{{ $formatLogField($field) }}</div>
+                                                    <div class="mt-1 text-xs text-slate-500">Before: <span class="font-semibold text-slate-700">{{ $formatLogValue($field, $previous[$field] ?? null) }}</span></div>
+                                                    <div class="mt-0.5 text-xs text-slate-500">After: <span class="font-semibold text-slate-900">{{ $formatLogValue($field, $value) }}</span></div>
                                                 </div>
                                             @endforeach
                                         </div>

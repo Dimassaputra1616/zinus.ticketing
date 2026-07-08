@@ -13,6 +13,7 @@
                     \App\Models\User::APPROVAL_REJECTED => ['label' => 'Ditolak', 'class' => 'border-rose-200 bg-rose-50 text-rose-700', 'dot' => 'bg-rose-500'],
                     default => ['label' => 'Approved', 'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700', 'dot' => 'bg-emerald-500'],
                 };
+                $requiresApproval = $approvalStatus === \App\Models\User::APPROVAL_PENDING;
                 $roleMeta = match ($u->role) {
                     'admin' => ['label' => 'Admin', 'dot' => 'bg-emerald-500', 'class' => 'border-emerald-100 bg-emerald-50 text-emerald-700'],
                     'technician' => ['label' => 'Technician', 'dot' => 'bg-sky-500', 'class' => 'border-sky-100 bg-sky-50 text-sky-700'],
@@ -57,29 +58,25 @@
                     @endif
                 </div>
 
-                @if ($isAdmin)
+                @if ($isAdmin && $requiresApproval)
                     <div class="mt-3 flex flex-wrap gap-2">
-                        @if ($approvalStatus !== \App\Models\User::APPROVAL_APPROVED)
-                            <x-ui.button
-                                type="button"
-                                size="sm"
-                                class="w-full sm:w-auto bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
-                                @click.prevent="submitApproval({{ Js::from(route('users.approve', $u)) }}, 'Akun disetujui')"
-                            >
-                                Approve
-                            </x-ui.button>
-                        @endif
-                        @if ($approvalStatus !== \App\Models\User::APPROVAL_REJECTED)
-                            <x-ui.button
-                                type="button"
-                                size="sm"
-                                class="w-full sm:w-auto border border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100"
-                                @click.prevent="submitApproval({{ Js::from(route('users.reject', $u)) }}, 'Akun ditolak')"
-                                x-bind:disabled="authId === {{ $u->id }}"
-                            >
-                                Reject
-                            </x-ui.button>
-                        @endif
+                        <x-ui.button
+                            type="button"
+                            size="sm"
+                            class="w-full sm:w-auto bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
+                            @click.prevent="submitApproval({{ Js::from(route('users.approve', $u)) }}, 'Akun disetujui')"
+                        >
+                            Approve
+                        </x-ui.button>
+                        <x-ui.button
+                            type="button"
+                            size="sm"
+                            class="w-full sm:w-auto border border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100"
+                            @click.prevent="submitApproval({{ Js::from(route('users.reject', $u)) }}, 'Akun ditolak')"
+                            x-bind:disabled="authId === {{ $u->id }}"
+                        >
+                            Reject
+                        </x-ui.button>
                     </div>
                 @endif
 
@@ -139,6 +136,7 @@
                                 \App\Models\User::APPROVAL_REJECTED => ['label' => 'Ditolak', 'class' => 'border-rose-200 bg-rose-50 text-rose-700', 'dot' => 'bg-rose-500'],
                                 default => ['label' => 'Approved', 'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700', 'dot' => 'bg-emerald-500'],
                             };
+                            $requiresApproval = $approvalStatus === \App\Models\User::APPROVAL_PENDING;
                             $roleMeta = match ($u->role) {
                                 'admin' => ['label' => 'Admin', 'dot' => 'bg-emerald-500', 'class' => 'border-emerald-100 bg-emerald-50 text-emerald-700'],
                                 'technician' => ['label' => 'Technician', 'dot' => 'bg-sky-500', 'class' => 'border-sky-100 bg-sky-50 text-sky-700'],
@@ -193,26 +191,22 @@
                             </td>
                             <td class="px-5 py-4 align-middle">
                                 <div class="flex flex-wrap items-center gap-1.5">
-                                    @if ($isAdmin)
-                                        @if ($approvalStatus !== \App\Models\User::APPROVAL_APPROVED)
-                                            <button
-                                                type="button"
-                                                class="inline-flex h-8 items-center justify-center rounded-full bg-emerald-500 px-3 text-[11px] font-bold text-white shadow-sm shadow-emerald-100 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
-                                                @click.prevent="submitApproval({{ Js::from(route('users.approve', $u)) }}, 'Akun disetujui')"
-                                            >
-                                                Approve
-                                            </button>
-                                        @endif
-                                        @if ($approvalStatus !== \App\Models\User::APPROVAL_REJECTED)
-                                            <button
-                                                type="button"
-                                                class="inline-flex h-8 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-3 text-[11px] font-bold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                                @click.prevent="submitApproval({{ Js::from(route('users.reject', $u)) }}, 'Akun ditolak')"
-                                                x-bind:disabled="authId === {{ $u->id }}"
-                                            >
-                                                Reject
-                                            </button>
-                                        @endif
+                                    @if ($isAdmin && $requiresApproval)
+                                        <button
+                                            type="button"
+                                            class="inline-flex h-8 items-center justify-center rounded-full bg-emerald-500 px-3 text-[11px] font-bold text-white shadow-sm shadow-emerald-100 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                            @click.prevent="submitApproval({{ Js::from(route('users.approve', $u)) }}, 'Akun disetujui')"
+                                        >
+                                            Approve
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="inline-flex h-8 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-3 text-[11px] font-bold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                            @click.prevent="submitApproval({{ Js::from(route('users.reject', $u)) }}, 'Akun ditolak')"
+                                            x-bind:disabled="authId === {{ $u->id }}"
+                                        >
+                                            Reject
+                                        </button>
                                     @endif
                                     @if ($isSuperAdmin)
                                         <button

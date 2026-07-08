@@ -159,6 +159,16 @@ class UserController extends Controller
             abort(403, 'Akses ditolak - hanya untuk admin IT');
         }
 
+        if (! $user->isPendingApproval()) {
+            $message = 'Approval hanya tersedia untuk akun baru yang masih menunggu approval.';
+
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return redirect()->route('users.index')->withErrors(['approval' => $message]);
+        }
+
         $user->approve($authUser);
 
         if ($request->wantsJson()) {
@@ -181,6 +191,16 @@ class UserController extends Controller
 
         if (! $authUser || ! $authUser->isAdmin()) {
             abort(403, 'Akses ditolak - hanya untuk admin IT');
+        }
+
+        if (! $user->isPendingApproval()) {
+            $message = 'Reject hanya tersedia untuk akun baru yang masih menunggu approval.';
+
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return redirect()->route('users.index')->withErrors(['approval' => $message]);
         }
 
         if ($user->id === $authUser->id) {

@@ -121,6 +121,33 @@ class AssetRelationTest extends TestCase
         $this->assertStringNotContainsString('Desk Monitor', $technicalInventoryHtml);
     }
 
+    public function test_asset_mutation_timeline_formats_status_values_for_display(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = $this->asset('PC-STATUS-001', 'Status Workstation', 'PC');
+
+        $this->actingAs($admin)
+            ->put(route('assets.update', $asset), [
+                'asset_code' => $asset->asset_code,
+                'name' => $asset->name,
+                'category' => $asset->category,
+                'status' => Asset::STATUS_IN_USE,
+            ])
+            ->assertRedirect(route('assets.edit', $asset));
+
+        $response = $this->actingAs($admin)
+            ->get(route('assets.show', $asset))
+            ->assertOk()
+            ->assertSeeText('Asset Mutation Timeline')
+            ->assertSeeText('Before: Spare')
+            ->assertSeeText('After: Active');
+
+        $visibleText = preg_replace('/\s+/', ' ', strip_tags($response->getContent()));
+
+        $this->assertStringNotContainsString('Before: available', $visibleText);
+        $this->assertStringNotContainsString('After: in_use', $visibleText);
+    }
+
     public function test_child_asset_detail_renders_current_host_relation(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
