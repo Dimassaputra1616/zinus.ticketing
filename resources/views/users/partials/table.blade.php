@@ -33,7 +33,7 @@
                     </span>
                 </div>
 
-                <div class="mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] {{ $approvalMeta['class'] }}">
+                <div class="mt-3 inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] {{ $approvalMeta['class'] }}">
                     <span class="h-2 w-2 rounded-full {{ $approvalMeta['dot'] }}"></span>
                     {{ $approvalMeta['label'] }}
                 </div>
@@ -71,7 +71,7 @@
                         <x-ui.button
                             type="button"
                             size="sm"
-                            class="w-full sm:w-auto border border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100"
+                            class="w-full sm:w-auto border border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100"
                             @click.prevent="submitApproval({{ Js::from(route('users.reject', $u)) }}, 'Akun ditolak')"
                             x-bind:disabled="authId === {{ $u->id }}"
                         >
@@ -82,15 +82,17 @@
 
                 @if ($isSuperAdmin)
                     <div class="mt-3 flex flex-wrap gap-2">
-                        <x-ui.button
-                            type="button"
-                            size="sm"
-                            class="w-full sm:w-auto bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
-                            @click.prevent="openReset({{ Js::from($u->name) }}, {{ Js::from(route('users.resetPassword', $u)) }})"
-                            x-bind:disabled="authId === {{ $u->id }}"
-                        >
-                            Reset Password
-                        </x-ui.button>
+                        @unless ($requiresApproval)
+                            <x-ui.button
+                                type="button"
+                                size="sm"
+                                class="w-full sm:w-auto bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
+                                @click.prevent="openReset({{ Js::from($u->name) }}, {{ Js::from(route('users.resetPassword', $u)) }})"
+                                x-bind:disabled="authId === {{ $u->id }}"
+                            >
+                                Reset Password
+                            </x-ui.button>
+                        @endunless
                         <x-ui.button
                             type="button"
                             size="sm"
@@ -184,54 +186,60 @@
                                 </div>
                             </td>
                             <td class="px-5 py-4">
-                                <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] {{ $approvalMeta['class'] }}">
+                                <span class="inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] {{ $approvalMeta['class'] }}">
                                     <span class="h-2 w-2 rounded-full {{ $approvalMeta['dot'] }}"></span>
                                     {{ $approvalMeta['label'] }}
                                 </span>
                             </td>
                             <td class="px-5 py-4 align-middle">
-                                <div class="flex flex-wrap items-center gap-1.5">
+                                <div class="flex flex-col gap-2">
                                     @if ($isAdmin && $requiresApproval)
-                                        <button
-                                            type="button"
-                                            class="inline-flex h-8 items-center justify-center rounded-full bg-emerald-500 px-3 text-[11px] font-bold text-white shadow-sm shadow-emerald-100 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
-                                            @click.prevent="submitApproval({{ Js::from(route('users.approve', $u)) }}, 'Akun disetujui')"
-                                        >
-                                            Approve
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="inline-flex h-8 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-3 text-[11px] font-bold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                            @click.prevent="submitApproval({{ Js::from(route('users.reject', $u)) }}, 'Akun ditolak')"
-                                            x-bind:disabled="authId === {{ $u->id }}"
-                                        >
-                                            Reject
-                                        </button>
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                class="inline-flex h-8 items-center justify-center rounded-full bg-emerald-500 px-3 text-[11px] font-bold text-white shadow-sm shadow-emerald-100 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                                @click.prevent="submitApproval({{ Js::from(route('users.approve', $u)) }}, 'Akun disetujui')"
+                                            >
+                                                Approve
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="inline-flex h-8 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 text-[11px] font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                                @click.prevent="submitApproval({{ Js::from(route('users.reject', $u)) }}, 'Akun ditolak')"
+                                                x-bind:disabled="authId === {{ $u->id }}"
+                                            >
+                                                Reject
+                                            </button>
+                                        </div>
                                     @endif
                                     @if ($isSuperAdmin)
-                                        <button
-                                            type="button"
-                                            class="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                            @click.prevent="openUpdate({ id: {{ $u->id }}, name: {{ Js::from($u->name) }}, email: {{ Js::from($u->email) }}, role: {{ Js::from($u->role) }}, action: {{ Js::from(route('users.updateRole', $u)) }} })"
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="inline-flex h-8 items-center justify-center rounded-full bg-emerald-600 px-3 text-[11px] font-bold text-white shadow-sm shadow-emerald-100 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                            @click.prevent="openReset({{ Js::from($u->name) }}, {{ Js::from(route('users.resetPassword', $u)) }})"
-                                            x-bind:disabled="authId === {{ $u->id }}"
-                                        >
-                                            Reset
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="inline-flex h-8 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 text-[11px] font-bold text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                            @click.prevent="confirmDelete({{ Js::from($u->name) }}, {{ Js::from(route('users.destroy', $u)) }})"
-                                            x-bind:disabled="authId === {{ $u->id }}"
-                                        >
-                                            Hapus
-                                        </button>
+                                        <div class="flex flex-wrap items-center gap-1.5 {{ $requiresApproval ? 'border-t border-slate-100 pt-2' : '' }}">
+                                            <button
+                                                type="button"
+                                                class="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                @click.prevent="openUpdate({ id: {{ $u->id }}, name: {{ Js::from($u->name) }}, email: {{ Js::from($u->email) }}, role: {{ Js::from($u->role) }}, action: {{ Js::from(route('users.updateRole', $u)) }} })"
+                                            >
+                                                Edit
+                                            </button>
+                                            @unless ($requiresApproval)
+                                                <button
+                                                    type="button"
+                                                    class="inline-flex h-8 items-center justify-center rounded-full bg-emerald-600 px-3 text-[11px] font-bold text-white shadow-sm shadow-emerald-100 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    @click.prevent="openReset({{ Js::from($u->name) }}, {{ Js::from(route('users.resetPassword', $u)) }})"
+                                                    x-bind:disabled="authId === {{ $u->id }}"
+                                                >
+                                                    Reset PW
+                                                </button>
+                                            @endunless
+                                            <button
+                                                type="button"
+                                                class="inline-flex h-8 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 text-[11px] font-bold text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                                @click.prevent="confirmDelete({{ Js::from($u->name) }}, {{ Js::from(route('users.destroy', $u)) }})"
+                                                x-bind:disabled="authId === {{ $u->id }}"
+                                            >
+                                                Hapus
+                                            </button>
+                                        </div>
                                     @endif
                                 </div>
                             </td>

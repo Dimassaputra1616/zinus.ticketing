@@ -63,6 +63,39 @@ class UserApprovalTest extends TestCase
             ->assertDontSee('Reject');
     }
 
+    public function test_pending_account_row_focuses_on_approval_actions(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'admin',
+            'is_admin' => true,
+            'is_super_admin' => true,
+        ]);
+        User::factory()->create([
+            'name' => 'Pending Review User',
+            'approval_status' => User::APPROVAL_PENDING,
+            'approved_at' => null,
+        ]);
+
+        $response = $this->actingAs($superAdmin)
+            ->getJson(route('users.index', [
+                'fragment' => 1,
+                'q' => 'Pending Review User',
+            ]))
+            ->assertOk();
+
+        $table = $response->json('table');
+
+        $this->assertStringContainsString('Pending Review User', $table);
+        $this->assertStringContainsString('Menunggu Approval', $table);
+        $this->assertStringContainsString('whitespace-nowrap', $table);
+        $this->assertStringContainsString('Approve', $table);
+        $this->assertStringContainsString('Reject', $table);
+        $this->assertStringContainsString('Edit', $table);
+        $this->assertStringContainsString('Hapus', $table);
+        $this->assertStringNotContainsString('Reset PW', $table);
+        $this->assertStringNotContainsString('Reset Password', $table);
+    }
+
     public function test_admin_cannot_approve_non_pending_user(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
