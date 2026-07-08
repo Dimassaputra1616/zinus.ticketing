@@ -140,6 +140,36 @@
             gap: 12px;
             grid-template-columns: 1fr 1fr;
         }
+        .photo-strip {
+            align-items: flex-start;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .photo-thumb {
+            border: 1px solid #9ca3af;
+            display: inline-block;
+            padding: 2px;
+            text-align: center;
+        }
+        .photo-thumb img {
+            display: block;
+            height: 28mm;
+            object-fit: cover;
+            width: 42mm;
+        }
+        .photo-thumb span {
+            color: #374151;
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .photo-note {
+            color: #4b5563;
+            font-size: 11px;
+            margin-top: 4px;
+        }
         .status-ok { color: #047857; font-weight: 800; }
         .status-issue { color: #b45309; font-weight: 800; }
         .status-na { color: #6b7280; font-weight: 800; }
@@ -273,7 +303,23 @@
                 <tr><th>Temuan</th><td>{!! nl2br(e($inspection->findings ?: '-')) !!}</td></tr>
                 <tr><th>Tindak Lanjut</th><td>{!! nl2br(e($inspection->action_required ?: '-')) !!}</td></tr>
                 @if (count($photos))
-                    <tr><th>Dokumentasi</th><td>{{ count($photos) }} foto tersimpan di sistem.</td></tr>
+                    <tr>
+                        <th>Dokumentasi</th>
+                        <td>
+                            <div class="photo-strip">
+                                @foreach (array_slice($photos, 0, 2) as $photo)
+                                    @php $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($photo['path']); @endphp
+                                    <div class="photo-thumb">
+                                        <img src="{{ $photoUrl }}" alt="Foto inspection {{ $loop->iteration }}">
+                                        <span>Foto {{ $loop->iteration }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if (count($photos) > 2)
+                                <div class="photo-note">+{{ count($photos) - 2 }} foto lain tersimpan di sistem.</div>
+                            @endif
+                        </td>
+                    </tr>
                 @endif
             </table>
         </section>
