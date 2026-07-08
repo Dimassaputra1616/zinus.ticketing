@@ -1,5 +1,13 @@
 <x-guest-layout>
     <div class="space-y-7">
+        <a
+            href="{{ route('login') }}"
+            class="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-emerald-700"
+        >
+            <span aria-hidden="true">&lt;</span>
+            <span>Back to login</span>
+        </a>
+
         <div class="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 shadow-sm">
             <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-emerald-300/20 blur-2xl"></div>
             <div class="absolute -bottom-12 left-6 h-24 w-24 rounded-full bg-cyan-300/10 blur-2xl"></div>
@@ -67,21 +75,10 @@
                 <x-input-error :messages="$errors->get('email')" class="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600" />
             </div>
 
-            <div class="grid gap-3 sm:grid-cols-[0.9fr_1.4fr] sm:items-center">
-                <a
-                    href="{{ route('login') }}"
-                    class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-                >
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M19 12H5" />
-                        <path d="m12 19-7-7 7-7" />
-                    </svg>
-                    {{ __('messages.back_to_login') }}
-                </a>
-
+            <div>
                 <button
                     type="submit"
-                    class="group inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0B2F26] via-emerald-700 to-[#12824C] px-5 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-emerald-900/25 transition hover:-translate-y-0.5 hover:shadow-emerald-900/35 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+                    class="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0B2F26] via-emerald-700 to-[#12824C] px-5 text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-emerald-900/25 transition hover:-translate-y-0.5 hover:shadow-emerald-900/35 focus:outline-none focus:ring-4 focus:ring-emerald-200"
                 >
                     <span>Kirim Kode Verifikasi</span>
                     <svg class="h-4 w-4 transition group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
