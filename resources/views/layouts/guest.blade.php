@@ -73,6 +73,12 @@
 
                     {{-- Login Card --}}
                     <div class="rounded-3xl border border-emerald-900/10 bg-white/95 px-8 py-10 sm:px-10 sm:py-12 shadow-[0_30px_70px_-45px_rgba(7,45,33,0.95)] backdrop-blur">
+                        @isset($cardTop)
+                            <div class="mb-6 flex items-center justify-start">
+                                {{ $cardTop }}
+                            </div>
+                        @endisset
+
                         {{-- Mobile-only branding --}}
                         <div class="mb-6 flex items-center justify-center gap-3 lg:hidden">
                             <img src="{{ asset('favicon.png') }}" alt="Zinus" class="h-10 w-10 rounded-xl shadow-lg">

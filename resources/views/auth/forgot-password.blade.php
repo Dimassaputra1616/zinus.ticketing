@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <div class="space-y-7">
+    <x-slot name="cardTop">
         <a
             href="{{ route('login') }}"
             class="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-emerald-700"
@@ -7,7 +7,9 @@
             <span aria-hidden="true">&lt;</span>
             <span>Back to login</span>
         </a>
+    </x-slot>
 
+    <div class="space-y-7">
         <div class="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 shadow-sm">
             <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-emerald-300/20 blur-2xl"></div>
             <div class="absolute -bottom-12 left-6 h-24 w-24 rounded-full bg-cyan-300/10 blur-2xl"></div>

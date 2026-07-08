@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <div class="space-y-7">
+    <x-slot name="cardTop">
         <a
             href="{{ route('password.request') }}"
             class="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-emerald-700"
@@ -7,7 +7,9 @@
             <span aria-hidden="true">&lt;</span>
             <span>Back to email</span>
         </a>
+    </x-slot>
 
+    <div class="space-y-7">
         <div class="rounded-3xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
             <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">Verifikasi reset</p>
             <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">Masukkan kode email</h3>
