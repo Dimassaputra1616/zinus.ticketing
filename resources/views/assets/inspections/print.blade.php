@@ -260,12 +260,15 @@
         }
         .photo-grid {
             display: grid;
-            gap: 10px;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .photo-grid.one-photo {
+            grid-template-columns: minmax(0, 96mm);
         }
         .photo-item {
-            border: 1px solid var(--line);
-            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 2px;
             overflow: hidden;
         }
         .photo-item img {
@@ -275,12 +278,14 @@
             width: 100%;
         }
         .photo-caption {
-            background: #f8fafc;
+            background: #fff;
+            border-top: 1px solid #cbd5e1;
             color: #475569;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
             overflow: hidden;
             padding: 5px 7px;
+            text-align: center;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
@@ -464,24 +469,6 @@
                 </table>
             </section>
 
-            @if (count($photos))
-                <section class="section">
-                    <div class="section-header">
-                        <span class="section-dot"></span>
-                        <span class="section-title">Inspection Photos</span>
-                    </div>
-                    <div class="photo-grid">
-                        @foreach ($photos as $photo)
-                            @php $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($photo['path']); @endphp
-                            <div class="photo-item">
-                                <img src="{{ $photoUrl }}" alt="{{ $photo['original_name'] ?? 'Foto inspection' }}">
-                                <div class="photo-caption">{{ $photo['original_name'] ?? 'Foto inspection' }}</div>
-                            </div>
-                        @endforeach
-                    </div>
-                </section>
-            @endif
-
             <div class="signature-grid">
                 <div class="signature-card">
                     <div class="signature-role">Inspected by,</div>
@@ -494,6 +481,24 @@
                     <div class="signature-name">IT Manager</div>
                 </div>
             </div>
+
+            @if (count($photos))
+                <section class="section">
+                    <div class="section-header">
+                        <span class="section-dot"></span>
+                        <span class="section-title">Inspection Photo Attachment</span>
+                    </div>
+                    <div class="photo-grid {{ count($photos) === 1 ? 'one-photo' : '' }}">
+                        @foreach ($photos as $photo)
+                            @php $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($photo['path']); @endphp
+                            <div class="photo-item">
+                                <img src="{{ $photoUrl }}" alt="Inspection photo {{ $loop->iteration }}">
+                                <div class="photo-caption">Photo {{ $loop->iteration }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                </section>
+            @endif
 
             <footer class="footer">
                 <span>{{ $appName }} - Device Inspection Report</span>
