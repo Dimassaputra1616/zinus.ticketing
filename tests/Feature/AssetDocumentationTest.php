@@ -8,6 +8,8 @@ use App\Models\AssetInspection;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AssetDocumentationTest extends TestCase
@@ -16,6 +18,8 @@ class AssetDocumentationTest extends TestCase
 
     public function test_admin_can_create_bast_for_asset(): void
     {
+        Storage::fake('public');
+
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $department = Department::create(['name' => 'IT']);
         $recipient = User::factory()->create([
@@ -47,6 +51,9 @@ class AssetDocumentationTest extends TestCase
                 'condition_summary' => 'Good',
                 'accessories' => ['Charger', 'Mouse'],
                 'notes' => 'Ready for handover.',
+                'photos' => [
+                    UploadedFile::fake()->image('handover-photo.jpg', 900, 600),
+                ],
             ]);
 
         $bast = AssetBast::firstOrFail();
@@ -63,15 +70,20 @@ class AssetDocumentationTest extends TestCase
         ]);
         $this->assertSame(['Charger', 'Mouse'], $bast->accessories);
         $this->assertSame('PC-BAST-001', $bast->asset_snapshot['asset_code']);
+        $this->assertCount(1, $bast->photos);
+        Storage::disk('public')->assertExists($bast->photos[0]['path']);
 
         $this->actingAs($admin)
             ->get(route('admin.assets.bast.print', $bast))
             ->assertOk()
-            ->assertSee('Berita Acara Serah Terima Asset');
+            ->assertSee('Berita Acara Serah Terima Asset')
+            ->assertSee('Dokumentasi Foto');
     }
 
     public function test_admin_can_create_inspection_and_view_report(): void
     {
+        Storage::fake('public');
+
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $asset = $this->asset('LAP-INSP-001', 'Loaner Laptop', 'Laptop', [
             'serial_number' => 'SN-INSP-001',
@@ -99,6 +111,9 @@ class AssetDocumentationTest extends TestCase
                 'findings' => 'Screen flicker ditemukan saat test.',
                 'action_required' => 'Cek LCD cable.',
                 'next_inspection_date' => '2026-08-08',
+                'photos' => [
+                    UploadedFile::fake()->image('inspection-photo.jpg', 900, 600),
+                ],
             ]);
 
         $inspection = AssetInspection::firstOrFail();
@@ -113,6 +128,8 @@ class AssetDocumentationTest extends TestCase
             'result' => AssetInspection::RESULT_NEEDS_REPAIR,
         ]);
         $this->assertSame('issue', $inspection->checklist['display']);
+        $this->assertCount(1, $inspection->photos);
+        Storage::disk('public')->assertExists($inspection->photos[0]['path']);
 
         $this->actingAs($admin)
             ->get(route('admin.assets.reports.index', [
@@ -121,6 +138,11 @@ class AssetDocumentationTest extends TestCase
             ]))
             ->assertOk()
             ->assertSee('INSP/202607/9001');
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.inspections.print', $inspection))
+            ->assertOk()
+            ->assertSee('Inspection Photos');
     }
 
     private function asset(string $code, string $name, string $category, array $overrides = []): Asset

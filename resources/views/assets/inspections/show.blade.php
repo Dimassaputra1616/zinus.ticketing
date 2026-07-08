@@ -27,6 +27,7 @@
         'issue' => 'Issue',
         'na' => 'N/A',
     ];
+    $photos = $inspection->photos ?? [];
 @endphp
 
 <x-app-layout>
@@ -129,6 +130,21 @@
                         <p class="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Action Required</p>
                         <p class="mt-2 whitespace-pre-line text-sm text-slate-700">{{ $inspection->action_required ?: '-' }}</p>
                     </section>
+
+                    @if (count($photos))
+                        <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Foto Inspection</p>
+                            <div class="mt-3 grid grid-cols-2 gap-3">
+                                @foreach ($photos as $photo)
+                                    @php $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($photo['path']); @endphp
+                                    <a href="{{ $photoUrl }}" target="_blank" class="group block overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                                        <img src="{{ $photoUrl }}" alt="{{ $photo['original_name'] ?? 'Foto inspection' }}" class="aspect-[4/3] w-full object-cover transition group-hover:scale-105">
+                                        <div class="truncate px-2 py-1.5 text-xs font-semibold text-slate-600">{{ $photo['original_name'] ?? 'Foto inspection' }}</div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
                 </div>
             </div>
         </div>

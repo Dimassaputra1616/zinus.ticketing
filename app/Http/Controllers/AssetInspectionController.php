@@ -69,12 +69,15 @@ class AssetInspectionController extends Controller
             'checklist.*' => ['nullable', 'in:ok,issue,na'],
             'findings' => ['nullable', 'string', 'max:5000'],
             'action_required' => ['nullable', 'string', 'max:5000'],
+            'photos' => ['nullable', 'array', 'max:6'],
+            'photos.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'next_inspection_date' => ['nullable', 'date', 'after_or_equal:inspection_date'],
         ]);
 
         $validated['inspection_number'] = ($validated['inspection_number'] ?? null) ?: $this->nextInspectionNumber();
         $validated['inspected_by'] = $request->user()?->id;
         $validated['checklist'] = $this->normalizeChecklist($validated['checklist'] ?? []);
+        $validated['photos'] = $this->storePhotos($request);
 
         $inspection = AssetInspection::create($validated);
 
@@ -127,6 +130,22 @@ class AssetInspectionController extends Controller
     {
         return collect($this->checklistItems())
             ->mapWithKeys(fn ($label, $key) => [$key => $checklist[$key] ?? 'na'])
+            ->all();
+    }
+
+    private function storePhotos(Request $request): array
+    {
+        return collect($request->file('photos', []))
+            ->filter()
+            ->map(function ($file) {
+                return [
+                    'path' => $file->store('asset-documents/inspections', 'public'),
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ];
+            })
+            ->values()
             ->all();
     }
 }

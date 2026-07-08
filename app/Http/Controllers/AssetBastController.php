@@ -99,6 +99,8 @@ class AssetBastController extends Controller
             'accessories' => ['nullable', 'array'],
             'accessories.*' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'photos' => ['nullable', 'array', 'max:6'],
+            'photos.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $asset = Asset::with(['department', 'user'])->findOrFail($validated['asset_id']);
@@ -114,6 +116,7 @@ class AssetBastController extends Controller
         $validated['signed_at'] = $validated['status'] === AssetBast::STATUS_SIGNED ? now() : null;
         $validated['asset_snapshot'] = $this->assetSnapshot($asset);
         $validated['accessories'] = array_values(array_filter($validated['accessories'] ?? []));
+        $validated['photos'] = $this->storePhotos($request);
 
         $bast = AssetBast::create($validated);
 
@@ -162,5 +165,21 @@ class AssetBastController extends Controller
             'department' => $asset->department?->name,
             'assigned_user' => $asset->user?->name,
         ];
+    }
+
+    private function storePhotos(Request $request): array
+    {
+        return collect($request->file('photos', []))
+            ->filter()
+            ->map(function ($file) {
+                return [
+                    'path' => $file->store('asset-documents/bast', 'public'),
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ];
+            })
+            ->values()
+            ->all();
     }
 }

@@ -16,6 +16,7 @@
         'issue' => 'Issue',
         'na' => 'N/A',
     ];
+    $photos = $inspection->photos ?? [];
     $appName = setting('app_name', 'Zinus Dream');
     $logoUrl = setting('app_logo')
         ? \Illuminate\Support\Facades\Storage::disk('public')->url(setting('app_logo'))
@@ -257,6 +258,32 @@
             gap: 14px;
             grid-template-columns: 1fr 1fr;
         }
+        .photo-grid {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .photo-item {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .photo-item img {
+            aspect-ratio: 4 / 3;
+            display: block;
+            object-fit: cover;
+            width: 100%;
+        }
+        .photo-caption {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 9px;
+            font-weight: 700;
+            overflow: hidden;
+            padding: 5px 7px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .status-ok { color: #047857; }
         .status-issue { color: #b45309; }
         .status-na { color: #64748b; }
@@ -436,6 +463,24 @@
                     <tr><th>Action Required</th><td>{!! nl2br(e($inspection->action_required ?: '-')) !!}</td></tr>
                 </table>
             </section>
+
+            @if (count($photos))
+                <section class="section">
+                    <div class="section-header">
+                        <span class="section-dot"></span>
+                        <span class="section-title">Inspection Photos</span>
+                    </div>
+                    <div class="photo-grid">
+                        @foreach ($photos as $photo)
+                            @php $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($photo['path']); @endphp
+                            <div class="photo-item">
+                                <img src="{{ $photoUrl }}" alt="{{ $photo['original_name'] ?? 'Foto inspection' }}">
+                                <div class="photo-caption">{{ $photo['original_name'] ?? 'Foto inspection' }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                </section>
+            @endif
 
             <div class="signature-grid">
                 <div class="signature-card">

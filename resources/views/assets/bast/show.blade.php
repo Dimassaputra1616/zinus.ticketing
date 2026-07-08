@@ -18,6 +18,7 @@
         'void' => 'bg-rose-50 text-rose-700 ring-rose-200',
     ];
     $snapshot = $bast->asset_snapshot ?? [];
+    $photos = $bast->photos ?? [];
 @endphp
 
 <x-app-layout>
@@ -130,6 +131,21 @@
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Notes</p>
                         <p class="mt-2 whitespace-pre-line text-sm text-slate-700">{{ $bast->notes ?: '-' }}</p>
                     </section>
+
+                    @if (count($photos))
+                        <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Foto Asset</p>
+                            <div class="mt-3 grid grid-cols-2 gap-3">
+                                @foreach ($photos as $photo)
+                                    @php $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($photo['path']); @endphp
+                                    <a href="{{ $photoUrl }}" target="_blank" class="group block overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                                        <img src="{{ $photoUrl }}" alt="{{ $photo['original_name'] ?? 'Foto asset' }}" class="aspect-[4/3] w-full object-cover transition group-hover:scale-105">
+                                        <div class="truncate px-2 py-1.5 text-xs font-semibold text-slate-600">{{ $photo['original_name'] ?? 'Foto asset' }}</div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
                 </div>
             </div>
         </div>

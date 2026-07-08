@@ -57,7 +57,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.assets.inspections.store') }}" class="space-y-5">
+            <form method="POST" action="{{ route('admin.assets.inspections.store') }}" enctype="multipart/form-data" class="space-y-5">
                 @csrf
                 <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="grid gap-4 md:grid-cols-2">
@@ -162,6 +162,17 @@
                                 class="mt-1 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                                 placeholder="Perlu repair, replace part, monitor berkala, atau tidak ada tindakan."
                             >{{ old('action_required') }}</textarea>
+                        </label>
+                        <label class="block">
+                            <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Foto Inspection</span>
+                            <input
+                                type="file"
+                                name="photos[]"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                class="mt-1 block w-full rounded-lg border border-slate-200 bg-white text-sm text-slate-600 shadow-sm file:mr-4 file:border-0 file:bg-slate-950 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-800"
+                            >
+                            <p class="mt-2 text-xs text-slate-500">Upload maksimal 6 foto hasil pengecekan. Format JPG, PNG, atau WEBP, maksimal 5 MB per foto.</p>
                         </label>
                     </div>
                 </div>

@@ -57,6 +57,7 @@ class AssetInspection extends Model
         'checklist',
         'findings',
         'action_required',
+        'photos',
         'next_inspection_date',
     ];
 
@@ -64,6 +65,7 @@ class AssetInspection extends Model
         'inspection_date' => 'date',
         'next_inspection_date' => 'date',
         'checklist' => 'array',
+        'photos' => 'array',
     ];
 
     public function asset(): BelongsTo

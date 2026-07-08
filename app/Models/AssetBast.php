@@ -52,6 +52,7 @@ class AssetBast extends Model
         'accessories',
         'asset_snapshot',
         'notes',
+        'photos',
         'signed_at',
     ];
 
@@ -59,6 +60,7 @@ class AssetBast extends Model
         'bast_date' => 'date',
         'accessories' => 'array',
         'asset_snapshot' => 'array',
+        'photos' => 'array',
         'signed_at' => 'datetime',
     ];
 
