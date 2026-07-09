@@ -66,7 +66,7 @@ class SettingSeeder extends Seeder
             [
                 'group' => 'theme',
                 'key' => 'welcome_message',
-                'value' => 'Welcome to the Zinus Dream Dashboard',
+                'value' => 'Welcome to IT Support Dashboard',
                 'type' => 'text',
                 'description' => 'Greeting message shown on the dashboard',
             ],

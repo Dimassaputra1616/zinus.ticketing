@@ -27,7 +27,7 @@ class Index extends Component
         $this->theme_color_secondary = setting('theme_color_secondary', '#53B77A');
         $this->sidebar_color = setting('sidebar_color', '#0E1F1B');
         $this->sidebar_text_color = setting('sidebar_text_color', '#ffffff');
-        $this->welcome_message = setting('welcome_message', 'Welcome to out Management Dashboard');
+        $this->welcome_message = setting('welcome_message', 'Welcome to IT Support Dashboard');
     }
 
     public function save()
