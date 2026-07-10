@@ -211,7 +211,7 @@ class AssetCategoryIndexTest extends TestCase
             ->assertSeeText('Searchable Workstation');
     }
 
-    public function test_admin_stays_on_asset_edit_page_after_updating_asset(): void
+    public function test_admin_returns_to_asset_center_after_updating_asset(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $asset = Asset::create([
@@ -230,7 +230,7 @@ class AssetCategoryIndexTest extends TestCase
                 'category' => 'PC',
                 'status' => Asset::STATUS_IN_USE,
             ])
-            ->assertRedirect(route('assets.edit', $asset))
+            ->assertRedirect(route('assets.index'))
             ->assertSessionHas('success', 'Asset diperbarui.');
 
         $this->assertDatabaseHas('assets', [

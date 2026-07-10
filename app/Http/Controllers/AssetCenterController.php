@@ -286,7 +286,7 @@ class AssetCenterController extends Controller
 
         $this->assetService->update($asset, $data, Auth::user());
 
-        return redirect()->route('admin.assets.manual.edit', $asset)
+        return redirect()->route('admin.assets.manual.index')
             ->with('success', 'Manual asset updated successfully.');
     }
 

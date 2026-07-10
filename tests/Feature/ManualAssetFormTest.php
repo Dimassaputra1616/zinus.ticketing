@@ -120,7 +120,7 @@ class ManualAssetFormTest extends TestCase
         ]);
     }
 
-    public function test_admin_stays_on_manual_edit_page_after_updating_asset(): void
+    public function test_admin_returns_to_manual_inventory_after_updating_asset(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $asset = Asset::create([
@@ -141,7 +141,7 @@ class ManualAssetFormTest extends TestCase
                 'condition' => 'good',
                 'lifecycle_status' => 'active',
             ])
-            ->assertRedirect(route('admin.assets.manual.edit', $asset))
+            ->assertRedirect(route('admin.assets.manual.index'))
             ->assertSessionHas('success', 'Manual asset updated successfully.');
 
         $this->assertDatabaseHas('assets', [
