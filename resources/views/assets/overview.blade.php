@@ -263,7 +263,7 @@
                                 <div class="space-y-1">
                                     <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{{ $rel->childAsset->name ?? 'Device' }}</span>
                                     <span class="text-xs text-slate-400">connected to</span>
-                                    <a href="{{ route('assets.show', $rel->parentAsset) }}" class="font-semibold text-emerald-600 hover:text-emerald-700 hover:underline">{{ $rel->parentAsset->name ?? 'PC' }}</a>
+                                    <a href="{{ route('assets.show', ['asset' => $rel->parentAsset, 'return_to' => request()->fullUrl()]) }}" class="font-semibold text-emerald-600 hover:text-emerald-700 hover:underline">{{ $rel->parentAsset->name ?? 'PC' }}</a>
                                 </div>
                                 <span class="text-xs text-slate-400 font-mono">{{ $rel->started_at ? $rel->started_at->diffForHumans() : '-' }}</span>
                             </div>
@@ -324,7 +324,7 @@
                                                         <span class="font-bold text-slate-800">{{ $log->actor->name ?? 'System' }}</span>
                                                         <span class="text-slate-500">{{ $log->notes }}</span>
                                                         @if($log->asset)
-                                                            <a href="{{ route('assets.show', $log->asset) }}" class="font-bold text-emerald-600 hover:text-emerald-700 font-mono bg-emerald-50/50 px-1.5 py-0.5 rounded border border-emerald-100/50">
+                                                            <a href="{{ route('assets.show', ['asset' => $log->asset, 'return_to' => request()->fullUrl()]) }}" class="font-bold text-emerald-600 hover:text-emerald-700 font-mono bg-emerald-50/50 px-1.5 py-0.5 rounded border border-emerald-100/50">
                                                                 {{ $log->asset->asset_code }}
                                                             </a>
                                                         @endif

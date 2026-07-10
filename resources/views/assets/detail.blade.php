@@ -1,4 +1,5 @@
 @php
+    $assetReturnTo = request()->query('return_to', request()->fullUrl());
     $statusMeta = [
         'in_use' => ['label' => __('messages.active'), 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200', 'dot' => 'bg-emerald-500'],
         'active' => ['label' => __('messages.active'), 'class' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200', 'dot' => 'bg-emerald-500'],
@@ -193,7 +194,7 @@
         ->filter(fn ($child) => \Illuminate\Support\Str::contains(\Illuminate\Support\Str::lower((string) $child->category), 'monitor'))
         ->map(fn ($child) => [
             'label' => $child->hostname ?: $child->asset_code,
-            'url' => route('assets.show', $child),
+            'url' => route('assets.show', ['asset' => $child, 'return_to' => $assetReturnTo]),
         ])
         ->filter(fn ($link) => filled($link['label']))
         ->values();
@@ -427,7 +428,7 @@
                         Back
                     </a>
                     <a
-                        href="{{ route('admin.assets.bast.create', ['asset_id' => $asset->id]) }}"
+                        href="{{ route('admin.assets.bast.create', ['asset_id' => $asset->id, 'return_to' => $assetReturnTo]) }}"
                         class="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-700"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -439,7 +440,7 @@
                         Create BAST
                     </a>
                     <a
-                        href="{{ route('admin.assets.inspections.create', ['asset_id' => $asset->id]) }}"
+                        href="{{ route('admin.assets.inspections.create', ['asset_id' => $asset->id, 'return_to' => $assetReturnTo]) }}"
                         class="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-700"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -449,7 +450,7 @@
                         Inspect Device
                     </a>
                     <a
-                        href="{{ $asset->source_type === 'manual' ? route('admin.assets.manual.edit', $asset) : route('assets.edit', $asset) }}"
+                        href="{{ $asset->source_type === 'manual' ? route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => $assetReturnTo]) : route('assets.edit', ['asset' => $asset, 'return_to' => $assetReturnTo]) }}"
                         class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -686,6 +687,7 @@
                         <form method="POST" action="{{ route('admin.assets.lifecycle.update', $asset) }}" class="mt-4 space-y-4">
                             @csrf
                             @method('PATCH')
+                            <input type="hidden" name="redirect_to" value="{{ $assetReturnTo }}">
                             <div>
                                 <label class="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Lifecycle</label>
                                 <select name="lifecycle_status" class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 focus:border-emerald-300 focus:bg-white focus:outline-none">
@@ -775,7 +777,7 @@
                                         <div class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                                             <div class="min-w-0">
                                                 <div class="flex flex-wrap items-center gap-2">
-                                                    <a href="{{ route('assets.show', $child) }}" class="truncate text-base font-bold text-slate-950 hover:text-emerald-700">{{ $child->name }}</a>
+                                                    <a href="{{ route('assets.show', ['asset' => $child, 'return_to' => $assetReturnTo]) }}" class="truncate text-base font-bold text-slate-950 hover:text-emerald-700">{{ $child->name }}</a>
                                                     <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">{{ $child->category ?: 'Asset' }}</span>
                                                 </div>
                                                 <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
@@ -801,7 +803,7 @@
                                     <div class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">Current Host</div>
                                     <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
-                                            <a href="{{ route('assets.show', $parentAsset) }}" class="text-lg font-bold text-slate-950 hover:text-emerald-800">{{ $parentAsset->name }}</a>
+                                            <a href="{{ route('assets.show', ['asset' => $parentAsset, 'return_to' => $assetReturnTo]) }}" class="text-lg font-bold text-slate-950 hover:text-emerald-800">{{ $parentAsset->name }}</a>
                                             <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
                                                 <span class="font-mono">{{ $parentAsset->asset_code }}</span>
                                                 <span>{{ $parentAsset->serial_number ?: 'No serial' }}</span>
@@ -873,7 +875,7 @@
                                         <div>
                                             <div class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">{{ $direction }}</div>
                                             @if ($otherAsset)
-                                                <a href="{{ route('assets.show', $otherAsset) }}" class="mt-1 block text-sm font-bold text-slate-950 hover:text-emerald-700">{{ $otherAsset->name }}</a>
+                                                <a href="{{ route('assets.show', ['asset' => $otherAsset, 'return_to' => $assetReturnTo]) }}" class="mt-1 block text-sm font-bold text-slate-950 hover:text-emerald-700">{{ $otherAsset->name }}</a>
                                                 <div class="mt-0.5 text-xs font-mono text-slate-500">{{ $otherAsset->asset_code }}</div>
                                             @else
                                                 <div class="mt-1 text-sm font-bold text-slate-500">Deleted asset</div>

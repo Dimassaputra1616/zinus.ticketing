@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\User;
 use App\Models\Category;
 use App\Services\AssetService;
+use App\Support\AssetModuleNavigation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -129,7 +130,9 @@ class AssetController extends Controller
     {
         $this->assetService->update($asset, $request->validated(), $request->user());
 
-        return redirect()->route('assets.index')->with('success', 'Asset diperbarui.');
+        return redirect()
+            ->to(AssetModuleNavigation::safeReturnUrl($request) ?? AssetModuleNavigation::routeForAsset($asset->fresh()))
+            ->with('success', 'Asset diperbarui.');
     }
 
     public function destroy(Asset $asset): RedirectResponse

@@ -7,6 +7,7 @@ use App\Models\AssetBast;
 use App\Models\BorrowLog;
 use App\Models\Department;
 use App\Models\User;
+use App\Support\AssetModuleNavigation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -120,7 +121,7 @@ class AssetBastController extends Controller
         $bast = AssetBast::create($validated);
 
         return redirect()
-            ->route('admin.assets.bast.show', $bast)
+            ->to(AssetModuleNavigation::safeReturnUrl($request) ?? route('admin.assets.bast.show', $bast))
             ->with('success', 'BAST berhasil dibuat.');
     }
 

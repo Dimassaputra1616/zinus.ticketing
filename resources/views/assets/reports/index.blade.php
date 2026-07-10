@@ -31,10 +31,10 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <a href="{{ route('admin.assets.bast.create') }}" class="inline-flex h-10 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:text-emerald-700">
+                    <a href="{{ route('admin.assets.bast.create', ['return_to' => request()->fullUrl()]) }}" class="inline-flex h-10 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:text-emerald-700">
                         New BAST
                     </a>
-                    <a href="{{ route('admin.assets.inspections.create') }}" class="inline-flex h-10 items-center rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
+                    <a href="{{ route('admin.assets.inspections.create', ['return_to' => request()->fullUrl()]) }}" class="inline-flex h-10 items-center rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
                         New Inspection
                     </a>
                 </div>

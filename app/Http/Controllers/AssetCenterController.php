@@ -11,6 +11,7 @@ use App\Services\AssetService;
 use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Models\AssetRelation;
+use App\Support\AssetModuleNavigation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -286,7 +287,8 @@ class AssetCenterController extends Controller
 
         $this->assetService->update($asset, $data, Auth::user());
 
-        return redirect()->route('admin.assets.manual.index')
+        return redirect()
+            ->to(AssetModuleNavigation::safeReturnUrl($request) ?? AssetModuleNavigation::routeForAsset($asset->fresh()))
             ->with('success', 'Manual asset updated successfully.');
     }
 
@@ -407,7 +409,10 @@ class AssetCenterController extends Controller
 
         $this->assetService->update($asset, $data, Auth::user());
 
-        return redirect()->back()->with('success', 'Asset lifecycle updated successfully.');
+        $redirectTo = AssetModuleNavigation::safeReturnUrl($request);
+
+        return ($redirectTo ? redirect()->to($redirectTo) : redirect()->back())
+            ->with('success', 'Asset lifecycle updated successfully.');
     }
 
     public function importExport()

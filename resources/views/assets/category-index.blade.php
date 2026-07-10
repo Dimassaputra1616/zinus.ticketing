@@ -334,7 +334,7 @@
                                 <tr class="group align-middle transition-colors hover:bg-emerald-50/30">
                                     @if ($isSoftwareLicense)
                                         <td class="px-4 py-3.5">
-                                            <a href="{{ route('assets.show', $asset) }}" class="block truncate font-semibold text-slate-900 hover:text-emerald-700">
+                                            <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="block truncate font-semibold text-slate-900 hover:text-emerald-700">
                                                 {{ $asset->name }}
                                             </a>
                                         </td>
@@ -353,7 +353,7 @@
                                         </td>
                                     @else
                                         <td class="px-4 py-3.5">
-                                            <a href="{{ route('assets.show', $asset) }}" class="flex min-w-0 items-center gap-3">
+                                            <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="flex min-w-0 items-center gap-3">
                                                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-emerald-100 group-hover:text-emerald-700">
                                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
                                                         <rect x="3" y="4" width="18" height="13" rx="2" />
@@ -397,7 +397,7 @@
                                     <td class="px-2 py-3.5">
                                         <div class="flex items-center justify-end gap-1.5">
                                             <a
-                                                href="{{ route('assets.show', $asset) }}"
+                                                href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                                 class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
                                                 title="View detail"
                                                 aria-label="View {{ $deviceName }}"
@@ -409,7 +409,7 @@
                                             </a>
                                             @if ($asset->source_type === 'manual')
                                                 <a
-                                                    href="{{ route('admin.assets.manual.edit', $asset) }}"
+                                                    href="{{ route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                                     class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
                                                     title="Edit asset"
                                                     aria-label="Edit {{ $deviceName }}"
@@ -434,7 +434,7 @@
                                                 </form>
                                             @else
                                                 <a
-                                                    href="{{ route('assets.edit', $asset) }}"
+                                                    href="{{ route('assets.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                                     class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
                                                     title="Edit asset"
                                                     aria-label="Edit {{ $deviceName }}"
@@ -497,7 +497,7 @@
                         @endphp
                         <article class="p-4">
                             <div class="flex items-start justify-between gap-3">
-                                <a href="{{ route('assets.show', $asset) }}" class="min-w-0">
+                                <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="min-w-0">
                                     <h3 class="truncate text-sm font-semibold tracking-normal text-slate-900">{{ $deviceName }}</h3>
                                     @if ($showHostname)
                                         <p class="mt-0.5 truncate font-mono text-xs text-slate-500">{{ $asset->hostname }}</p>
@@ -563,7 +563,7 @@
 
                             <div class="mt-4 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
                                 <a
-                                    href="{{ route('assets.show', $asset) }}"
+                                    href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                     class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600"
                                     title="View detail"
                                     aria-label="View {{ $deviceName }}"
@@ -574,7 +574,7 @@
                                     </svg>
                                 </a>
                                 <a
-                                    href="{{ $asset->source_type === 'manual' ? route('admin.assets.manual.edit', $asset) : route('assets.edit', $asset) }}"
+                                    href="{{ $asset->source_type === 'manual' ? route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) : route('assets.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                     class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600"
                                     title="Edit asset"
                                     aria-label="Edit {{ $deviceName }}"

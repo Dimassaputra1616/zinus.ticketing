@@ -34,7 +34,7 @@
                     <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Inspection Device</h1>
                     <p class="mt-1 text-sm text-slate-500">Checklist kondisi device, hasil inspeksi, dan follow-up per asset.</p>
                 </div>
-                <a href="{{ route('admin.assets.inspections.create') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+                <a href="{{ route('admin.assets.inspections.create', ['return_to' => request()->fullUrl()]) }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 5v14" />
                         <path d="M5 12h14" />

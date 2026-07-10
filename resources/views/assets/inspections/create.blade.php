@@ -22,6 +22,7 @@
         'issue' => 'Issue',
         'na' => 'N/A',
     ];
+    $backUrl = \App\Support\AssetModuleNavigation::safeReturnUrl(request(), 'return_to') ?? route('admin.assets.inspections.index');
 @endphp
 
 <x-app-layout>
@@ -33,7 +34,7 @@
                     <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Create Inspection</h1>
                     <p class="mt-1 text-sm text-slate-500">Catat checklist kondisi device dan keputusan lanjutannya.</p>
                 </div>
-                <a href="{{ route('admin.assets.inspections.index') }}" class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:text-emerald-700">
+                <a href="{{ $backUrl }}" class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:text-emerald-700">
                     Back to Inspection
                 </a>
             </div>
@@ -59,6 +60,9 @@
 
             <form method="POST" action="{{ route('admin.assets.inspections.store') }}" enctype="multipart/form-data" class="space-y-5">
                 @csrf
+                @if (filled(old('redirect_to', request()->query('return_to'))))
+                    <input type="hidden" name="redirect_to" value="{{ old('redirect_to', request()->query('return_to')) }}">
+                @endif
                 <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="grid gap-4 md:grid-cols-2">
                         <label class="block">
@@ -178,7 +182,7 @@
                 </div>
 
                 <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <a href="{{ route('admin.assets.inspections.index') }}" class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:text-emerald-700">
+                    <a href="{{ $backUrl }}" class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:text-emerald-700">
                         Cancel
                     </a>
                     <button type="submit" class="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">

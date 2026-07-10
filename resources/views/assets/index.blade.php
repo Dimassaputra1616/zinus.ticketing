@@ -452,13 +452,13 @@
 
                             <div class="mt-3 flex flex-wrap items-center gap-2">
                                 <a
-                                    href="{{ route('assets.show', $asset) }}"
+                                    href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                     class="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-emerald-200 hover:text-emerald-700"
                                 >
                                     {{ __('messages.view') }}
                                 </a>
                                 <a
-                                    href="{{ route('assets.edit', $asset) }}"
+                                    href="{{ route('assets.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                     class="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-sm shadow-emerald-400/30 hover:bg-emerald-700"
                                 >
                                     {{ __('messages.edit') }}
@@ -556,7 +556,7 @@
                                 @endphp
                                 <tr
                                     class="table-hover-row group rounded-2xl border border-l-4 shadow-sm shadow-slate-200/60 transition duration-150 cursor-pointer hover:shadow-md {{ $rowTone }}"
-                                    onclick="window.location='{{ route('assets.show', $asset) }}'"
+                                    onclick="window.location='{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}'"
                                 >
                                     <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-900">
                                         <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.3em] text-emerald-700 ring-1 ring-emerald-200/70" title="Asset Code: {{ $asset->asset_code }}">{{ $asset->hostname ?? $asset->name ?? $asset->asset_code }}</span>
@@ -606,7 +606,7 @@
                                     <td class="px-3 py-2.5 text-right overflow-visible">
                                         <div class="flex items-center justify-end gap-2 opacity-80 transition group-hover:opacity-100">
                                             <a
-                                                href="{{ route('assets.show', $asset) }}"
+                                                href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                                 onclick="event.stopPropagation()"
                                                 class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-600 shadow-sm shadow-slate-200/60 transition hover:border-emerald-200 hover:text-emerald-700"
                                                 aria-label="Open detail"
@@ -619,7 +619,7 @@
                                                 </svg>
                                             </a>
                                             <a
-                                                href="{{ route('assets.edit', $asset) }}"
+                                                href="{{ route('assets.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                                 onclick="event.stopPropagation()"
                                                 class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm shadow-emerald-400/30 transition hover:bg-emerald-700"
                                                 aria-label="Edit asset"

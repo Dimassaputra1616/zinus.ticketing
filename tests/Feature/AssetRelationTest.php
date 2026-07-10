@@ -133,7 +133,7 @@ class AssetRelationTest extends TestCase
                 'category' => $asset->category,
                 'status' => Asset::STATUS_IN_USE,
             ])
-            ->assertRedirect(route('assets.index'));
+            ->assertRedirect(route('admin.assets.pc'));
 
         $response = $this->actingAs($admin)
             ->get(route('assets.show', $asset))

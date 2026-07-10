@@ -35,6 +35,9 @@
             ['label' => __('messages.spare'), 'value' => \App\Models\Asset::STATUS_AVAILABLE],
             ['label' => __('messages.retired'), 'value' => \App\Models\Asset::STATUS_BROKEN],
         ];
+        $backUrl = $isEdit
+            ? (\App\Support\AssetModuleNavigation::safeReturnUrl(request(), 'return_to') ?? route('assets.show', $asset))
+            : route('assets.index');
     @endphp
 
     @php
@@ -57,10 +60,10 @@
             </x-slot:icon>
             <x-slot:side>
                 <a
-                    href="{{ $isEdit ? route('assets.show', $asset) : route('assets.index') }}"
+                    href="{{ $backUrl }}"
                     class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
                 >
-                    &larr; {{ $isEdit ? __('messages.back_to_detail') : __('messages.back_to_list') }}
+                    &larr; {{ $isEdit ? __('messages.back') : __('messages.back_to_list') }}
                 </a>
             </x-slot:side>
         </x-ui.section-hero>
@@ -70,6 +73,9 @@
                 @csrf
                 @if ($isEdit)
                     @method('PUT')
+                @endif
+                @if ($isEdit && filled(old('redirect_to', request()->query('return_to'))))
+                    <input type="hidden" name="redirect_to" value="{{ old('redirect_to', request()->query('return_to')) }}">
                 @endif
 
                 <div class="grid gap-6 lg:grid-cols-2">
@@ -377,7 +383,7 @@
 
                 <div class="sticky bottom-0 left-0 right-0 mt-4 -mx-6 flex items-center justify-end gap-3 border-t border-slate-200/80 bg-white/95 px-6 py-4 backdrop-blur">
                     <a
-                        href="{{ $isEdit ? route('assets.show', $asset) : route('assets.index') }}"
+                        href="{{ $backUrl }}"
                         class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-emerald-200 hover:text-emerald-700"
                     >
                         {{ __('messages.cancel') }}

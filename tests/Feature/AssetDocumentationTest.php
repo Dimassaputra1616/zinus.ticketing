@@ -52,6 +52,7 @@ class AssetDocumentationTest extends TestCase
                 'condition_summary' => 'Good',
                 'accessories' => ['Charger', 'Mouse'],
                 'notes' => 'Ready for handover.',
+                'redirect_to' => route('admin.assets.bast.index'),
                 'photos' => [
                     UploadedFile::fake()->image('handover-photo.jpg', 900, 600),
                 ],
@@ -60,7 +61,7 @@ class AssetDocumentationTest extends TestCase
         $bast = AssetBast::firstOrFail();
 
         $response
-            ->assertRedirect(route('admin.assets.bast.show', $bast))
+            ->assertRedirect(route('admin.assets.bast.index'))
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('asset_basts', [
@@ -179,6 +180,7 @@ class AssetDocumentationTest extends TestCase
                 'findings' => 'Screen flicker ditemukan saat test.',
                 'action_required' => 'Cek LCD cable.',
                 'next_inspection_date' => '2026-08-08',
+                'redirect_to' => route('admin.assets.inspections.index'),
                 'photos' => [
                     UploadedFile::fake()->image('inspection-photo.jpg', 900, 600),
                 ],
@@ -187,7 +189,7 @@ class AssetDocumentationTest extends TestCase
         $inspection = AssetInspection::firstOrFail();
 
         $response
-            ->assertRedirect(route('admin.assets.inspections.show', $inspection))
+            ->assertRedirect(route('admin.assets.inspections.index'))
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('asset_inspections', [

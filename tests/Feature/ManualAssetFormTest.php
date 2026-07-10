@@ -131,6 +131,7 @@ class ManualAssetFormTest extends TestCase
             'source_type' => 'manual',
             'sync_source' => 'manual',
         ]);
+        $returnTo = route('admin.assets.manual.index');
 
         $this->actingAs($admin)
             ->put(route('admin.assets.manual.update', $asset), [
@@ -140,8 +141,9 @@ class ManualAssetFormTest extends TestCase
                 'status' => Asset::STATUS_IN_USE,
                 'condition' => 'good',
                 'lifecycle_status' => 'active',
+                'redirect_to' => $returnTo,
             ])
-            ->assertRedirect(route('admin.assets.manual.index'))
+            ->assertRedirect($returnTo)
             ->assertSessionHas('success', 'Manual asset updated successfully.');
 
         $this->assertDatabaseHas('assets', [

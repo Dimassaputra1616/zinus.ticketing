@@ -211,7 +211,7 @@ class AssetCategoryIndexTest extends TestCase
             ->assertSeeText('Searchable Workstation');
     }
 
-    public function test_admin_returns_to_asset_center_after_updating_asset(): void
+    public function test_admin_returns_to_source_asset_module_after_updating_asset(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $asset = Asset::create([
@@ -222,6 +222,7 @@ class AssetCategoryIndexTest extends TestCase
             'source_type' => 'agent',
             'sync_source' => 'agent',
         ]);
+        $returnTo = route('admin.assets.pc', ['search' => 'Agent']);
 
         $this->actingAs($admin)
             ->put(route('assets.update', $asset), [
@@ -229,8 +230,9 @@ class AssetCategoryIndexTest extends TestCase
                 'name' => 'Agent Workstation Updated',
                 'category' => 'PC',
                 'status' => Asset::STATUS_IN_USE,
+                'redirect_to' => $returnTo,
             ])
-            ->assertRedirect(route('assets.index'))
+            ->assertRedirect($returnTo)
             ->assertSessionHas('success', 'Asset diperbarui.');
 
         $this->assertDatabaseHas('assets', [
@@ -264,6 +266,29 @@ class AssetCategoryIndexTest extends TestCase
 
         // The page renders one desktop row and one mobile card.
         $this->assertSame(2, substr_count($visibleText, 'DisplayPort'));
+    }
+
+    public function test_asset_update_ignores_external_return_url(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = Asset::create([
+            'asset_code' => 'MON-RETURN-001',
+            'name' => 'Return Safety Monitor',
+            'category' => 'Monitor',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('assets.update', $asset), [
+                'asset_code' => $asset->asset_code,
+                'name' => 'Return Safety Monitor Updated',
+                'category' => 'Monitor',
+                'status' => Asset::STATUS_IN_USE,
+                'redirect_to' => 'https://example.invalid/admin/assets',
+            ])
+            ->assertRedirect(route('admin.assets.monitor'));
     }
 
     public function test_peripheral_inventory_shows_connection_instead_of_ip_address(): void

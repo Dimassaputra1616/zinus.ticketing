@@ -104,7 +104,7 @@
             <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
-                        <a href="{{ route('assets.show', $asset) }}" class="block truncate text-sm font-bold text-slate-900 hover:text-emerald-700">
+                        <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="block truncate text-sm font-bold text-slate-900 hover:text-emerald-700">
                             {{ $asset->hostname ?? $asset->name ?? $asset->asset_code }}
                         </a>
                         <p class="mt-0.5 truncate font-mono text-[11px] text-slate-400">{{ $asset->asset_code }}</p>
@@ -132,8 +132,8 @@
                     </div>
                 </div>
                 <div class="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
-                    <a href="{{ route('assets.show', $asset) }}" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-emerald-200 hover:text-emerald-700">View</a>
-                    <a href="{{ route('assets.edit', $asset) }}" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Edit</a>
+                    <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-emerald-200 hover:text-emerald-700">View</a>
+                    <a href="{{ route('assets.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Edit</a>
                 </div>
             </article>
         @empty
@@ -169,7 +169,7 @@
                     @endphp
                     <tr class="group transition hover:bg-emerald-50/30">
                         <td class="whitespace-nowrap px-5 py-3">
-                            <a href="{{ route('assets.show', $asset) }}" class="font-bold text-slate-900 transition group-hover:text-emerald-700">
+                            <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="font-bold text-slate-900 transition group-hover:text-emerald-700">
                                 {{ $asset->hostname ?? $asset->name ?? $asset->asset_code }}
                             </a>
                             <p class="mt-0.5 font-mono text-[10px] text-slate-400">{{ $asset->asset_code }}</p>
@@ -203,13 +203,13 @@
                         </td>
                         <td class="whitespace-nowrap px-5 py-3 text-right">
                             <div class="flex items-center justify-end gap-1.5">
-                                <a href="{{ route('assets.show', $asset) }}" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700" title="View asset">
+                                <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700" title="View asset">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                         <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
                                         <circle cx="12" cy="12" r="2.5" />
                                     </svg>
                                 </a>
-                                <a href="{{ route('assets.edit', $asset) }}" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700" title="Edit asset">
+                                <a href="{{ route('assets.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700" title="Edit asset">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                         <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
                                     </svg>

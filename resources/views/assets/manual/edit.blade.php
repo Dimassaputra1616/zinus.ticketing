@@ -5,6 +5,7 @@
         ->mapWithKeys(fn ($category) => [$category => \App\Support\AssetCategoryProfile::key($category)]);
     $initialProfileKey = \App\Support\AssetCategoryProfile::key($initialCategory);
     $initialProfile = $categoryProfiles[$initialProfileKey];
+    $backUrl = \App\Support\AssetModuleNavigation::safeReturnUrl(request(), 'return_to') ?? route('admin.assets.manual.index');
 @endphp
 
 <x-app-layout>
@@ -54,10 +55,10 @@
                     <p class="text-sm text-slate-600">Update details for manual asset: <span class="font-bold text-indigo-600">{{ $asset->asset_code }}</span></p>
                 </div>
                 <a
-                    href="{{ route('admin.assets.manual.index') }}"
+                    href="{{ $backUrl }}"
                     class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-600"
                 >
-                    &larr; Back to list
+                    &larr; Back
                 </a>
             </div>
         </section>
@@ -67,6 +68,9 @@
             <form action="{{ route('admin.assets.manual.update', $asset) }}" method="POST" class="space-y-6 px-6 py-6">
                 @csrf
                 @method('PUT')
+                @if (filled(old('redirect_to', request()->query('return_to'))))
+                    <input type="hidden" name="redirect_to" value="{{ old('redirect_to', request()->query('return_to')) }}">
+                @endif
 
                 <div class="grid gap-6 lg:grid-cols-2">
                     <!-- Identity Section -->
@@ -500,7 +504,7 @@
 
                 <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-6">
                     <a
-                        href="{{ route('admin.assets.manual.index') }}"
+                        href="{{ $backUrl }}"
                         class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                     >
                         Cancel

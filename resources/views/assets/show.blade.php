@@ -87,7 +87,7 @@
                         <a href="{{ route('assets.index') }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-200 hover:text-emerald-700">
                             &larr; {{ __('messages.back') }}
                         </a>
-                        <a href="{{ route('assets.edit', $asset) }}" class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-400/30 hover:bg-emerald-700">
+                        <a href="{{ route('assets.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-400/30 hover:bg-emerald-700">
                             {{ __('messages.edit_asset') }}
                         </a>
                     </div>

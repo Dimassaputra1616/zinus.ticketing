@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetInspection;
+use App\Support\AssetModuleNavigation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -82,7 +83,7 @@ class AssetInspectionController extends Controller
         $inspection = AssetInspection::create($validated);
 
         return redirect()
-            ->route('admin.assets.inspections.show', $inspection)
+            ->to(AssetModuleNavigation::safeReturnUrl($request) ?? route('admin.assets.inspections.show', $inspection))
             ->with('success', 'Inspection device berhasil disimpan.');
     }
 

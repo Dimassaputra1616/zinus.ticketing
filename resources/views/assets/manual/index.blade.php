@@ -343,7 +343,7 @@
                                     <td class="px-3 py-3 text-right">
                                         <div class="flex items-center justify-end gap-2">
                                             <a
-                                                href="{{ route('admin.assets.manual.edit', $asset) }}"
+                                                href="{{ route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
                                                 class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm shadow-emerald-400/30 transition hover:bg-emerald-700"
                                                 title="Edit asset"
                                             >
