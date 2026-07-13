@@ -4,7 +4,6 @@ param(
     [string]$BlockedPath = ".\zinus-auto-needs-policy-or-agent.csv",
     [string]$ScanPath = ".\zinus-auto-scan-results.csv",
     [string]$AnyDeskPath = ".\zinus-auto-anydesk-results.csv",
-    [string]$RustDeskPath = "",
     [string]$ResultPath = ".\zinus-auto-failure-analysis.csv",
     [string]$SummaryPath = ".\zinus-auto-failure-summary.csv"
 )
@@ -194,8 +193,7 @@ $discovery = Import-ZinusCsv -Path $DiscoveryPath
 $verification = Import-ZinusCsv -Path $VerificationPath
 $blocked = Import-ZinusCsv -Path $BlockedPath
 $scan = Import-ZinusCsv -Path $ScanPath
-$remoteDeployPath = if (-not [string]::IsNullOrWhiteSpace($RustDeskPath)) { $RustDeskPath } else { $AnyDeskPath }
-$anyDesk = Import-ZinusCsv -Path $remoteDeployPath
+$anyDesk = Import-ZinusCsv -Path $AnyDeskPath
 
 $discoveryByIp = New-RowMap -Rows $discovery -KeyName "ip_address"
 $verificationByIp = New-RowMap -Rows $verification -KeyName "ip_address"

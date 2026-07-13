@@ -431,7 +431,7 @@ class AssetCenterController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Asset Code', 'Name', 'Hostname', 'Category', 'Sub Category', 'Factory', 'Brand', 'Model', 'Serial Number', 'IP Address', 'CPU', 'RAM GB', 'Storage GB', 'OS Name', 'AnyDesk ID', 'RustDesk ID', 'Specs', 'Source Type', 'Condition', 'Lifecycle Status', 'Warranty Until', 'Location', 'Status', 'Notes'];
+        $columns = ['Asset Code', 'Name', 'Hostname', 'Category', 'Sub Category', 'Factory', 'Brand', 'Model', 'Serial Number', 'IP Address', 'CPU', 'RAM GB', 'Storage GB', 'OS Name', 'AnyDesk ID', 'Specs', 'Source Type', 'Condition', 'Lifecycle Status', 'Warranty Until', 'Location', 'Status', 'Notes'];
 
         $callback = function() use($columns) {
             $file = fopen('php://output', 'w');
@@ -454,7 +454,6 @@ class AssetCenterController extends Controller
                     $asset->storage_gb,
                     $asset->os_name,
                     $asset->anydesk_id,
-                    $asset->rustdesk_id,
                     $asset->specs,
                     $asset->source_type,
                     $asset->condition ?: 'good',
@@ -549,7 +548,6 @@ class AssetCenterController extends Controller
                     'storage_gb' => $this->csvValue($row, 'storage_gb'),
                     'os_name' => $this->csvValue($row, 'os_name'),
                     'anydesk_id' => $this->csvValue($row, 'anydesk_id'),
-                    'rustdesk_id' => $this->csvValue($row, 'rustdesk_id'),
                     'specs' => $this->csvValue($row, 'specs'),
                     'source_type' => $sourceType,
                     'sync_source' => $sourceType === 'agent' ? 'agent' : 'manual',

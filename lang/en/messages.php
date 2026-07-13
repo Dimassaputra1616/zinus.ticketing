@@ -483,8 +483,6 @@ return [
     'connect_remote' => 'Connect Remote',
     'online' => 'Online',
     'offline' => 'Offline',
-    'rustdesk_id' => 'RustDesk ID',
-    'no_rustdesk_id' => 'No RustDesk ID set',
     'anydesk_id' => 'AnyDesk ID',
     'no_anydesk_id' => 'No AnyDesk ID set',
 ];

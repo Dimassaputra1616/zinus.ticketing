@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('assets', function (Blueprint $table) {
-            $table->string('anydesk_id')->nullable()->after('rustdesk_id');
+            $table->string('anydesk_id')->nullable()->after('ip_address');
         });
     }
 

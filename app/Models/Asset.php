@@ -52,7 +52,6 @@ class Asset extends Model
         'storage_detail',
         'os_name',
         'ip_address',
-        'rustdesk_id',
         'anydesk_id',
         'sync_source',
         'source_type',

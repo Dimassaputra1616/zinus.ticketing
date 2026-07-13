@@ -57,7 +57,6 @@ class UpdateAssetRequest extends FormRequest
             'warranty_until' => ['nullable', 'date', 'after_or_equal:purchase_date'],
             'price' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:5000'],
-            'rustdesk_id' => ['nullable', 'string', 'max:100'],
             'anydesk_id' => ['nullable', 'string', 'max:100'],
             'source_type' => ['nullable', 'string', 'in:agent,manual,import_excel'],
         ];

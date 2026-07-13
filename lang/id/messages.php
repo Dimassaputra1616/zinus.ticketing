@@ -473,8 +473,6 @@ return [
     'connect_remote' => 'Hubungkan Remote',
     'online' => 'Online',
     'offline' => 'Offline',
-    'rustdesk_id' => 'RustDesk ID',
-    'no_rustdesk_id' => 'Belum ada RustDesk ID',
     'anydesk_id' => 'AnyDesk ID',
     'no_anydesk_id' => 'Belum ada AnyDesk ID',
 ];

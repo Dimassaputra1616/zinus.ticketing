@@ -42,7 +42,6 @@
         'storage_gb' => 'Storage',
         'os_name' => 'Operating System',
         'ip_address' => 'IP Address',
-        'rustdesk_id' => 'RustDesk ID',
         'anydesk_id' => 'AnyDesk ID',
         'department_id' => 'Department',
         'user_id' => 'Assigned User',

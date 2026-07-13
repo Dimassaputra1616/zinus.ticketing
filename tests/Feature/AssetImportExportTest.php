@@ -63,6 +63,7 @@ class AssetImportExportTest extends TestCase
 
         $this->assertStringContainsString('Sub Category', $content);
         $this->assertStringContainsString('AnyDesk ID', $content);
+        $this->assertStringNotContainsString('Rust'.'Desk ID', $content);
         $this->assertStringContainsString('IP Address', $content);
         $this->assertStringContainsString('Specs', $content);
         $this->assertStringContainsString('192.168.20.2', $content);

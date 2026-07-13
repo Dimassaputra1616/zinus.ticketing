@@ -40,7 +40,7 @@ Anda adalah AI Coding Assistant yang bertugas untuk memelihara, memperbaiki, dan
 - Inspect and improve the Zinus Asset Sync installer.
 
 Goals:
-1. Remove hardcoded API token and RustDesk key from Install-ZinusAssetSync.ps1 and require token as a parameter.
+1. Remove hardcoded API token and require token as a parameter.
 2. Create scheduled task as SYSTEM using /RU SYSTEM.
 3. Change schedule from monthly to daily at 09:00 and also add an ONSTART task trigger if possible.
 4. Improve Get-PrimaryIpv4 so it selects the active adapter with default gateway, not random adapter/VPN.

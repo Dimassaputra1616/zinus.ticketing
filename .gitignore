@@ -19,8 +19,12 @@
 /storage/*.key
 /storage/pail
 /vendor
+vendor.root-owned.backup.*
 ZinusAssetInstaller/PsExec.exe
 ZinusAssetInstaller/zinus-auto-*.csv
+ZinusAssetInstaller/zinus-*.csv
+ZinusAssetInstaller/zinus-remediation-*.txt
+ZinusAssetInstaller/*desk-*.msi
 Homestead.json
 Homestead.yaml
 Thumbs.db
