@@ -53,6 +53,7 @@ class Asset extends Model
         'os_name',
         'ip_address',
         'rustdesk_id',
+        'anydesk_id',
         'sync_source',
         'source_type',
         'condition',

@@ -217,15 +217,15 @@
 
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">RustDesk ID</label>
+                                    <label class="text-sm font-semibold text-slate-700">AnyDesk ID</label>
                                     <input
-                                        name="rustdesk_id"
-                                        value="{{ old('rustdesk_id', $asset?->rustdesk_id) }}"
+                                        name="anydesk_id"
+                                        value="{{ old('anydesk_id', $asset?->anydesk_id) }}"
                                         class="h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 font-mono focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                                         placeholder="Contoh: 123 456 789"
                                     >
-                                    <p class="text-[11px] text-slate-400">ID perangkat dari RustDesk untuk koneksi remote.</p>
-                                    @error('rustdesk_id')
+                                    <p class="text-[11px] text-slate-400">ID perangkat dari AnyDesk untuk koneksi remote.</p>
+                                    @error('anydesk_id')
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
                                     @enderror
                                 </div>

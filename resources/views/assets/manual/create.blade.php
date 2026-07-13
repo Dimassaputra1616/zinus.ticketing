@@ -335,15 +335,15 @@
                                         @enderror
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <label class="text-sm font-semibold text-slate-700">RustDesk ID</label>
+                                        <label class="text-sm font-semibold text-slate-700">AnyDesk ID</label>
                                         <input
-                                            name="rustdesk_id"
-                                            value="{{ old('rustdesk_id') }}"
+                                            name="anydesk_id"
+                                            value="{{ old('anydesk_id') }}"
                                             :disabled="!profile.show_computer"
                                             class="h-11 rounded-xl border border-slate-200 px-3 font-mono text-sm text-slate-700 focus:border-indigo-400 focus:outline-none"
                                             placeholder="e.g. 123456789"
                                         >
-                                        @error('rustdesk_id')
+                                        @error('anydesk_id')
                                             <p class="text-xs text-rose-600">{{ $message }}</p>
                                         @enderror
                                     </div>

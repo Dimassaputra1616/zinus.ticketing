@@ -48,12 +48,8 @@ return [
         'google_spreadsheet_id' => env('GOOGLE_SPREADSHEET_ID'),
     ],
 
-    'rustdesk' => [
-        'custom_server' => env('RUSTDESK_CUSTOM_SERVER', false),
-        'id_server' => env('RUSTDESK_ID_SERVER', ''),
-        'relay_server' => env('RUSTDESK_RELAY_SERVER', ''),
-        'api_server' => env('RUSTDESK_API_SERVER', ''),
-        'key' => env('RUSTDESK_KEY', ''),
+    'anydesk' => [
+        'url_scheme' => env('ANYDESK_URL_SCHEME', 'anydesk'),
     ],
 
 ];

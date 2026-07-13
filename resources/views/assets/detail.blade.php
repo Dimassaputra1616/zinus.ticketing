@@ -43,6 +43,7 @@
         'os_name' => 'Operating System',
         'ip_address' => 'IP Address',
         'rustdesk_id' => 'RustDesk ID',
+        'anydesk_id' => 'AnyDesk ID',
         'department_id' => 'Department',
         'user_id' => 'Assigned User',
         'purchase_date' => 'Purchase Date',
@@ -233,7 +234,7 @@
             ['label' => 'Storage', 'value' => $storageValue],
             ['label' => 'Operating System', 'value' => $osValue],
             ['label' => 'IP Address', 'value' => $ipValue, 'mono' => true, 'copy' => true],
-            ['label' => 'RustDesk ID', 'value' => $asset->rustdesk_id, 'mono' => true, 'copy' => true],
+            ['label' => 'AnyDesk ID', 'value' => $asset->anydesk_id, 'mono' => true, 'copy' => true],
         ],
         'monitor' => [
             ['label' => 'Brand / Model', 'value' => $brandModel],
@@ -527,12 +528,12 @@
                                     </svg>
                                     Copy Code
                                 </button>
-                                @if ($asset->rustdesk_id)
+                                @if ($asset->anydesk_id)
                                     <button
                                         type="button"
                                         class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100"
-                                        title="Copy RustDesk ID"
-                                        @click="copy(@js($asset->rustdesk_id), 'RustDesk ID')"
+                                        title="Copy AnyDesk ID"
+                                        @click="copy(@js($asset->anydesk_id), 'AnyDesk ID')"
                                     >
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                             <rect x="3" y="4" width="18" height="12" rx="2" />

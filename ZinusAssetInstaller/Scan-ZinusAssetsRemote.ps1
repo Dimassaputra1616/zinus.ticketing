@@ -12,7 +12,13 @@ param(
     [string]$AgentVersion = "1.1.0-remote-scan",
     [string]$ResultPath = ".\zinus-asset-remote-scan-results.csv",
     [int]$WsManPort = 5985,
-    [int]$PortTimeoutMs = 1000,
+    [int]$PortTimeoutMs = 3000,
+    [ValidateRange(1, 50)]
+    [int]$MaxParallel = 20,
+    [ValidateRange(0, 5)]
+    [int]$RetryCount = 1,
+    [ValidateRange(1, 60)]
+    [int]$RetryDelaySeconds = 5,
     [switch]$SkipPreflight,
     [switch]$NoFailExit,
     [System.Management.Automation.PSCredential]$Credential
@@ -91,16 +97,38 @@ function New-ScanResult {
         [string]$Status,
         [string]$Message,
         [string]$AssetCode = "",
-        [string]$Hostname = ""
+        [string]$Hostname = "",
+        [string]$Category = "",
+        [string]$Brand = "",
+        [string]$Model = "",
+        [string]$SerialNumber = "",
+        [string]$IdentitySource = "",
+        [string]$IsIdentityVerified = "",
+        [int]$MonitorCount = 0,
+        [int]$MonitorVerifiedCount = 0,
+        [string]$MonitorIdentitySources = "",
+        [string]$IpAddress = "",
+        [string]$AnyDeskId = ""
     )
 
     [pscustomobject]@{
-        computer   = $Computer
-        hostname   = $Hostname
-        asset_code = $AssetCode
-        status     = $Status
-        message    = $Message
-        scanned_at = (Get-Date).ToString("s")
+        computer                 = $Computer
+        hostname                 = $Hostname
+        asset_code               = $AssetCode
+        status                   = $Status
+        message                  = $Message
+        category                 = $Category
+        brand                    = $Brand
+        model                    = $Model
+        serial_number            = $SerialNumber
+        identity_source          = $IdentitySource
+        is_identity_verified     = $IsIdentityVerified
+        monitor_count            = $MonitorCount
+        monitor_verified_count   = $MonitorVerifiedCount
+        monitor_identity_sources = $MonitorIdentitySources
+        ip_address               = $IpAddress
+        anydesk_id               = $AnyDeskId
+        scanned_at               = (Get-Date).ToString("s")
     }
 }
 
@@ -351,6 +379,31 @@ $collector = {
         return $null
     }
 
+    function Resolve-AssetCategory {
+        param(
+            [string]$Hostname,
+            [string]$Brand,
+            [string]$Model
+        )
+
+        if ($Hostname -match '(?i)^(NB|LAPTOP|LT|NOTEBOOK)[-_]') { return "Laptop" }
+        if ($Hostname -match '(?i)^(PC|DESKTOP|WS|MP)[-_]') { return "PC" }
+
+        $chassisCategory = Get-CategoryFromChassis
+        if ($chassisCategory) { return $chassisCategory }
+
+        $modelText = "$Brand $Model"
+        if ($modelText -match '(?i)\b(thinkpad|ideapad|yoga|zenbook|vivobook|aspire|inspiron|latitude|precision|elitebook|probook|notebook|laptop)\b') {
+            return "Laptop"
+        }
+
+        if ($modelText -match '(?i)\b(nuc|desktop|tower|optiplex|prodesk|elitedesk|h110|h310|h410|h510|h610|b450|b560|b660|a520|a620|prime|ms-7d20|poweredge)\b') {
+            return "PC"
+        }
+
+        return $null
+    }
+
     function Convert-WmiMonitorString {
         param($Value)
 
@@ -367,6 +420,68 @@ $collector = {
         if ($text -eq "") { return $null }
 
         return $text
+    }
+
+    function Resolve-MonitorManufacturerName {
+        param(
+            [string]$Manufacturer,
+            [string]$PnpId
+        )
+
+        $candidate = $Manufacturer
+        if ([string]::IsNullOrWhiteSpace($candidate) -and $PnpId -match '(?i)^DISPLAY\\([A-Z0-9]{3})') {
+            $candidate = $matches[1]
+        }
+
+        if ([string]::IsNullOrWhiteSpace($candidate)) { return $null }
+
+        $code = $candidate.Trim().ToUpperInvariant()
+        if ($code -notmatch '^[A-Z0-9]{3}$') { return $candidate }
+
+        $manufacturerNames = @{
+            ACI = "ASUS"
+            ACM = "Acer"
+            ACR = "Acer"
+            AOC = "AOC"
+            APP = "Apple"
+            AUO = "AU Optronics"
+            BNQ = "BenQ"
+            BOE = "BOE"
+            CMO = "Chi Mei"
+            CMN = "Chimei"
+            DEL = "Dell"
+            EIZ = "EIZO"
+            FUJ = "Fujitsu"
+            GSM = "LG"
+            HSD = "HannStar"
+            HWP = "HP"
+            HPN = "HP"
+            IBM = "IBM"
+            IVM = "Iiyama"
+            LEN = "Lenovo"
+            LGD = "LG Display"
+            LPL = "LG Display"
+            MEI = "Panasonic"
+            MSI = "MSI"
+            NEC = "NEC"
+            PAN = "Panasonic"
+            PHI = "Philips"
+            PHL = "Philips"
+            SAM = "Samsung"
+            SEC = "Samsung"
+            SHP = "Sharp"
+            SNY = "Sony"
+            TOS = "Toshiba"
+            TPL = "Top Victory"
+            VIZ = "Vizio"
+            VSC = "ViewSonic"
+        }
+
+        if ($manufacturerNames.ContainsKey($code)) {
+            return $manufacturerNames[$code]
+        }
+
+        return $candidate
     }
 
     function Get-StableHash {
@@ -437,17 +552,131 @@ $collector = {
         return $hostname
     }
 
+    function Get-ObjectPropertyValue {
+        param(
+            $Object,
+            [string]$Name
+        )
+
+        if ($null -eq $Object) { return $null }
+        if ($Object.PSObject.Properties.Name -contains $Name) {
+            return $Object.$Name
+        }
+
+        return $null
+    }
+
+    function Get-FallbackConnectedMonitors {
+        param(
+            [string]$ParentHostname,
+            [string]$Category
+        )
+
+        if ($Category -and $Category -ne "PC") { return @() }
+
+        $fallbackMonitors = @()
+        try {
+            $fallbackMonitors = @(
+                Get-CimInstance Win32_PnPEntity -Filter "PNPClass = 'Monitor'" -ErrorAction SilentlyContinue |
+                    Where-Object {
+                        (Get-ObjectPropertyValue -Object $_ -Name "PNPDeviceID") -and
+                        (Get-ObjectPropertyValue -Object $_ -Name "Name") -and
+                        ((Get-ObjectPropertyValue -Object $_ -Name "Status") -ne "Error")
+                    }
+            )
+        } catch {
+            $fallbackMonitors = @()
+        }
+
+        if ($fallbackMonitors.Count -eq 0) {
+            try {
+                $fallbackMonitors = @(
+                    Get-CimInstance Win32_DesktopMonitor -ErrorAction SilentlyContinue |
+                        Where-Object {
+                            (Get-ObjectPropertyValue -Object $_ -Name "PNPDeviceID") -or
+                            (Get-ObjectPropertyValue -Object $_ -Name "DeviceID") -or
+                            (Get-ObjectPropertyValue -Object $_ -Name "Name")
+                        }
+                )
+            } catch {
+                $fallbackMonitors = @()
+            }
+        }
+
+        $results = @()
+        $index = 0
+        foreach ($monitor in $fallbackMonitors) {
+            $index++
+            $pnpId = [string](Get-ObjectPropertyValue -Object $monitor -Name "PNPDeviceID")
+            if ([string]::IsNullOrWhiteSpace($pnpId)) {
+                $pnpId = [string](Get-ObjectPropertyValue -Object $monitor -Name "DeviceID")
+            }
+
+            $name = Normalize-AssetValue -Value ([string](Get-ObjectPropertyValue -Object $monitor -Name "Name")) -Placeholders $commonPlaceholders
+            $manufacturer = Normalize-AssetValue -Value ([string](Get-ObjectPropertyValue -Object $monitor -Name "Manufacturer")) -Placeholders $commonPlaceholders
+            if (-not $manufacturer) {
+                $manufacturer = Normalize-AssetValue -Value ([string](Get-ObjectPropertyValue -Object $monitor -Name "MonitorManufacturer")) -Placeholders $commonPlaceholders
+            }
+            $manufacturer = Resolve-MonitorManufacturerName -Manufacturer $manufacturer -PnpId $pnpId
+
+            $model = $name
+            if ($model -match '(?i)^generic.*monitor$' -and $pnpId -match '^DISPLAY\\([^\\]+)\\') {
+                $model = $matches[1]
+            }
+            if (-not $model) { $model = "Monitor $index" }
+
+            $fingerprint = Get-StableHash -Value (@($pnpId, $name, $manufacturer, $model, $index) -join "|")
+            $assetCode = "MON-FB-$fingerprint"
+            $monitorHostname = New-MonitorHostname -ParentHostname $ParentHostname -Model $model -Serial "" -Index $index
+
+            $results += [pscustomobject]@{
+                asset_code           = $assetCode
+                hostname             = $monitorHostname
+                name                 = $model
+                serial_number        = $null
+                manufacturer         = $manufacturer
+                brand                = $manufacturer
+                model                = $model
+                connection           = "Unknown"
+                instance_name        = $pnpId
+                identity_source      = "pnp_fallback"
+                is_identity_verified = $false
+                screen_width_cm      = $null
+                screen_height_cm     = $null
+            }
+        }
+
+        return @(
+            $results |
+                Group-Object -Property asset_code |
+                ForEach-Object { $_.Group | Select-Object -First 1 } |
+                Select-Object -First 12
+        )
+    }
+
     function Get-ConnectedMonitors {
         param(
-            [string]$ParentHostname
+            [string]$ParentHostname,
+            [string]$Category
         )
 
         $results = @()
 
-        try {
-            $monitorIds = @(Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorID -ErrorAction SilentlyContinue)
-        } catch {
-            return $results
+        $monitorIds = @()
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            try {
+                $monitorIds = @(Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorID -ErrorAction Stop)
+            } catch {
+                $monitorIds = @()
+            }
+
+            if ($monitorIds.Count -gt 0) {
+                break
+            }
+
+            if ($attempt -lt 3) {
+                Start-Sleep -Seconds 2
+            }
         }
 
         if (-not $monitorIds -or $monitorIds.Count -eq 0) { return $results }
@@ -474,20 +703,33 @@ $collector = {
             if ($display.InstanceName) { $displayByInstance[$display.InstanceName] = $display }
         }
 
+        $activeMonitorCount = @(
+            $monitorIds | Where-Object {
+                -not ($_.PSObject.Properties.Name -contains "Active") -or [bool]$_.Active
+            }
+        ).Count
+        $useInactiveFallback = $Category -eq "PC" -and $activeMonitorCount -eq 0
+
         $index = 0
         foreach ($monitor in $monitorIds) {
             $isActive = $true
             if ($monitor.PSObject.Properties.Name -contains "Active") { $isActive = [bool]$monitor.Active }
-            if (-not $isActive) { continue }
+            if (-not $isActive -and -not $useInactiveFallback) { continue }
 
             $connectionLabel = $null
             if ($monitor.InstanceName -and $connectionByInstance.ContainsKey($monitor.InstanceName)) {
                 $connectionLabel = Get-MonitorConnectionLabel -Technology $connectionByInstance[$monitor.InstanceName].VideoOutputTechnology
             }
 
-            if (@("Internal", "Embedded DisplayPort", "Embedded UDI") -contains $connectionLabel) { continue }
+            if ($Category -ne "PC" -and (
+                    [string]::IsNullOrWhiteSpace([string]$connectionLabel) -or
+                    @("Internal", "Embedded DisplayPort", "Embedded UDI", "Unknown", "Uninitialized") -contains $connectionLabel
+                )) {
+                continue
+            }
 
             $manufacturer = Normalize-AssetValue -Value (Convert-WmiMonitorString $monitor.ManufacturerName) -Placeholders $commonPlaceholders
+            $manufacturer = Resolve-MonitorManufacturerName -Manufacturer $manufacturer -PnpId $monitor.InstanceName
             $model = Normalize-AssetValue -Value (Convert-WmiMonitorString $monitor.UserFriendlyName) -Placeholders $commonPlaceholders
             $serial = Normalize-AssetValue -Value (Convert-WmiMonitorString $monitor.SerialNumberID) -Placeholders $serialPlaceholders
 
@@ -559,7 +801,53 @@ $collector = {
                 ForEach-Object { $_.Group | Select-Object -First 1 }
         )
 
+        if ($uniqueResults.Count -eq 0) {
+            $uniqueResults = @(Get-FallbackConnectedMonitors -ParentHostname $ParentHostname -Category $Category)
+        }
+
         return @($uniqueResults | Select-Object -First 12)
+    }
+
+    function Get-AnyDeskExecutablePaths {
+        $paths = @(
+            "$env:ProgramFiles\AnyDesk\AnyDesk.exe",
+            "${env:ProgramFiles(x86)}\AnyDesk\AnyDesk.exe",
+            "C:\Program Files\AnyDesk\AnyDesk.exe",
+            "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
+        )
+
+        foreach ($root in @($env:ProgramFiles, ${env:ProgramFiles(x86)}, "C:\Program Files", "C:\Program Files (x86)")) {
+            if ([string]::IsNullOrWhiteSpace($root) -or -not (Test-Path -LiteralPath $root)) {
+                continue
+            }
+
+            try {
+                $paths += Get-ChildItem -LiteralPath $root -Directory -Filter "AnyDesk*" -ErrorAction SilentlyContinue |
+                    ForEach-Object {
+                        Get-ChildItem -LiteralPath $_.FullName -File -Filter "AnyDesk*.exe" -ErrorAction SilentlyContinue |
+                            Select-Object -ExpandProperty FullName
+                    }
+            } catch {}
+        }
+
+        return @($paths | Where-Object { $_ } | Select-Object -Unique)
+    }
+
+    function Get-AnyDeskId {
+        foreach ($path in Get-AnyDeskExecutablePaths) {
+            if (-not (Test-Path -LiteralPath $path)) {
+                continue
+            }
+
+            try {
+                $output = & $path --get-id 2>&1 | Out-String
+                if ($output -match '([0-9]{3}\s?[0-9]{3}\s?[0-9]{3,4})') {
+                    return ($matches[1] -replace '\s+', '')
+                }
+            } catch {}
+        }
+
+        return $null
     }
 
     $hostname = $env:COMPUTERNAME
@@ -600,6 +888,8 @@ $collector = {
         }) -join "; "
     }
 
+    $category = Resolve-AssetCategory -Hostname $hostname -Brand $brand -Model $model
+
     [pscustomobject]@{
         factory              = $Factory
         department           = $Department
@@ -608,7 +898,7 @@ $collector = {
         hostname             = $hostname
         user_name            = Get-LoggedOnUser
         os_name              = $osName
-        category             = Get-CategoryFromChassis
+        category             = $category
         brand                = $brand
         model                = $model
         cpu                  = $cpuInfo
@@ -616,11 +906,12 @@ $collector = {
         storage_gb           = $storageGb
         storage_detail       = $storageDetail
         disks                = $disks
-        monitors             = @(Get-ConnectedMonitors -ParentHostname $hostname)
+        monitors             = @(Get-ConnectedMonitors -ParentHostname $hostname -Category $category)
         serial_number        = $serialNumber
         identity_source      = $identity.identity_source
         is_identity_verified = $identity.is_identity_verified
         ip_address           = Get-PrimaryIpv4
+        anydesk_id           = Get-AnyDeskId
     }
 }
 
@@ -628,7 +919,7 @@ Write-Host "Starting parallel remote scan on $($targets.Count) targets..." -Fore
 
 # Create Runspace Pool
 $sessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
-$pool = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspacePool(1, 30, $sessionState, $Host)
+$pool = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspacePool(1, $MaxParallel, $sessionState, $Host)
 $pool.Open()
 
 # Target worker script
@@ -642,6 +933,8 @@ $workerScript = {
         [string]$AgentVersion,
         [int]$WsManPort,
         [int]$PortTimeoutMs,
+        [int]$RetryCount,
+        [int]$RetryDelaySeconds,
         [bool]$SkipPreflight,
         [System.Management.Automation.PSCredential]$Credential,
         [scriptblock]$collector
@@ -676,88 +969,152 @@ $workerScript = {
             [string]$Status,
             [string]$Message,
             [string]$AssetCode = "",
-            [string]$Hostname = ""
+            [string]$Hostname = "",
+            [string]$Category = "",
+            [string]$Brand = "",
+            [string]$Model = "",
+            [string]$SerialNumber = "",
+            [string]$IdentitySource = "",
+            [string]$IsIdentityVerified = "",
+            [int]$MonitorCount = 0,
+            [int]$MonitorVerifiedCount = 0,
+            [string]$MonitorIdentitySources = "",
+            [string]$IpAddress = "",
+            [string]$AnyDeskId = ""
         )
 
         [pscustomobject]@{
-            computer   = $Computer
-            hostname   = $Hostname
-            asset_code = $AssetCode
-            status     = $Status
-            message    = $Message
-            scanned_at = (Get-Date).ToString("s")
+            computer                 = $Computer
+            hostname                 = $Hostname
+            asset_code               = $AssetCode
+            status                   = $Status
+            message                  = $Message
+            category                 = $Category
+            brand                    = $Brand
+            model                    = $Model
+            serial_number            = $SerialNumber
+            identity_source          = $IdentitySource
+            is_identity_verified     = $IsIdentityVerified
+            monitor_count            = $MonitorCount
+            monitor_verified_count   = $MonitorVerifiedCount
+            monitor_identity_sources = $MonitorIdentitySources
+            ip_address               = $IpAddress
+            anydesk_id               = $AnyDeskId
+            scanned_at               = (Get-Date).ToString("s")
         }
     }
 
-    try {
-        if (-not $SkipPreflight) {
-            $portOpen = Test-TcpPort -Computer $target -Port $WsManPort -TimeoutMs $PortTimeoutMs
-            if (-not $portOpen) {
-                $message = "WinRM port $WsManPort tidak terbuka atau tidak reachable. Aktifkan WinRM/firewall di target."
-                return New-ScanResult -Computer $target -Status "skipped" -Message $message
-            }
-        }
-
-        $invokeParams = @{
-            ComputerName = $target
-            ScriptBlock  = $collector
-            ArgumentList = @($Factory, $Department, $AgentVersion)
-        }
-
-        if ($Credential) {
-            $invokeParams.Credential = $Credential
-        }
-
-        $payload = Invoke-Command @invokeParams
-        $payload = $payload | Select-Object -First 1
-
-        if (-not $payload) {
-            return New-ScanResult -Computer $target -Status "failed" -Message "Invoke-Command returned no data."
-        }
-
-        # Defensive API boundary: never send more than the server-side maximum.
-        $payload.monitors = @($payload.monitors | Select-Object -First 12)
-
-        $jsonBody = $payload | Select-Object `
-            factory,
-            department,
-            agent_version,
-            asset_code,
-            hostname,
-            user_name,
-            os_name,
-            category,
-            brand,
-            model,
-            cpu,
-            ram_gb,
-            storage_gb,
-            storage_detail,
-            disks,
-            monitors,
-            serial_number,
-            identity_source,
-            is_identity_verified,
-            ip_address |
-            ConvertTo-Json -Depth 8
-
-        $response = Invoke-RestMethod -Uri $ServerUrl -Method Post -Headers @{ Authorization = "Bearer $Token" } -Body $jsonBody -ContentType "application/json"
-        $summary = if ($response.counts) { ($response.counts | ConvertTo-Json -Compress) } else { "Synced" }
-
-        return New-ScanResult -Computer $target -Status "success" -Message $summary -AssetCode $payload.asset_code -Hostname $payload.hostname
-    } catch {
-        $message = $_.Exception.Message
+    $lastMessage = ""
+    for ($attempt = 1; $attempt -le ($RetryCount + 1); $attempt++) {
         try {
-            if ($_.Exception.Response) {
-                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-                $body = $reader.ReadToEnd()
-                $reader.Close()
-                if ($body) { $message = "$message | $body" }
-            }
-        } catch {}
+            if (-not $SkipPreflight) {
+                $portOpen = Test-TcpPort -Computer $target -Port $WsManPort -TimeoutMs $PortTimeoutMs
+                if (-not $portOpen) {
+                    $lastMessage = "WinRM port $WsManPort tidak terbuka atau tidak reachable. Aktifkan WinRM/firewall di target."
+                    if ($attempt -le $RetryCount) {
+                        Start-Sleep -Seconds $RetryDelaySeconds
+                        continue
+                    }
 
-        return New-ScanResult -Computer $target -Status "failed" -Message $message
+                    return New-ScanResult -Computer $target -Status "skipped" -Message $lastMessage
+                }
+            }
+
+            $invokeParams = @{
+                ComputerName = $target
+                ScriptBlock  = $collector
+                ArgumentList = @($Factory, $Department, $AgentVersion)
+                ErrorAction  = "Stop"
+            }
+
+            if ($Credential) {
+                $invokeParams.Credential = $Credential
+            }
+
+            $payload = Invoke-Command @invokeParams
+            $payload = $payload | Select-Object -First 1
+
+            if (-not $payload) {
+                $lastMessage = "Invoke-Command returned no data."
+                if ($attempt -le $RetryCount) {
+                    Start-Sleep -Seconds $RetryDelaySeconds
+                    continue
+                }
+
+                return New-ScanResult -Computer $target -Status "failed" -Message $lastMessage
+            }
+
+            # Defensive API boundary: never send more than the server-side maximum.
+            $payload.monitors = @($payload.monitors | Select-Object -First 12)
+
+            $jsonBody = $payload | Select-Object `
+                factory,
+                department,
+                agent_version,
+                asset_code,
+                hostname,
+                user_name,
+                os_name,
+                category,
+                brand,
+                model,
+                cpu,
+                ram_gb,
+                storage_gb,
+                storage_detail,
+                disks,
+                monitors,
+                serial_number,
+                identity_source,
+                is_identity_verified,
+                ip_address,
+                anydesk_id |
+                ConvertTo-Json -Depth 8
+
+            $response = Invoke-RestMethod -Uri $ServerUrl -Method Post -Headers @{ Authorization = "Bearer $Token" } -Body $jsonBody -ContentType "application/json"
+            $summary = if ($response.counts) { ($response.counts | ConvertTo-Json -Compress) } else { "Synced" }
+            $monitorIdentitySources = (@($payload.monitors) |
+                ForEach-Object { $_.identity_source } |
+                Where-Object { $_ } |
+                Sort-Object -Unique) -join ","
+
+            return New-ScanResult `
+                -Computer $target `
+                -Status "success" `
+                -Message $summary `
+                -AssetCode $payload.asset_code `
+                -Hostname $payload.hostname `
+                -Category $payload.category `
+                -Brand $payload.brand `
+                -Model $payload.model `
+                -SerialNumber $payload.serial_number `
+                -IdentitySource $payload.identity_source `
+                -IsIdentityVerified ([string]$payload.is_identity_verified) `
+                -MonitorCount @($payload.monitors).Count `
+                -MonitorVerifiedCount @(@($payload.monitors) | Where-Object { $_.is_identity_verified }).Count `
+                -MonitorIdentitySources $monitorIdentitySources `
+                -IpAddress $payload.ip_address `
+                -AnyDeskId $payload.anydesk_id
+        } catch {
+            $lastMessage = $_.Exception.Message
+            try {
+                if ($_.Exception.Response) {
+                    $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                    $body = $reader.ReadToEnd()
+                    $reader.Close()
+                    if ($body) { $lastMessage = "$lastMessage | $body" }
+                }
+            } catch {}
+
+            if ($lastMessage -match '(?i)Access is denied|Unauthorized|401|403' -or $attempt -gt $RetryCount) {
+                return New-ScanResult -Computer $target -Status "failed" -Message $lastMessage
+            }
+
+            Start-Sleep -Seconds $RetryDelaySeconds
+        }
     }
+
+    return New-ScanResult -Computer $target -Status "failed" -Message $lastMessage
 }
 
 $runspaces = @()
@@ -774,6 +1131,8 @@ foreach ($target in $targets) {
     $pipeline.AddArgument($AgentVersion) | Out-Null
     $pipeline.AddArgument($WsManPort) | Out-Null
     $pipeline.AddArgument($PortTimeoutMs) | Out-Null
+    $pipeline.AddArgument($RetryCount) | Out-Null
+    $pipeline.AddArgument($RetryDelaySeconds) | Out-Null
     $pipeline.AddArgument($SkipPreflight) | Out-Null
     $pipeline.AddArgument($Credential) | Out-Null
     $pipeline.AddArgument($collector) | Out-Null

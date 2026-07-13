@@ -21,8 +21,8 @@ class RemoteSystemController extends Controller
         $baseQuery = Asset::query()->remoteEndpoints();
         $totalEndpoints = (clone $baseQuery)->count();
         $readyEndpoints = (clone $baseQuery)
-            ->whereNotNull('rustdesk_id')
-            ->where('rustdesk_id', '!=', '')
+            ->whereNotNull('anydesk_id')
+            ->where('anydesk_id', '!=', '')
             ->count();
 
         $assets = $baseQuery
@@ -33,19 +33,19 @@ class RemoteSystemController extends Controller
                         ->orWhere('hostname', 'like', "%{$search}%")
                         ->orWhere('asset_code', 'like', "%{$search}%")
                         ->orWhere('ip_address', 'like', "%{$search}%")
-                        ->orWhere('rustdesk_id', 'like', "%{$search}%")
+                        ->orWhere('anydesk_id', 'like', "%{$search}%")
                         ->orWhereHas('user', fn (Builder $userQuery) => $userQuery->where('name', 'like', "%{$search}%"))
                         ->orWhereHas('department', fn (Builder $departmentQuery) => $departmentQuery->where('name', 'like', "%{$search}%"));
                 });
             })
             ->when($connection === 'ready', function (Builder $query) {
-                $query->whereNotNull('rustdesk_id')
-                    ->where('rustdesk_id', '!=', '');
+                $query->whereNotNull('anydesk_id')
+                    ->where('anydesk_id', '!=', '');
             })
             ->when($connection === 'missing', function (Builder $query) {
                 $query->where(function (Builder $query) {
-                    $query->whereNull('rustdesk_id')
-                        ->orWhere('rustdesk_id', '');
+                    $query->whereNull('anydesk_id')
+                        ->orWhere('anydesk_id', '');
                 });
             })
             ->orderBy('name')

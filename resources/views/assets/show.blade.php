@@ -157,7 +157,7 @@
                             ['label' => __('messages.department'), 'value' => $asset->department->name ?? null],
                             ['label' => __('messages.assigned_to'), 'value' => $asset->user->name ?? null],
                             ['label' => __('messages.serial_number'), 'value' => $asset->serial_number],
-                            ['label' => __('messages.rustdesk_id') ?? 'Remote ID', 'value' => $asset->rustdesk_id],
+                            ['label' => __('messages.anydesk_id') ?? 'Remote ID', 'value' => $asset->anydesk_id],
                             ['label' => __('messages.purchase_date'), 'value' => optional($asset->purchase_date)->format('Y-m-d')],
                             ['label' => __('messages.price'), 'value' => $asset->price ? 'Rp ' . number_format($asset->price, 2) : null],
                             ['label' => __('messages.warranty_end'), 'value' => optional($asset->warranty_expired)->format('Y-m-d')],

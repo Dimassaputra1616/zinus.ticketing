@@ -90,7 +90,7 @@ class AssetRelationTest extends TestCase
             'serial_number' => 'SN-001',
             'condition' => 'good',
             'lifecycle_status' => 'active',
-            'rustdesk_id' => '123456789',
+            'anydesk_id' => '123456789',
             'specs' => 'CPU: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz | RAM: 15.9 GB | Storage: 1034.66 GB | OS: Microsoft Windows 10 Home Single Language | IP: 10.62.36.74 | User: Administrator',
             'warranty_until' => now()->addYear()->toDateString(),
         ]);
@@ -205,7 +205,7 @@ class AssetRelationTest extends TestCase
         $this->assertStringNotContainsString('>Storage<', $technicalInventoryHtml);
         $this->assertStringNotContainsString('Operating System', $technicalInventoryHtml);
         $this->assertStringNotContainsString('IP Address', $technicalInventoryHtml);
-        $this->assertStringNotContainsString('RustDesk ID', $technicalInventoryHtml);
+        $this->assertStringNotContainsString('AnyDesk ID', $technicalInventoryHtml);
         $this->assertStringNotContainsString('Sub Category', $technicalInventoryHtml);
     }
 
@@ -281,7 +281,7 @@ class AssetRelationTest extends TestCase
             $this->assertStringNotContainsString('>CPU<', $technicalInventoryHtml);
             $this->assertStringNotContainsString('>RAM<', $technicalInventoryHtml);
             $this->assertStringNotContainsString('Operating System', $technicalInventoryHtml);
-            $this->assertStringNotContainsString('RustDesk ID', $technicalInventoryHtml);
+            $this->assertStringNotContainsString('AnyDesk ID', $technicalInventoryHtml);
         }
     }
 

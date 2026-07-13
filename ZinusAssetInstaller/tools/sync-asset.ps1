@@ -300,6 +300,31 @@ function Get-CategoryFromChassis {
     return $null
 }
 
+function Resolve-AssetCategory {
+    param(
+        [string]$Hostname,
+        [string]$Brand,
+        [string]$Model
+    )
+
+    if ($Hostname -match '(?i)^(NB|LAPTOP|LT|NOTEBOOK)[-_]') { return "Laptop" }
+    if ($Hostname -match '(?i)^(PC|DESKTOP|WS|MP)[-_]') { return "PC" }
+
+    $chassisCategory = Get-CategoryFromChassis
+    if ($chassisCategory) { return $chassisCategory }
+
+    $modelText = "$Brand $Model"
+    if ($modelText -match '(?i)\b(thinkpad|ideapad|yoga|zenbook|vivobook|aspire|inspiron|latitude|precision|elitebook|probook|notebook|laptop)\b') {
+        return "Laptop"
+    }
+
+    if ($modelText -match '(?i)\b(nuc|desktop|tower|optiplex|prodesk|elitedesk|h110|h310|h410|h510|h610|b450|b560|b660|a520|a620|prime|ms-7d20|poweredge)\b') {
+        return "PC"
+    }
+
+    return $null
+}
+
 function Convert-WmiMonitorString {
     param($Value)
 
@@ -320,6 +345,72 @@ function Convert-WmiMonitorString {
     }
 
     return $text
+}
+
+function Resolve-MonitorManufacturerName {
+    param(
+        [string]$Manufacturer,
+        [string]$PnpId
+    )
+
+    $candidate = $Manufacturer
+    if ([string]::IsNullOrWhiteSpace($candidate) -and $PnpId -match '(?i)^DISPLAY\\([A-Z0-9]{3})') {
+        $candidate = $matches[1]
+    }
+
+    if ([string]::IsNullOrWhiteSpace($candidate)) {
+        return $null
+    }
+
+    $code = $candidate.Trim().ToUpperInvariant()
+    if ($code -notmatch '^[A-Z0-9]{3}$') {
+        return $candidate
+    }
+
+    $manufacturerNames = @{
+        ACI = "ASUS"
+        ACM = "Acer"
+        ACR = "Acer"
+        AOC = "AOC"
+        APP = "Apple"
+        AUO = "AU Optronics"
+        BNQ = "BenQ"
+        BOE = "BOE"
+        CMO = "Chi Mei"
+        CMN = "Chimei"
+        DEL = "Dell"
+        EIZ = "EIZO"
+        FUJ = "Fujitsu"
+        GSM = "LG"
+        HSD = "HannStar"
+        HWP = "HP"
+        HPN = "HP"
+        IBM = "IBM"
+        IVM = "Iiyama"
+        LEN = "Lenovo"
+        LGD = "LG Display"
+        LPL = "LG Display"
+        MEI = "Panasonic"
+        MSI = "MSI"
+        NEC = "NEC"
+        PAN = "Panasonic"
+        PHI = "Philips"
+        PHL = "Philips"
+        SAM = "Samsung"
+        SEC = "Samsung"
+        SHP = "Sharp"
+        SNY = "Sony"
+        TOS = "Toshiba"
+        TPL = "Top Victory"
+        VIZ = "Vizio"
+        VSC = "ViewSonic"
+    }
+
+    if ($manufacturerNames.ContainsKey($code)) {
+        return $manufacturerNames[$code]
+    }
+
+    return $candidate
 }
 
 function Get-StableHash {
@@ -405,23 +496,141 @@ function New-MonitorHostname {
     return $hostname
 }
 
+function Get-ObjectPropertyValue {
+    param(
+        $Object,
+        [string]$Name
+    )
+
+    if ($null -eq $Object) { return $null }
+    if ($Object.PSObject.Properties.Name -contains $Name) {
+        return $Object.$Name
+    }
+
+    return $null
+}
+
+function Get-FallbackConnectedMonitors {
+    param(
+        [string]$ParentHostname,
+        [string[]]$CommonPlaceholders,
+        [string]$Category
+    )
+
+    if ($Category -and $Category -ne "PC") { return @() }
+
+    $fallbackMonitors = @()
+    try {
+        $fallbackMonitors = @(
+            Get-CimInstance Win32_PnPEntity -Filter "PNPClass = 'Monitor'" -ErrorAction SilentlyContinue |
+                Where-Object {
+                    (Get-ObjectPropertyValue -Object $_ -Name "PNPDeviceID") -and
+                    (Get-ObjectPropertyValue -Object $_ -Name "Name") -and
+                    ((Get-ObjectPropertyValue -Object $_ -Name "Status") -ne "Error")
+                }
+        )
+    } catch {
+        $fallbackMonitors = @()
+    }
+
+    if ($fallbackMonitors.Count -eq 0) {
+        try {
+            $fallbackMonitors = @(
+                Get-CimInstance Win32_DesktopMonitor -ErrorAction SilentlyContinue |
+                    Where-Object {
+                        (Get-ObjectPropertyValue -Object $_ -Name "PNPDeviceID") -or
+                        (Get-ObjectPropertyValue -Object $_ -Name "DeviceID") -or
+                        (Get-ObjectPropertyValue -Object $_ -Name "Name")
+                    }
+            )
+        } catch {
+            $fallbackMonitors = @()
+        }
+    }
+
+    $results = @()
+    $index = 0
+    foreach ($monitor in $fallbackMonitors) {
+        $index++
+        $pnpId = [string](Get-ObjectPropertyValue -Object $monitor -Name "PNPDeviceID")
+        if ([string]::IsNullOrWhiteSpace($pnpId)) {
+            $pnpId = [string](Get-ObjectPropertyValue -Object $monitor -Name "DeviceID")
+        }
+
+        $name = Normalize-AssetValue -Value ([string](Get-ObjectPropertyValue -Object $monitor -Name "Name")) -Placeholders $CommonPlaceholders
+        $manufacturer = Normalize-AssetValue -Value ([string](Get-ObjectPropertyValue -Object $monitor -Name "Manufacturer")) -Placeholders $CommonPlaceholders
+        if (-not $manufacturer) {
+            $manufacturer = Normalize-AssetValue -Value ([string](Get-ObjectPropertyValue -Object $monitor -Name "MonitorManufacturer")) -Placeholders $CommonPlaceholders
+        }
+        $manufacturer = Resolve-MonitorManufacturerName -Manufacturer $manufacturer -PnpId $pnpId
+
+        $model = $name
+        if ($model -match '(?i)^generic.*monitor$' -and $pnpId -match '^DISPLAY\\([^\\]+)\\') {
+            $model = $matches[1]
+        }
+        if (-not $model) { $model = "Monitor $index" }
+
+        $fingerprint = Get-StableHash -Value (@($pnpId, $name, $manufacturer, $model, $index) -join "|")
+        $assetCode = "MON-FB-$fingerprint"
+        $monitorHostname = New-MonitorHostname -ParentHostname $ParentHostname -Model $model -Serial "" -Index $index
+
+        $results += [pscustomobject]@{
+            asset_code           = $assetCode
+            hostname             = $monitorHostname
+            name                 = $model
+            serial_number        = $null
+            manufacturer         = $manufacturer
+            brand                = $manufacturer
+            model                = $model
+            connection           = "Unknown"
+            instance_name        = $pnpId
+            identity_source      = "pnp_fallback"
+            is_identity_verified = $false
+            screen_width_cm      = $null
+            screen_height_cm     = $null
+        }
+    }
+
+    return @(
+        $results |
+            Group-Object -Property asset_code |
+            ForEach-Object { $_.Group | Select-Object -First 1 } |
+            Select-Object -First 12
+    )
+}
+
 function Get-ConnectedMonitors {
     param(
         [string]$ParentHostname,
         [string[]]$CommonPlaceholders,
-        [string[]]$SerialPlaceholders
+        [string[]]$SerialPlaceholders,
+        [string]$Category
     )
 
     $results = @()
 
-    try {
-        $monitorIds = @(Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorID -ErrorAction SilentlyContinue)
-    } catch {
-        Write-Log "Failed to collect monitor IDs: $($_.Exception.Message)" "WARN"
-        return $results
+    $monitorIds = @()
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        try {
+            $monitorIds = @(Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorID -ErrorAction Stop)
+        } catch {
+            $monitorIds = @()
+            if ($attempt -eq 3) {
+                Write-Log "Failed to collect monitor IDs after $attempt attempts: $($_.Exception.Message)" "WARN"
+            }
+        }
+
+        if ($monitorIds.Count -gt 0) {
+            break
+        }
+
+        if ($attempt -lt 3) {
+            Start-Sleep -Seconds 2
+        }
     }
 
     if (-not $monitorIds -or $monitorIds.Count -eq 0) {
+        Write-Log "No monitor IDs detected after 3 attempts. Monitor payload will be empty." "WARN"
         return $results
     }
 
@@ -453,13 +662,23 @@ function Get-ConnectedMonitors {
         }
     }
 
+    $activeMonitorCount = @(
+        $monitorIds | Where-Object {
+            -not ($_.PSObject.Properties.Name -contains "Active") -or [bool]$_.Active
+        }
+    ).Count
+    $useInactiveFallback = $Category -eq "PC" -and $activeMonitorCount -eq 0
+    if ($useInactiveFallback) {
+        Write-Log "No active monitor reported for desktop; using inactive WMI monitor entries as fallback." "WARN"
+    }
+
     $index = 0
     foreach ($monitor in $monitorIds) {
         $isActive = $true
         if ($monitor.PSObject.Properties.Name -contains "Active") {
             $isActive = [bool]$monitor.Active
         }
-        if (-not $isActive) {
+        if (-not $isActive -and -not $useInactiveFallback) {
             continue
         }
 
@@ -473,11 +692,15 @@ function Get-ConnectedMonitors {
             $connectionLabel = Get-MonitorConnectionLabel -Technology $connection.VideoOutputTechnology
         }
 
-        if (@("Internal", "Embedded DisplayPort", "Embedded UDI") -contains $connectionLabel) {
+        if ($Category -ne "PC" -and (
+                [string]::IsNullOrWhiteSpace([string]$connectionLabel) -or
+                @("Internal", "Embedded DisplayPort", "Embedded UDI", "Unknown", "Uninitialized") -contains $connectionLabel
+            )) {
             continue
         }
 
         $manufacturer = Normalize-AssetValue -Value (Convert-WmiMonitorString $monitor.ManufacturerName) -Placeholders $CommonPlaceholders
+        $manufacturer = Resolve-MonitorManufacturerName -Manufacturer $manufacturer -PnpId $monitor.InstanceName
         $model = Normalize-AssetValue -Value (Convert-WmiMonitorString $monitor.UserFriendlyName) -Placeholders $CommonPlaceholders
         $serial = Normalize-AssetValue -Value (Convert-WmiMonitorString $monitor.SerialNumberID) -Placeholders $SerialPlaceholders
 
@@ -555,134 +778,60 @@ function Get-ConnectedMonitors {
             ForEach-Object { $_.Group | Select-Object -First 1 }
     )
 
+    if ($uniqueResults.Count -eq 0) {
+        $uniqueResults = @(
+            Get-FallbackConnectedMonitors `
+                -ParentHostname $ParentHostname `
+                -CommonPlaceholders $CommonPlaceholders `
+                -Category $Category
+        )
+    }
+
     return @($uniqueResults | Select-Object -First 12)
 }
 
-function Get-RustDesktopId {
-    # Try using rustdesk CLI first
-    $exePaths = @(
-        "$env:ProgramFiles\RustDesk\rustdesk.exe",
-        "${env:ProgramFiles(x86)}\RustDesk\rustdesk.exe",
-        "C:\Program Files\RustDesk\rustdesk.exe",
-        "C:\Program Files (x86)\RustDesk\rustdesk.exe"
+function Get-AnyDeskExecutablePaths {
+    $paths = @(
+        "$env:ProgramFiles\AnyDesk\AnyDesk.exe",
+        "${env:ProgramFiles(x86)}\AnyDesk\AnyDesk.exe",
+        "C:\Program Files\AnyDesk\AnyDesk.exe",
+        "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
     )
 
-    foreach ($exe in $exePaths) {
-        if (Test-Path $exe) {
-            try {
-                $output = & $exe --get-id 2>&1 | Out-String
-                if ($output) {
-                    $id = $output.Trim()
-                    # Custom ID allows alphanumerics, typical IDs are numeric
-                    if ($id -match '^[a-zA-Z0-9\-_]+$') {
-                        return $id
-                    }
-                }
-            } catch {
-                Write-Log "Failed to get ID via rustdesk.exe: $($_.Exception.Message)" "WARN"
-            }
+    foreach ($root in @($env:ProgramFiles, ${env:ProgramFiles(x86)}, "C:\Program Files", "C:\Program Files (x86)")) {
+        if ([string]::IsNullOrWhiteSpace($root) -or -not (Test-Path -LiteralPath $root)) {
+            continue
         }
+
+        try {
+            $paths += Get-ChildItem -LiteralPath $root -Directory -Filter "AnyDesk*" -ErrorAction SilentlyContinue |
+                ForEach-Object {
+                    Get-ChildItem -LiteralPath $_.FullName -File -Filter "AnyDesk*.exe" -ErrorAction SilentlyContinue |
+                        Select-Object -ExpandProperty FullName
+                }
+        } catch {}
     }
 
-    # Check potential RustDesk config locations
-    $configPaths = @(
-        "$env:ProgramData\RustDesk\config\RustDesk.toml",
-        "$env:ProgramData\RustDesk\config\RustDesk2.toml",
-        "$env:APPDATA\RustDesk\config\RustDesk.toml",
-        "$env:APPDATA\RustDesk\config\RustDesk2.toml",
-        "$env:LOCALAPPDATA\RustDesk\config\RustDesk.toml",
-        "$env:LOCALAPPDATA\RustDesk\config\RustDesk2.toml",
-        "C:\Windows\ServiceProfiles\LocalService\AppData\Roaming\RustDesk\config\RustDesk.toml",
-        "C:\Windows\ServiceProfiles\LocalService\AppData\Roaming\RustDesk\config\RustDesk2.toml"
-    )
-
-    foreach ($path in $configPaths) {
-        if (Test-Path $path) {
-            try {
-                $content = Get-Content $path -Raw
-                # Match the id = 'xxxxxxxxx' pattern in the TOML file with more flexibility
-                if ($content -match "(?m)^\s*id\s*=\s*['""]?([^'"">\r\n]+)['""]?") {
-                    $id = $matches[1].Trim()
-                    if ($id -match '^[a-zA-Z0-9\-_]+$') {
-                        return $id
-                    }
-                }
-            } catch {
-                Write-Log "Failed to read RustDesk config at ${path}: $($_.Exception.Message)" "WARN"
-            }
-        }
-    }
-    
-    return $null
+    return @($paths | Where-Object { $_ } | Select-Object -Unique)
 }
 
-function Set-RustDeskConfig {
-    param(
-        [string]$IdServer,
-        [string]$RelayServer,
-        [string]$Key
-    )
-
-    if ([string]::IsNullOrWhiteSpace($IdServer)) { return }
-
-    $paths = @(
-        "C:\Windows\ServiceProfiles\LocalService\AppData\Roaming\RustDesk\config\RustDesk2.toml",
-        "$env:ProgramData\RustDesk\config\RustDesk2.toml",
-        "$env:APPDATA\RustDesk\config\RustDesk2.toml"
-    )
-
-    foreach ($path in $paths) {
-        $dir = Split-Path $path -Parent
-        if (-not (Test-Path $dir)) {
-            try { New-Item -ItemType Directory -Path $dir -Force | Out-Null } catch {}
+function Get-AnyDeskId {
+    foreach ($exe in Get-AnyDeskExecutablePaths) {
+        if (-not (Test-Path -LiteralPath $exe)) {
+            continue
         }
 
-        $content = ""
-        if (Test-Path $path) {
-            $content = Get-Content $path -Raw
-        }
-
-        $modified = $false
-        
-        $updateSetting = {
-            param($name, $value)
-            $pattern = "(?m)^$name\s*=.*$"
-            if ($content -match $pattern) {
-                $content = $content -replace $pattern, "$name = '$value'"
-            } else {
-                if ($content -and -not $content.EndsWith("`n")) { $content += "`n" }
-                $content += "$name = '$value'`n"
+        try {
+            $output = & $exe --get-id 2>&1 | Out-String
+            if ($output -match '([0-9]{3}\s?[0-9]{3}\s?[0-9]{3,4})') {
+                return ($matches[1] -replace '\s+', '')
             }
-        }
-
-        if (-not [string]::IsNullOrWhiteSpace($IdServer)) {
-            &$updateSetting "custom-rendezvous-server" $IdServer
-            $modified = $true
-        }
-        if (-not [string]::IsNullOrWhiteSpace($RelayServer)) {
-            &$updateSetting "relay-server" $RelayServer
-            $modified = $true
-        }
-        if (-not [string]::IsNullOrWhiteSpace($Key)) {
-            &$updateSetting "key" $Key
-            $modified = $true
-        }
-
-        if ($modified) {
-            try {
-                Set-Content -Path $path -Value $content -Encoding UTF8 -Force
-                Write-Log "Updated RustDesk config at ${path}" "INFO"
-                
-                $service = Get-Service -Name "RustDesk" -ErrorAction SilentlyContinue
-                if ($service -and $service.Status -eq 'Running') {
-                    Restart-Service -Name "RustDesk" -Force -ErrorAction SilentlyContinue
-                    Start-Sleep -Seconds 3 # Allow time for service to generate ID to config
-                }
-            } catch {
-                Write-Log "Failed to write RustDesk config at ${path}: $($_.Exception.Message)" "WARN"
-            }
+        } catch {
+            Write-Log "Failed to get ID via AnyDesk.exe: $($_.Exception.Message)" "WARN"
         }
     }
+
+    return $null
 }
 
 $syncMutex = Enter-SyncMutex
@@ -710,9 +859,6 @@ $token = $configJson.token
 $factory = $configJson.factory
 $department = $configJson.department
 $agentVersion = $configJson.agent_version
-$rustdeskIdServer = $configJson.rustdesk_id_server
-$rustdeskRelayServer = $configJson.rustdesk_relay_server
-$rustdeskKey = $configJson.rustdesk_key
 
 if ($serverUrl) {
     $serverUrl = $serverUrl.Trim()
@@ -722,10 +868,6 @@ if ($token) {
 }
 if (-not $agentVersion) {
     $agentVersion = "unknown"
-}
-
-if ($rustdeskIdServer) {
-    Set-RustDeskConfig -IdServer $rustdeskIdServer -RelayServer $rustdeskRelayServer -Key $rustdeskKey
 }
 
 if (-not $serverUrl -or -not $token -or -not $factory -or -not $department) {
@@ -764,8 +906,14 @@ $systemUuid = Get-SystemUuid -SerialPlaceholders $serialPlaceholders
 $identity = Get-AssetIdentity -SerialNumber $serialNumber -Uuid $systemUuid -Hostname $hostname
 $brand = Normalize-AssetValue -Value $csInfo.Manufacturer -Placeholders $commonPlaceholders
 $model = Normalize-AssetValue -Value $csInfo.Model -Placeholders $commonPlaceholders
-$category = Get-CategoryFromChassis
-$monitors = @(Get-ConnectedMonitors -ParentHostname $hostname -CommonPlaceholders $commonPlaceholders -SerialPlaceholders $serialPlaceholders)
+$category = Resolve-AssetCategory -Hostname $hostname -Brand $brand -Model $model
+$monitors = @(
+    Get-ConnectedMonitors `
+        -ParentHostname $hostname `
+        -CommonPlaceholders $commonPlaceholders `
+        -SerialPlaceholders $serialPlaceholders `
+        -Category $category
+)
 
 try {
     $baseboard = Get-CimInstance Win32_BaseBoard -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -780,7 +928,7 @@ if (-not $model -and $baseboard) {
     $model = Normalize-AssetValue -Value $baseboard.Product -Placeholders $commonPlaceholders
 }
 
-$rustdeskId = Get-RustDesktopId
+$anyDeskId = Get-AnyDeskId
 
 if (-not $serialNumber) {
     Write-Log "Serial number not found. Using $($identity.identity_source) fallback asset identity." "WARN"
@@ -821,8 +969,8 @@ $payload = @{
 if ($ipAddress) {
     $payload.ip_address = $ipAddress
 }
-if ($rustdeskId) {
-    $payload.rustdesk_id = $rustdeskId
+if ($anyDeskId) {
+    $payload.anydesk_id = $anyDeskId
 }
 
 $jsonBody = $payload | ConvertTo-Json -Depth 6

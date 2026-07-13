@@ -16,7 +16,7 @@ class AssetImportExportTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $csv = implode("\n", [
-            'asset_code,name,hostname,category,sub_category,brand,model,serial_number,ip_address,cpu,ram_gb,storage_gb,os_name,rustdesk_id,specs,status',
+            'asset_code,name,hostname,category,sub_category,brand,model,serial_number,ip_address,cpu,ram_gb,storage_gb,os_name,anydesk_id,specs,status',
             'PC-CSV-001,CSV Workstation,PC-CSV-001,PC,Desktop,Lenovo,M80,CSV-SN-001,192.168.20.10,Intel Core i5,16,512,Windows 11 Pro,987654321,Managed device,in_use',
         ]);
 
@@ -35,7 +35,7 @@ class AssetImportExportTest extends TestCase
             'ram_gb' => 16,
             'storage_gb' => 512,
             'os_name' => 'Windows 11 Pro',
-            'rustdesk_id' => '987654321',
+            'anydesk_id' => '987654321',
             'specs' => 'Managed device',
         ]);
     }
@@ -62,6 +62,7 @@ class AssetImportExportTest extends TestCase
             ->streamedContent();
 
         $this->assertStringContainsString('Sub Category', $content);
+        $this->assertStringContainsString('AnyDesk ID', $content);
         $this->assertStringContainsString('IP Address', $content);
         $this->assertStringContainsString('Specs', $content);
         $this->assertStringContainsString('192.168.20.2', $content);

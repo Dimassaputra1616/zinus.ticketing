@@ -494,4 +494,6 @@ return [
     'offline' => '오프라인',
     'rustdesk_id' => 'RustDesk ID',
     'no_rustdesk_id' => 'RustDesk ID가 설정되지 않음',
+    'anydesk_id' => 'AnyDesk ID',
+    'no_anydesk_id' => 'AnyDesk ID가 설정되지 않음',
 ];

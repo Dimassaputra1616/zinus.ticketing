@@ -20,8 +20,8 @@ class RemoteSystemTest extends TestCase
         $monitor = $this->asset('MON-REMOTE-001', 'Finance Monitor', 'Monitor');
         $printer = $this->asset('PRN-REMOTE-001', 'Finance Printer', 'Printer & Scanner', '10.10.1.12');
 
-        $monitor->update(['rustdesk_id' => 'MONITOR-MUST-NOT-APPEAR']);
-        $printer->update(['rustdesk_id' => 'PRINTER-MUST-NOT-APPEAR']);
+        $monitor->update(['anydesk_id' => 'MONITOR-MUST-NOT-APPEAR']);
+        $printer->update(['anydesk_id' => 'PRINTER-MUST-NOT-APPEAR']);
 
         $this->actingAs($admin)
             ->get(route('remote-system.index'))
@@ -65,12 +65,12 @@ class RemoteSystemTest extends TestCase
             ->assertDontSeeText('Remote Device 01');
     }
 
-    public function test_remote_system_can_filter_rustdesk_readiness_and_search_endpoints(): void
+    public function test_remote_system_can_filter_anydesk_readiness_and_search_endpoints(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $ready = $this->asset('PC-READY-001', 'Ready Finance PC', 'PC', '10.10.3.10');
         $missing = $this->asset('PC-MISSING-001', 'Missing Warehouse PC', 'PC', '10.10.3.11');
-        $ready->update(['rustdesk_id' => '123456789']);
+        $ready->update(['anydesk_id' => '123456789']);
 
         $this->actingAs($admin)
             ->get(route('remote-system.index', ['connection' => 'ready']))

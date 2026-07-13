@@ -45,6 +45,7 @@ class AssetSyncController extends Controller
             'agent_sha256' => ['nullable', 'string'],
             'idempotency_key' => ['nullable', 'string'],
             'rustdesk_id' => ['nullable', 'string', 'max:100'],
+            'anydesk_id' => ['nullable', 'string', 'max:100'],
             'monitors' => ['nullable', 'array', 'max:12'],
             'monitors.*.asset_code' => ['nullable', 'string', 'max:191'],
             'monitors.*.hostname' => ['nullable', 'string', 'max:191'],
@@ -277,6 +278,8 @@ class AssetSyncController extends Controller
             $specParts[] = 'Identity Source: ' . $identitySource;
             $specParts[] = 'Identity Verified: ' . ($isIdentityVerified ? 'Yes' : 'No');
             $specString = implode(' | ', $specParts);
+            $brand = $this->normalizeMonitorBrand($this->cleanAssetString($data['brand'] ?? null, 150));
+            $model = $this->cleanAssetString($data['model'] ?? null, 150);
 
             $payload = [
                 'name' => $hostname,
@@ -284,8 +287,8 @@ class AssetSyncController extends Controller
                 'factory' => $factory,
                 'category' => $categoryName,
                 'category_id' => $categoryId,
-                'brand' => $data['brand'] ?? null,
-                'model' => $data['model'] ?? null,
+                'brand' => $brand,
+                'model' => $model,
                 'cpu' => $data['cpu'] ?? null,
                 'ram_gb' => isset($data['ram_gb']) ? (int) round($data['ram_gb']) : null,
                 'serial_number' => $serialNumber,
@@ -295,6 +298,7 @@ class AssetSyncController extends Controller
                 'os_name' => $data['os_name'] ?? null,
                 'ip_address' => $data['ip_address'] ?? null,
                 'rustdesk_id' => $data['rustdesk_id'] ?? null,
+                'anydesk_id' => $data['anydesk_id'] ?? null,
                 'status' => $status,
                 'department_id' => $departmentId,
                 'location' => $factory,
@@ -560,7 +564,8 @@ class AssetSyncController extends Controller
     {
         $serial = $this->cleanAssetString($monitor['serial_number'] ?? null);
         $instanceName = $this->cleanAssetString($monitor['instance_name'] ?? null, 255);
-        $brand = $this->cleanAssetString($monitor['brand'] ?? ($monitor['manufacturer'] ?? null), 150);
+        $rawBrand = $this->cleanAssetString($monitor['brand'] ?? ($monitor['manufacturer'] ?? null), 150);
+        $brand = $this->normalizeMonitorBrand($rawBrand, $instanceName);
         $model = $this->cleanAssetString($monitor['model'] ?? null, 150);
         $connection = $this->cleanAssetString($monitor['connection'] ?? null, 100);
         $identitySource = $this->cleanAssetString($monitor['identity_source'] ?? null, 50);
@@ -586,6 +591,12 @@ class AssetSyncController extends Controller
         if (! $name) {
             $nameParts = array_filter([$model, $serial ? "({$serial})" : null]);
             $name = $nameParts ? implode(' ', $nameParts) : $hostname;
+        }
+        if ($name && $rawBrand && $brand && strcasecmp($rawBrand, $brand) !== 0) {
+            $normalizedName = preg_replace('/^' . preg_quote($rawBrand, '/') . '\b/i', $brand, $name, 1);
+            if (is_string($normalizedName) && $normalizedName !== '') {
+                $name = $normalizedName;
+            }
         }
         $name = Str::limit($name, 191, '');
 
@@ -753,6 +764,64 @@ class AssetSyncController extends Controller
         }
 
         return implode(' | ', $parts);
+    }
+
+    protected function normalizeMonitorBrand(?string $brand, ?string $instanceName = null): ?string
+    {
+        $candidate = $brand;
+        if (! $candidate && $instanceName && preg_match('/^DISPLAY\\\\([A-Z0-9]{3})/i', $instanceName, $matches)) {
+            $candidate = strtoupper($matches[1]);
+        }
+
+        if (! $candidate) {
+            return null;
+        }
+
+        $code = strtoupper(trim($candidate));
+        if (! preg_match('/^[A-Z0-9]{3}$/', $code)) {
+            return $candidate;
+        }
+
+        $manufacturerNames = [
+            'ACI' => 'ASUS',
+            'ACM' => 'Acer',
+            'ACR' => 'Acer',
+            'AOC' => 'AOC',
+            'APP' => 'Apple',
+            'AUO' => 'AU Optronics',
+            'BNQ' => 'BenQ',
+            'BOE' => 'BOE',
+            'CMO' => 'Chi Mei',
+            'CMN' => 'Chimei',
+            'DEL' => 'Dell',
+            'EIZ' => 'EIZO',
+            'FUJ' => 'Fujitsu',
+            'GSM' => 'LG',
+            'HSD' => 'HannStar',
+            'HWP' => 'HP',
+            'HPN' => 'HP',
+            'IBM' => 'IBM',
+            'IVM' => 'Iiyama',
+            'LEN' => 'Lenovo',
+            'LGD' => 'LG Display',
+            'LPL' => 'LG Display',
+            'MEI' => 'Panasonic',
+            'MSI' => 'MSI',
+            'NEC' => 'NEC',
+            'PAN' => 'Panasonic',
+            'PHI' => 'Philips',
+            'PHL' => 'Philips',
+            'SAM' => 'Samsung',
+            'SEC' => 'Samsung',
+            'SHP' => 'Sharp',
+            'SNY' => 'Sony',
+            'TOS' => 'Toshiba',
+            'TPL' => 'Top Victory',
+            'VIZ' => 'Vizio',
+            'VSC' => 'ViewSonic',
+        ];
+
+        return $manufacturerNames[$code] ?? $candidate;
     }
 
     protected function cleanAssetString(mixed $value, int $limit = 191): ?string

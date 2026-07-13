@@ -6,9 +6,6 @@ param(
     [string]$Department = "IT",
     [string]$ServerUrl = "https://app.it-ticketing.web.id/api/asset-sync",
     [string]$AgentVersion = "1.1.0",
-    [string]$RustdeskIdServer = "",
-    [string]$RustdeskRelayServer = "",
-    [string]$RustdeskKey = "",
     [switch]$SkipRun
 )
 
@@ -25,9 +22,6 @@ $Factory = $Factory.Trim()
 $Department = $Department.Trim()
 $ServerUrl = $ServerUrl.Trim()
 $AgentVersion = $AgentVersion.Trim()
-$RustdeskIdServer = $RustdeskIdServer.Trim()
-$RustdeskRelayServer = $RustdeskRelayServer.Trim()
-$RustdeskKey = $RustdeskKey.Trim()
 
 if ([string]::IsNullOrWhiteSpace($Token)) {
     Write-Host "Token is required. Pass -Token when running the installer." -ForegroundColor Red
@@ -77,9 +71,6 @@ $config = [ordered]@{
     department            = $Department
     agent_version         = $AgentVersion
     agent_sha256          = $agentHash
-    rustdesk_id_server    = $RustdeskIdServer
-    rustdesk_relay_server = $RustdeskRelayServer
-    rustdesk_key          = $RustdeskKey
 }
 
 $config | ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
@@ -88,27 +79,58 @@ $schtasksPath = Join-Path $env:WINDIR "System32\schtasks.exe"
 $taskName = "Zinus Asset Daily Sync"
 $legacyTaskName = "Zinus Asset Monthly Sync"
 $startupTaskName = "Zinus Asset Startup Sync"
-$taskCommand = "`"$installCmd`""
+$logonTaskName = "Zinus Asset Logon Sync"
+$powershellPath = Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershell.exe"
+$taskCommand = "`"$powershellPath`" -NoProfile -ExecutionPolicy Bypass -File `"$installScript`""
+
+function Invoke-ZinusScheduledTaskCommand {
+    param(
+        [string[]]$Arguments,
+        [string]$Operation,
+        [switch]$IgnoreFailure
+    )
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        # schtasks writes expected conditions such as "task not found" to
+        # stderr. Capture its exit code explicitly instead of allowing the
+        # script-wide Stop preference to abort the complete installation.
+        $ErrorActionPreference = "Continue"
+        $output = @(& $schtasksPath @Arguments 2>&1)
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($exitCode -ne 0 -and -not $IgnoreFailure) {
+        $outputText = (($output | ForEach-Object {
+            if ($_ -is [System.Management.Automation.ErrorRecord]) {
+                $_.Exception.Message
+            } else {
+                [string]$_
+            }
+        }) -join " ").Trim()
+        throw "$Operation gagal (schtasks exit code $exitCode). $outputText"
+    }
+}
 
 if (Test-Path $schtasksPath) {
-    & $schtasksPath /Delete /TN "$legacyTaskName" /F 2>$null | Out-Null
+    Invoke-ZinusScheduledTaskCommand `
+        -Arguments @("/Delete", "/TN", $legacyTaskName, "/F") `
+        -Operation "Menghapus scheduled task lama" `
+        -IgnoreFailure
 
-    & $schtasksPath /Create `
-        /SC DAILY `
-        /ST 09:00 `
-        /TN "$taskName" `
-        /TR $taskCommand `
-        /RU SYSTEM `
-        /RL HIGHEST `
-        /F | Out-Null
+    Invoke-ZinusScheduledTaskCommand `
+        -Arguments @("/Create", "/SC", "DAILY", "/ST", "09:00", "/TN", $taskName, "/TR", $taskCommand, "/RU", "SYSTEM", "/RL", "HIGHEST", "/F") `
+        -Operation "Membuat scheduled task harian"
 
-    & $schtasksPath /Create `
-        /SC ONSTART `
-        /TN "$startupTaskName" `
-        /TR $taskCommand `
-        /RU SYSTEM `
-        /RL HIGHEST `
-        /F | Out-Null
+    Invoke-ZinusScheduledTaskCommand `
+        -Arguments @("/Create", "/SC", "ONSTART", "/DELAY", "0005:00", "/TN", $startupTaskName, "/TR", $taskCommand, "/RU", "SYSTEM", "/RL", "HIGHEST", "/F") `
+        -Operation "Membuat scheduled task startup"
+
+    Invoke-ZinusScheduledTaskCommand `
+        -Arguments @("/Create", "/SC", "ONLOGON", "/DELAY", "0002:00", "/TN", $logonTaskName, "/TR", $taskCommand, "/RU", "SYSTEM", "/RL", "HIGHEST", "/F") `
+        -Operation "Membuat scheduled task logon"
 } else {
     Write-Host "schtasks.exe not found. Task not created." -ForegroundColor Yellow
 }
@@ -117,5 +139,5 @@ Write-Host "Install complete. Files copied to $installRoot" -ForegroundColor Gre
 
 if (-not $SkipRun) {
     Write-Host "Running agent once for verification..." -ForegroundColor Cyan
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$installScript" -NoDelay
+    & $powershellPath -NoProfile -ExecutionPolicy Bypass -File "$installScript" -NoDelay
 }

@@ -1,17 +1,9 @@
 @php
-    $isCustomServer = filter_var(config('services.rustdesk.custom_server'), FILTER_VALIDATE_BOOLEAN);
-    $rustdeskUriFor = function ($asset) use ($isCustomServer) {
-        $uri = "rustdesk://connection/new/{$asset->rustdesk_id}";
+    $anydeskUrlScheme = trim((string) config('services.anydesk.url_scheme', 'anydesk')) ?: 'anydesk';
+    $anydeskUriFor = function ($asset) use ($anydeskUrlScheme) {
+        $remoteId = preg_replace('/\s+/', '', (string) $asset->anydesk_id);
 
-        if ($isCustomServer && config('services.rustdesk.id_server')) {
-            $configuration = [
-                'custom-rendezvous-server' => config('services.rustdesk.id_server'),
-                'key' => config('services.rustdesk.key'),
-            ];
-            $uri .= '?conf=' . base64_encode(json_encode($configuration));
-        }
-
-        return $uri;
+        return "{$anydeskUrlScheme}:{$remoteId}";
     };
     $pageDevices = $assets->getCollection()
         ->map(fn ($asset) => ['id' => $asset->id, 'ip' => $asset->ip_address])
@@ -48,7 +40,7 @@
                                 Live monitoring
                             </span>
                         </div>
-                        <p class="mt-1 max-w-xl text-xs leading-relaxed text-slate-400">Manage PC and laptop availability, RustDesk readiness, and remote connections from one workspace.</p>
+                        <p class="mt-1 max-w-xl text-xs leading-relaxed text-slate-400">Manage PC and laptop availability, AnyDesk readiness, and remote connections from one workspace.</p>
                     </div>
                 </div>
 
@@ -96,8 +88,8 @@
                         class="h-11 w-full rounded-xl border-white/10 bg-slate-900 py-0 text-sm font-medium text-slate-200 focus:border-emerald-400 focus:ring-emerald-400/20 md:w-56"
                     >
                         <option value="all" @selected($connection === 'all')>All configurations</option>
-                        <option value="ready" @selected($connection === 'ready')>RustDesk ready</option>
-                        <option value="missing" @selected($connection === 'missing')>Missing RustDesk ID</option>
+                        <option value="ready" @selected($connection === 'ready')>AnyDesk ready</option>
+                        <option value="missing" @selected($connection === 'missing')>Missing AnyDesk ID</option>
                     </select>
 
                     <button
@@ -169,14 +161,14 @@
                                 <th class="px-4 py-3">Owner / Department</th>
                                 <th class="px-4 py-3">IP Address</th>
                                 <th class="px-4 py-3">Live Status</th>
-                                <th class="px-4 py-3">RustDesk</th>
+                                <th class="px-4 py-3">AnyDesk</th>
                                 <th class="px-4 py-3 text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @foreach ($assets as $asset)
                                 @php
-                                    $hasRustdesk = filled($asset->rustdesk_id);
+                                    $hasAnyDesk = filled($asset->anydesk_id);
                                     $editUrl = $asset->source_type === 'manual'
                                         ? route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => $returnTo])
                                         : route('assets.edit', ['asset' => $asset, 'return_to' => $returnTo]);
@@ -223,9 +215,9 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-3">
-                                        @if ($hasRustdesk)
+                                        @if ($hasAnyDesk)
                                             <span class="inline-flex rounded-lg bg-emerald-50 px-2.5 py-1 font-mono text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
-                                                {{ $asset->rustdesk_id }}
+                                                {{ $asset->anydesk_id }}
                                             </span>
                                         @else
                                             <span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600">
@@ -236,9 +228,9 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex justify-end">
-                                            @if ($hasRustdesk)
+                                            @if ($hasAnyDesk)
                                                 <a
-                                                    href="{{ $rustdeskUriFor($asset) }}"
+                                                    href="{{ $anydeskUriFor($asset) }}"
                                                     class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-3.5 text-xs font-bold text-white shadow-sm shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:from-emerald-700 hover:to-emerald-600"
                                                 >
                                                     Connect
@@ -251,7 +243,7 @@
                                                     href="{{ $editUrl }}"
                                                     class="inline-flex h-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-3.5 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
                                                 >
-                                                    Set RustDesk ID
+                                                    Set AnyDesk ID
                                                 </a>
                                             @endif
                                         </div>
@@ -266,7 +258,7 @@
             <section class="grid gap-3 lg:hidden sm:grid-cols-2">
                 @foreach ($assets as $asset)
                     @php
-                        $hasRustdesk = filled($asset->rustdesk_id);
+                        $hasAnyDesk = filled($asset->anydesk_id);
                         $editUrl = $asset->source_type === 'manual'
                             ? route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => $returnTo])
                             : route('assets.edit', ['asset' => $asset, 'return_to' => $returnTo]);
@@ -303,11 +295,11 @@
                         </dl>
 
                         <div class="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                            <span class="truncate font-mono text-[11px] {{ $hasRustdesk ? 'text-emerald-700' : 'text-amber-600' }}">
-                                {{ $hasRustdesk ? $asset->rustdesk_id : 'Missing RustDesk ID' }}
+                            <span class="truncate font-mono text-[11px] {{ $hasAnyDesk ? 'text-emerald-700' : 'text-amber-600' }}">
+                                {{ $hasAnyDesk ? $asset->anydesk_id : 'Missing AnyDesk ID' }}
                             </span>
-                            @if ($hasRustdesk)
-                                <a href="{{ $rustdeskUriFor($asset) }}" class="inline-flex h-8 shrink-0 items-center rounded-lg bg-emerald-600 px-3 text-[11px] font-bold text-white">
+                            @if ($hasAnyDesk)
+                                <a href="{{ $anydeskUriFor($asset) }}" class="inline-flex h-8 shrink-0 items-center rounded-lg bg-emerald-600 px-3 text-[11px] font-bold text-white">
                                     Connect
                                 </a>
                             @else
@@ -333,7 +325,7 @@
                     </svg>
                 </span>
                 <h3 class="mt-4 text-base font-bold text-slate-800">No remote endpoints found</h3>
-                <p class="mt-1 text-sm text-slate-500">Try changing the search or RustDesk configuration filter.</p>
+                <p class="mt-1 text-sm text-slate-500">Try changing the search or AnyDesk configuration filter.</p>
                 @if ($search !== '' || $connection !== 'all')
                     <a href="{{ route('remote-system.index') }}" class="mt-4 inline-flex h-9 items-center rounded-xl bg-slate-950 px-4 text-xs font-bold text-white">
                         Clear filters

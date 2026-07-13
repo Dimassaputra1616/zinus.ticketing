@@ -7,9 +7,6 @@ param(
     [string]$Department = "IT",
     [string]$ServerUrl = "https://app.it-ticketing.web.id/api/asset-sync",
     [string]$AgentVersion = "1.1.0",
-    [string]$RustdeskIdServer = "",
-    [string]$RustdeskRelayServer = "",
-    [string]$RustdeskKey = "",
     [switch]$RunNow,
     [string]$RemoteStagePath = "C:\ProgramData\ZinusAssetSyncDeploy",
     [string]$ResultPath = ".\zinus-asset-deploy-results.csv",
@@ -77,6 +74,7 @@ foreach ($target in $targets) {
     Write-Host "Deploying Zinus Asset Sync to $target..." -ForegroundColor Cyan
 
     $session = $null
+    $stage = "membuat PowerShell session"
     try {
         $sessionParams = @{
             ComputerName = $target
@@ -88,6 +86,7 @@ foreach ($target in $targets) {
 
         $session = New-PSSession @sessionParams
 
+        $stage = "membuat folder staging"
         Invoke-Command -Session $session -ScriptBlock {
             param([string]$StagePath)
 
@@ -95,10 +94,12 @@ foreach ($target in $targets) {
             New-Item -ItemType Directory -Path (Join-Path $StagePath "tools") -Force | Out-Null
         } -ArgumentList $RemoteStagePath
 
+        $stage = "menyalin file installer"
         Copy-Item -ToSession $session -Path $installerPath -Destination (Join-Path $RemoteStagePath "Install-ZinusAssetSync.ps1") -Force
         Copy-Item -ToSession $session -Path $syncScriptPath -Destination (Join-Path $RemoteStagePath "tools\sync-asset.ps1") -Force
         Copy-Item -ToSession $session -Path $runCmdPath -Destination (Join-Path $RemoteStagePath "tools\run.cmd") -Force
 
+        $stage = "menjalankan installer agent"
         $installOutput = Invoke-Command -Session $session -ScriptBlock {
             param(
                 [string]$StagePath,
@@ -107,9 +108,6 @@ foreach ($target in $targets) {
                 [string]$Department,
                 [string]$ServerUrl,
                 [string]$AgentVersion,
-                [string]$RustdeskIdServer,
-                [string]$RustdeskRelayServer,
-                [string]$RustdeskKey,
                 [bool]$RunNow
             )
 
@@ -122,9 +120,6 @@ foreach ($target in $targets) {
                 Department            = $Department
                 ServerUrl             = $ServerUrl
                 AgentVersion          = $AgentVersion
-                RustdeskIdServer      = $RustdeskIdServer
-                RustdeskRelayServer   = $RustdeskRelayServer
-                RustdeskKey           = $RustdeskKey
             }
 
             if (-not $RunNow) {
@@ -139,9 +134,6 @@ foreach ($target in $targets) {
             $Department,
             $ServerUrl,
             $AgentVersion,
-            $RustdeskIdServer,
-            $RustdeskRelayServer,
-            $RustdeskKey,
             [bool]$RunNow
         )
 
@@ -153,7 +145,7 @@ foreach ($target in $targets) {
         $results += New-DeployResult -Computer $target -Status "success" -Message $message
         Write-Host "Success: $target" -ForegroundColor Green
     } catch {
-        $message = $_.Exception.Message
+        $message = "[$stage] $($_.Exception.Message)"
         $results += New-DeployResult -Computer $target -Status "failed" -Message $message
         Write-Host "Failed: $target - $message" -ForegroundColor Red
     } finally {

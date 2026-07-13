@@ -20,7 +20,7 @@ try {
 $token = if ($config.token) { [string]$config.token } else { "" }
 $token = $token.Trim()
 
-if ([string]::IsNullOrWhiteSpace($token) -or $token -eq "ISI_TOKEN_ASSET_SYNC_DI_SINI") {
+if ([string]::IsNullOrWhiteSpace($token) -or $token -in @("ISI_TOKEN_ASSET_SYNC_DI_SINI", "TOKEN_DARI_SERVER")) {
     Write-Host "Token belum diisi di install-config.json." -ForegroundColor Red
     exit 1
 }
@@ -37,9 +37,6 @@ $installParams = @{
     Department          = if ($config.department) { [string]$config.department } else { "IT" }
     ServerUrl           = if ($config.server_url) { [string]$config.server_url } else { "https://app.it-ticketing.web.id/api/asset-sync" }
     AgentVersion        = if ($config.agent_version) { [string]$config.agent_version } else { "1.1.0" }
-    RustdeskIdServer    = if ($config.rustdesk_id_server) { [string]$config.rustdesk_id_server } else { "" }
-    RustdeskRelayServer = if ($config.rustdesk_relay_server) { [string]$config.rustdesk_relay_server } else { "" }
-    RustdeskKey         = if ($config.rustdesk_key) { [string]$config.rustdesk_key } else { "" }
 }
 
 if ($config.PSObject.Properties.Name -contains "skip_run" -and [bool]$config.skip_run) {

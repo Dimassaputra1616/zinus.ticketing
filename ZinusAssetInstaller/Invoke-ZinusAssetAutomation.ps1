@@ -27,6 +27,50 @@ function ConvertTo-Boolean {
     return ([string]$Value).Trim() -eq "True"
 }
 
+function Merge-DiscoveryRows {
+    param(
+        [object[]]$BaseRows,
+        [object[]]$RetryRows
+    )
+
+    $byIp = @{}
+    foreach ($row in @($BaseRows)) {
+        if ($row.ip_address) {
+            $byIp[[string]$row.ip_address] = $row
+        }
+    }
+
+    foreach ($row in @($RetryRows)) {
+        if (-not $row.ip_address) { continue }
+
+        $ip = [string]$row.ip_address
+        if (-not $byIp.ContainsKey($ip)) {
+            $byIp[$ip] = $row
+            continue
+        }
+
+        $current = $byIp[$ip]
+        $currentReady = ConvertTo-Boolean $current.wsman_5985
+        $retryReady = ConvertTo-Boolean $row.wsman_5985
+        $currentOnline = ConvertTo-Boolean $current.online
+        $retryOnline = ConvertTo-Boolean $row.online
+
+        if ($retryReady -or (-not $currentOnline -and $retryOnline)) {
+            $byIp[$ip] = $row
+            continue
+        }
+
+        if ([string]::IsNullOrWhiteSpace([string]$current.hostname) -and -not [string]::IsNullOrWhiteSpace([string]$row.hostname)) {
+            $current.hostname = $row.hostname
+            $current.name_source = $row.name_source
+            $current.dns_name = $row.dns_name
+            $byIp[$ip] = $current
+        }
+    }
+
+    return @($byIp.Values | Sort-Object ip_address)
+}
+
 function Read-RequiredToken {
     $secureToken = Read-Host "Masukkan Asset Sync token" -AsSecureString
     $tokenBstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureToken)
@@ -50,9 +94,10 @@ if (-not (Test-IsAdministrator)) {
 $discoverScript = Join-Path $PSScriptRoot "Discover-ZinusNetwork.ps1"
 $bootstrapScript = Join-Path $PSScriptRoot "Bootstrap-ZinusWinRM.ps1"
 $scanScript = Join-Path $PSScriptRoot "Scan-ZinusAssetsRemote.ps1"
+$anyDeskDeployScript = Join-Path $PSScriptRoot "Deploy-ZinusAnyDesk.ps1"
 $psExecFullPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($PsExecPath)
 
-foreach ($requiredPath in @($discoverScript, $bootstrapScript, $scanScript, $psExecFullPath)) {
+foreach ($requiredPath in @($discoverScript, $bootstrapScript, $scanScript, $anyDeskDeployScript, $psExecFullPath)) {
     if (-not (Test-Path $requiredPath)) {
         throw "File wajib tidak ditemukan: $requiredPath"
     }
@@ -85,6 +130,37 @@ $factory = if ([string]::IsNullOrWhiteSpace($factoryInput)) { $DefaultFactory } 
 $departmentInput = Read-Host "Department awal untuk aset baru [$DefaultDepartment]"
 $department = if ([string]::IsNullOrWhiteSpace($departmentInput)) { $DefaultDepartment } else { $departmentInput.Trim() }
 
+$anyDeskInput = Read-Host "Pasang AnyDesk massal ke PC yang belum punya? (y/N) [N]"
+$deployAnyDesk = $anyDeskInput -match '^(y|yes|ya)$'
+$anyDeskInstallerPath = ""
+
+if ($deployAnyDesk) {
+    $anyDeskCandidates = @(
+        Get-ChildItem -LiteralPath $PSScriptRoot -File |
+            Where-Object {
+                $_.Name -match '(?i)^anydesk.*\.(exe|msi)$'
+            } |
+            Sort-Object LastWriteTime -Descending
+    )
+
+    $defaultAnyDeskInstaller = if ($anyDeskCandidates.Count -gt 0) {
+        $anyDeskCandidates[0].FullName
+    } else {
+        Join-Path $PSScriptRoot "anydesk.exe"
+    }
+
+    $anyDeskInstallerInput = Read-Host "Path installer AnyDesk [$defaultAnyDeskInstaller]"
+    $anyDeskInstallerPath = if ([string]::IsNullOrWhiteSpace($anyDeskInstallerInput)) {
+        $defaultAnyDeskInstaller
+    } else {
+        $anyDeskInstallerInput.Trim().Trim('"')
+    }
+
+    if (-not (Test-Path -LiteralPath $anyDeskInstallerPath -PathType Leaf)) {
+        throw "Installer AnyDesk tidak ditemukan: $anyDeskInstallerPath. Download installer resmi lalu taruh di folder $PSScriptRoot."
+    }
+}
+
 $segments = @(
     $segmentInput.Split(",") |
         ForEach-Object { $_.Trim() } |
@@ -114,19 +190,30 @@ $onlinePath = Join-Path $PSScriptRoot "zinus-auto-online.csv"
 $verificationPath = Join-Path $PSScriptRoot "zinus-auto-verification.csv"
 $verificationOnlinePath = Join-Path $PSScriptRoot "zinus-auto-verification-online.csv"
 $bootstrapPath = Join-Path $PSScriptRoot "zinus-auto-bootstrap.csv"
+$anyDeskPath = Join-Path $PSScriptRoot "zinus-auto-anydesk-results.csv"
 $scanPath = Join-Path $PSScriptRoot "zinus-auto-scan-results.csv"
 $blockedPath = Join-Path $PSScriptRoot "zinus-auto-needs-policy-or-agent.csv"
+$failureAnalysisPath = Join-Path $PSScriptRoot "zinus-auto-failure-analysis.csv"
+$failureSummaryPath = Join-Path $PSScriptRoot "zinus-auto-failure-summary.csv"
+$dataQualityPath = Join-Path $PSScriptRoot "zinus-auto-data-quality-issues.csv"
+$dataQualityScript = Join-Path $PSScriptRoot "Export-ZinusDataQualityIssues.ps1"
+$missingHostnamesScript = Join-Path $PSScriptRoot "Export-ZinusMissingHostnames.ps1"
+$missingHostnamesPath = Join-Path $PSScriptRoot "zinus-auto-missing-hostnames.csv"
+$remediationScript = Join-Path $PSScriptRoot "Export-ZinusRemediationLists.ps1"
 
-foreach ($oldResult in @($discoveryPath, $onlinePath, $verificationPath, $verificationOnlinePath, $bootstrapPath, $scanPath, $blockedPath)) {
+foreach ($oldResult in @($discoveryPath, $onlinePath, $verificationPath, $verificationOnlinePath, $bootstrapPath, $anyDeskPath, $scanPath, $blockedPath)) {
     Remove-Item -LiteralPath $oldResult -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host ""
-Write-Host "TAHAP 1/4 - Mencari perangkat online..." -ForegroundColor Cyan
+Write-Host "TAHAP 1/5 - Mencari perangkat online..." -ForegroundColor Cyan
 & $discoverScript `
     -IpSegment $segments `
     -StartHost $startHost `
     -EndHost $endHost `
+    -PingTimeoutMs 1500 `
+    -PortTimeoutMs 3000 `
+    -NbtstatTimeoutMs 2500 `
     -ProbeWsMan `
     -ResultPath $discoveryPath `
     -OnlineResultPath $onlinePath
@@ -148,27 +235,67 @@ $initialReadyTargets = @(
 $needsBootstrap = @($onlineTargets | Where-Object { $_ -notin $initialReadyTargets })
 
 Write-Host ""
-Write-Host "TAHAP 2/4 - Mengaktifkan WinRM pada $($needsBootstrap.Count) perangkat online..." -ForegroundColor Cyan
+Write-Host "TAHAP 2/5 - Mengaktifkan WinRM pada $($needsBootstrap.Count) perangkat online..." -ForegroundColor Cyan
 & $bootstrapScript `
     -ComputerName $onlineTargets `
     -ComputerList "" `
     -PsExecPath $psExecFullPath `
+    -PortTimeoutMs 3000 `
     -ResultPath $bootstrapPath `
     -Credential $credential `
     -EnableLocalAccountRemoteAdmin `
     -NoFailExit
 
 Write-Host ""
-Write-Host "TAHAP 3/4 - Memverifikasi ulang WinRM setelah bootstrap..." -ForegroundColor Cyan
+Write-Host "TAHAP 3/5 - Memverifikasi ulang WinRM setelah bootstrap..." -ForegroundColor Cyan
 & $discoverScript `
     -IpSegment $onlineTargets `
     -StartHost 1 `
     -EndHost 254 `
+    -PingTimeoutMs 1500 `
+    -PortTimeoutMs 3000 `
+    -NbtstatTimeoutMs 2500 `
     -ProbeWsMan `
     -ResultPath $verificationPath `
     -OnlineResultPath $verificationOnlinePath
 
 $verification = @(Import-Csv -LiteralPath $verificationPath)
+
+for ($retry = 1; $retry -le 2; $retry++) {
+    $retryTargets = @(
+        $verification |
+            Where-Object { -not (ConvertTo-Boolean $_.wsman_5985) } |
+            Select-Object -ExpandProperty ip_address -Unique
+    )
+
+    if ($retryTargets.Count -eq 0) {
+        break
+    }
+
+    $retryPath = Join-Path $PSScriptRoot "zinus-auto-verification-retry-$retry.csv"
+    $retryOnlinePath = Join-Path $PSScriptRoot "zinus-auto-verification-retry-$retry-online.csv"
+
+    Write-Host "Retry verifikasi WinRM $retry/2 untuk $($retryTargets.Count) target..." -ForegroundColor Yellow
+    Start-Sleep -Seconds (5 * $retry)
+    & $discoverScript `
+        -IpSegment $retryTargets `
+        -StartHost 1 `
+        -EndHost 254 `
+        -PingTimeoutMs 2000 `
+        -PortTimeoutMs 5000 `
+        -NbtstatTimeoutMs 3000 `
+        -ProbeWsMan `
+        -ResultPath $retryPath `
+        -OnlineResultPath $retryOnlinePath
+
+    $retryRows = @(Import-Csv -LiteralPath $retryPath)
+    $verification = @(Merge-DiscoveryRows -BaseRows $verification -RetryRows $retryRows)
+    $verification | Export-Csv -Path $verificationPath -NoTypeInformation -Encoding UTF8
+    $verification |
+        Where-Object { ConvertTo-Boolean $_.online } |
+        Export-Csv -Path $verificationOnlinePath -NoTypeInformation -Encoding UTF8
+}
+
 $readyTargets = @(
     $verification |
         Where-Object { ConvertTo-Boolean $_.wsman_5985 } |
@@ -189,11 +316,20 @@ $blocked = @(
         Where-Object { -not (ConvertTo-Boolean $_.wsman_5985) } |
         ForEach-Object {
             $bootstrapResult = $bootstrapByTarget[$_.ip_address]
-            $status = if ($bootstrapResult) { $bootstrapResult.status } else { "not_ready" }
-            $reason = if ($bootstrapResult) {
-                $bootstrapResult.message
-            } elseif (-not (ConvertTo-Boolean $_.online)) {
+            $status = if ($bootstrapResult -and $bootstrapResult.status -eq "already_ready") {
+                "lost_wsman_after_verification"
+            } elseif ($bootstrapResult) {
+                $bootstrapResult.status
+            } else {
+                "not_ready"
+            }
+
+            $reason = if (-not (ConvertTo-Boolean $_.online)) {
                 "Perangkat tidak lagi terdeteksi online saat verifikasi."
+            } elseif ($bootstrapResult -and $bootstrapResult.status -eq "already_ready") {
+                "WinRM sempat terbuka saat bootstrap, tetapi port 5985 tertutup atau tidak reachable saat verifikasi ulang."
+            } elseif ($bootstrapResult) {
+                $bootstrapResult.message
             } else {
                 "WinRM port 5985 tetap tertutup."
             }
@@ -209,7 +345,28 @@ $blocked = @(
 $blocked | Export-Csv -Path $blockedPath -NoTypeInformation -Encoding UTF8
 
 Write-Host ""
-Write-Host "TAHAP 4/4 - Menarik dan mengirim aset dari $($readyTargets.Count) PC siap..." -ForegroundColor Cyan
+Write-Host "TAHAP 4/5 - Deployment AnyDesk..." -ForegroundColor Cyan
+if ($deployAnyDesk -and $readyTargets.Count -gt 0) {
+    & $anyDeskDeployScript `
+        -ComputerName $readyTargets `
+        -ComputerList "" `
+        -InstallerPath $anyDeskInstallerPath `
+        -Credential $credential `
+        -ResultPath $anyDeskPath `
+        -NoFailExit
+} elseif ($deployAnyDesk) {
+    Write-Host "Belum ada PC dengan WinRM siap; deployment AnyDesk dilewati." -ForegroundColor Yellow
+} else {
+    Write-Host "Deployment AnyDesk tidak dipilih." -ForegroundColor DarkGray
+}
+
+$anyDeskResults = if (Test-Path $anyDeskPath) { @(Import-Csv -LiteralPath $anyDeskPath) } else { @() }
+$anyDeskReadyCount = @($anyDeskResults | Where-Object { $_.status -eq "success" }).Count
+$anyDeskInstalledCount = @($anyDeskResults | Where-Object { $_.action -like "installed*" }).Count
+$anyDeskFailedCount = @($anyDeskResults | Where-Object { $_.status -eq "failed" }).Count
+
+Write-Host ""
+Write-Host "TAHAP 5/5 - Menarik dan mengirim aset dari $($readyTargets.Count) PC siap..." -ForegroundColor Cyan
 if ($readyTargets.Count -gt 0) {
     & $scanScript `
         -ComputerName $readyTargets `
@@ -218,6 +375,10 @@ if ($readyTargets.Count -gt 0) {
         -Factory $factory `
         -Department $department `
         -ServerUrl $serverUrl `
+        -PortTimeoutMs 5000 `
+        -MaxParallel 12 `
+        -RetryCount 2 `
+        -RetryDelaySeconds 8 `
         -ResultPath $scanPath `
         -Credential $credential `
         -NoFailExit
@@ -239,7 +400,63 @@ Write-Host "Ditemukan online : $($onlineTargets.Count)"
 Write-Host "WinRM siap       : $($readyTargets.Count)"
 Write-Host "Aset sukses      : $successCount"
 Write-Host "Scan gagal       : $failedCount"
+if ($deployAnyDesk) {
+    Write-Host "AnyDesk siap     : $anyDeskReadyCount"
+    Write-Host "AnyDesk baru     : $anyDeskInstalledCount"
+    Write-Host "AnyDesk gagal    : $anyDeskFailedCount"
+    Write-Host "Hasil AnyDesk    : $anyDeskPath"
+}
 Write-Host "Perlu GPO/agent  : $($blocked.Count)"
 Write-Host "Hasil scan       : $scanPath"
 Write-Host "Belum terjangkau : $blockedPath"
+
+if (Test-Path -LiteralPath $dataQualityScript) {
+    try {
+        & $dataQualityScript `
+            -ScanPath $scanPath `
+            -ResultPath $dataQualityPath
+
+        Write-Host "Quality issue    : $dataQualityPath"
+    } catch {
+        Write-Host "Gagal membuat data quality report: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
+
+$failureAnalysisScript = Join-Path $PSScriptRoot "Export-ZinusFailureAnalysis.ps1"
+if (Test-Path -LiteralPath $failureAnalysisScript) {
+    try {
+        & $failureAnalysisScript `
+            -DiscoveryPath $discoveryPath `
+            -VerificationPath $verificationPath `
+            -BlockedPath $blockedPath `
+            -ScanPath $scanPath `
+            -AnyDeskPath $anyDeskPath `
+            -ResultPath $failureAnalysisPath `
+            -SummaryPath $failureSummaryPath
+
+        Write-Host "Analisa gagal    : $failureAnalysisPath"
+        Write-Host "Summary gagal    : $failureSummaryPath"
+
+        if (Test-Path -LiteralPath $missingHostnamesScript) {
+            & $missingHostnamesScript `
+                -FailureAnalysisPath $failureAnalysisPath `
+                -DiscoveryPath $discoveryPath `
+                -VerificationPath $verificationPath `
+                -ResultPath $missingHostnamesPath
+
+            Write-Host "Hostname kosong  : $missingHostnamesPath"
+        }
+
+        if (Test-Path -LiteralPath $remediationScript) {
+            & $remediationScript `
+                -FailureAnalysisPath $failureAnalysisPath `
+                -DataQualityPath $dataQualityPath `
+                -OutputDirectory $PSScriptRoot
+
+            Write-Host "Remediation CSV  : $PSScriptRoot\zinus-remediation-*.csv"
+        }
+    } catch {
+        Write-Host "Gagal membuat analisa failure: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
 Write-Host "============================================================" -ForegroundColor Cyan

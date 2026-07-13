@@ -39,6 +39,7 @@ class AssetSyncTest extends TestCase
             'factory' => 'Factory A',
             'department' => 'IT',
             'user_name' => 'Jane Doe',
+            'anydesk_id' => '123456789',
         ];
 
         $response = $this->syncAsset($payload);
@@ -55,6 +56,7 @@ class AssetSyncTest extends TestCase
             'serial_number' => 'SN-001',
             'asset_code' => 'SN-001',
             'name' => 'laptop-01',
+            'anydesk_id' => '123456789',
         ]);
     }
 
@@ -337,6 +339,41 @@ class AssetSyncTest extends TestCase
         $this->assertNull($monitor->serial_number);
         $this->assertStringContainsString('Identity Source: wmi_hash', $monitor->specs);
         $this->assertStringContainsString('Identity Verified: No', $monitor->specs);
+    }
+
+    public function test_asset_sync_expands_edid_manufacturer_codes(): void
+    {
+        $response = $this->syncAsset([
+            'hostname' => 'pc-edid-brand-host',
+            'serial_number' => 'PC-SN-EDID-001',
+            'category' => 'PC',
+            'brand' => 'SAM',
+            'model' => 'Workstation',
+            'monitors' => [
+                [
+                    'asset_code' => 'MON-LEN-D24-20',
+                    'hostname' => 'pc-edid-brand-host-D24-20',
+                    'name' => 'LEN D24-20',
+                    'serial_number' => 'MON-SN-EDID-001',
+                    'brand' => 'LEN',
+                    'model' => 'D24-20',
+                    'instance_name' => 'DISPLAY\\LEN66AA\\5&UID1234',
+                    'connection' => 'HDMI',
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.monitors.created', 1)
+            ->assertJsonPath('data.monitors.attached', 1);
+
+        $parent = Asset::where('serial_number', 'PC-SN-EDID-001')->firstOrFail();
+        $monitor = Asset::where('asset_code', 'MON-LEN-D24-20')->firstOrFail();
+
+        $this->assertEquals('Samsung', $parent->brand);
+        $this->assertEquals('Lenovo', $monitor->brand);
+        $this->assertEquals('Lenovo D24-20', $monitor->name);
+        $this->assertStringContainsString('Brand: Lenovo', $monitor->specs);
     }
 
     public function test_laptop_sync_creates_and_attaches_reported_monitors(): void

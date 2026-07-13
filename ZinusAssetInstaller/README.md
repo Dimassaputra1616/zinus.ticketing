@@ -32,8 +32,8 @@ Remoting.
   berdasarkan IP segment, default untuk segment `10.62.38`, `10.62.39`, dan
   `10.62.36`.
 - `Invoke-ZinusAssetAutomation.ps1` dan `RUN-AUTO-ASSET-SCAN.cmd` - alur massal
-  satu klik: discovery, bootstrap WinRM, verifikasi, lalu scan hanya PC yang
-  siap.
+  satu klik: discovery, bootstrap WinRM, deployment AnyDesk opsional,
+  verifikasi, lalu scan hanya PC yang siap.
 - `RUN-DEPLOY-ALL.cmd` - wrapper bulk deploy yang membaca `computers.txt`,
   meminta token dan credential admin, lalu menjalankan deployer.
 - `Deploy-ZinusAssetSync.ps1` - helper bulk deployment memakai PowerShell
@@ -78,10 +78,7 @@ Contoh isi `install-config.json`:
   "department": "IT",
   "server_url": "https://app.it-ticketing.web.id/api/asset-sync",
   "agent_version": "1.1.0",
-  "skip_run": false,
-  "rustdesk_id_server": "",
-  "rustdesk_relay_server": "",
-  "rustdesk_key": ""
+  "skip_run": false
 }
 ```
 
@@ -102,13 +99,20 @@ Launcher meminta elevasi Administrator secara otomatis, lalu:
 2. melewati IP yang mati;
 3. mengaktifkan WinRM lewat PsExec pada perangkat yang dapat dijangkau;
 4. memeriksa ulang port WinRM `5985`;
-5. menarik dan mengirim aset hanya dari PC yang sudah siap.
+5. memasang AnyDesk secara massal jika dipilih;
+6. menarik dan mengirim aset hanya dari PC yang sudah siap.
+
+Untuk deployment AnyDesk, download installer Windows resmi (`.exe` atau
+`.msi`) dan taruh di folder installer dengan nama yang diawali `anydesk`.
+Jawab `Y` saat launcher menanyakan deployment AnyDesk. PC yang sudah memiliki
+AnyDesk hanya diverifikasi dan tidak diinstal ulang.
 
 Masukkan satu credential Administrator yang berlaku pada seluruh PC target dan
 Asset Sync token saat diminta. Hasil utama disimpan di:
 
 ```text
 .\zinus-auto-scan-results.csv
+.\zinus-auto-anydesk-results.csv
 .\zinus-auto-needs-policy-or-agent.csv
 ```
 
@@ -406,12 +410,7 @@ Gunakan command install:
 Install-ZinusAssetSync-Silent.cmd -Token "YOUR_TOKEN" -Factory "GCI-HWANG" -Department "IT" -ServerUrl "https://app.it-ticketing.web.id/api/asset-sync" -SkipRun
 ```
 
-`-Token` wajib diisi. Setting RustDesk opsional dan harus dikirim eksplisit
-jika diperlukan:
-
-```cmd
--RustdeskIdServer "YOUR_SERVER" -RustdeskRelayServer "YOUR_RELAY" -RustdeskKey "YOUR_KEY"
-```
+`-Token` wajib diisi.
 
 Detection path yang disarankan:
 

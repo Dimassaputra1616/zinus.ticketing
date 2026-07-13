@@ -410,12 +410,12 @@
                                     <dd class="text-slate-800">{{ $asset->serial_number ?? '-' }}</dd>
                                 </div>
                                 <div class="space-y-1">
-                                    <dt class="font-semibold text-slate-500">{{ __('messages.rustdesk_id') ?? 'Remote ID' }}</dt>
+                                    <dt class="font-semibold text-slate-500">{{ __('messages.anydesk_id') ?? 'Remote ID' }}</dt>
                                     <dd class="text-slate-800">
-                                        @if($asset->rustdesk_id)
-                                            <span class="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-200 cursor-pointer hover:bg-indigo-100 transition-colors" onclick="event.stopPropagation(); navigator.clipboard.writeText('{{ $asset->rustdesk_id }}'); alert('RustDesk ID {{ $asset->rustdesk_id }} copied to clipboard!');">
+                                        @if($asset->anydesk_id)
+                                            <span class="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-200 cursor-pointer hover:bg-indigo-100 transition-colors" onclick="event.stopPropagation(); navigator.clipboard.writeText('{{ $asset->anydesk_id }}'); alert('AnyDesk ID {{ $asset->anydesk_id }} copied to clipboard!');">
                                                 <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                                {{ $asset->rustdesk_id }}
+                                                {{ $asset->anydesk_id }}
                                             </span>
                                         @else
                                             -
@@ -528,7 +528,7 @@
                                 <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">{{ __('messages.brand') }}</th>
                                 <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">{{ __('messages.model') }}</th>
                                 <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">{{ __('messages.serial_number') }}</th>
-                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">{{ __('messages.rustdesk_id') ?? 'Remote ID' }}</th>
+                                <th class="sticky top-0 z-20 hidden bg-slate-50/95 px-3 py-3 backdrop-blur xl:table-cell">{{ __('messages.anydesk_id') ?? 'Remote ID' }}</th>
                                 <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.status') }}</th>
                                 <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.created') }}</th>
                                 <th class="sticky top-0 z-20 bg-slate-50/95 px-3 py-3 backdrop-blur">{{ __('messages.updated') }}</th>
@@ -568,10 +568,10 @@
                                     <td class="hidden px-3 py-2.5 text-slate-500 break-words xl:table-cell">{{ $asset->model ?? ($asset->name ?? '-') }}</td>
                                     <td class="hidden px-3 py-2.5 text-slate-500 break-words xl:table-cell">{{ $asset->serial_number ?? '-' }}</td>
                                     <td class="hidden px-3 py-2.5 text-slate-500 break-words xl:table-cell">
-                                        @if($asset->rustdesk_id)
-                                            <span class="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-200 cursor-pointer hover:bg-indigo-100 transition-colors" onclick="event.stopPropagation(); navigator.clipboard.writeText('{{ $asset->rustdesk_id }}'); alert('RustDesk ID {{ $asset->rustdesk_id }} copied to clipboard!');">
+                                        @if($asset->anydesk_id)
+                                            <span class="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-200 cursor-pointer hover:bg-indigo-100 transition-colors" onclick="event.stopPropagation(); navigator.clipboard.writeText('{{ $asset->anydesk_id }}'); alert('AnyDesk ID {{ $asset->anydesk_id }} copied to clipboard!');">
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                                {{ $asset->rustdesk_id }}
+                                                {{ $asset->anydesk_id }}
                                             </span>
                                         @else
                                             -

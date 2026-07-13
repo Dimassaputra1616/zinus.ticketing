@@ -101,7 +101,7 @@ class ManualAssetFormTest extends TestCase
                 'storage_gb' => 512,
                 'os_name' => 'Windows 11 Pro',
                 'ip_address' => '192.168.10.30',
-                'rustdesk_id' => '123456789',
+                'anydesk_id' => '123456789',
                 'status' => Asset::STATUS_IN_USE,
                 'condition' => 'good',
                 'lifecycle_status' => 'active',
@@ -116,7 +116,7 @@ class ManualAssetFormTest extends TestCase
             'storage_gb' => 512,
             'os_name' => 'Windows 11 Pro',
             'ip_address' => '192.168.10.30',
-            'rustdesk_id' => '123456789',
+            'anydesk_id' => '123456789',
         ]);
     }
 
