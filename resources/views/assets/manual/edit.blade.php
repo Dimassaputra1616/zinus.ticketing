@@ -68,9 +68,7 @@
             <form action="{{ route('admin.assets.manual.update', $asset) }}" method="POST" class="space-y-6 px-6 py-6">
                 @csrf
                 @method('PUT')
-                @if (filled(old('redirect_to', request()->query('return_to'))))
-                    <input type="hidden" name="redirect_to" value="{{ old('redirect_to', request()->query('return_to')) }}">
-                @endif
+                <input type="hidden" name="redirect_to" value="{{ old('redirect_to', $backUrl) }}">
 
                 <div class="grid gap-6 lg:grid-cols-2">
                     <!-- Identity Section -->

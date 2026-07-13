@@ -16,6 +16,7 @@
     $pageDevices = $assets->getCollection()
         ->map(fn ($asset) => ['id' => $asset->id, 'ip' => $asset->ip_address])
         ->values();
+    $returnTo = request()->fullUrl();
 @endphp
 
 <x-app-layout>
@@ -177,8 +178,8 @@
                                 @php
                                     $hasRustdesk = filled($asset->rustdesk_id);
                                     $editUrl = $asset->source_type === 'manual'
-                                        ? route('admin.assets.manual.edit', $asset)
-                                        : route('assets.edit', $asset);
+                                        ? route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => $returnTo])
+                                        : route('assets.edit', ['asset' => $asset, 'return_to' => $returnTo]);
                                 @endphp
                                 <tr
                                     data-remote-device
@@ -195,7 +196,7 @@
                                                 </svg>
                                             </span>
                                             <div class="min-w-0">
-                                                <a href="{{ route('assets.show', $asset) }}" class="block max-w-[250px] truncate font-bold text-slate-900 hover:text-emerald-700">
+                                                <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => $returnTo]) }}" class="block max-w-[250px] truncate font-bold text-slate-900 hover:text-emerald-700">
                                                     {{ $asset->name }}
                                                 </a>
                                                 <p class="mt-0.5 max-w-[250px] truncate font-mono text-[11px] text-slate-400">{{ $asset->hostname ?: $asset->asset_code }}</p>
@@ -267,8 +268,8 @@
                     @php
                         $hasRustdesk = filled($asset->rustdesk_id);
                         $editUrl = $asset->source_type === 'manual'
-                            ? route('admin.assets.manual.edit', $asset)
-                            : route('assets.edit', $asset);
+                            ? route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => $returnTo])
+                            : route('assets.edit', ['asset' => $asset, 'return_to' => $returnTo]);
                     @endphp
                     <article
                         data-remote-device
@@ -278,7 +279,7 @@
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <a href="{{ route('assets.show', $asset) }}" class="block truncate text-sm font-bold text-slate-900">{{ $asset->name }}</a>
+                                <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => $returnTo]) }}" class="block truncate text-sm font-bold text-slate-900">{{ $asset->name }}</a>
                                 <p class="mt-0.5 truncate font-mono text-[11px] text-slate-400">{{ $asset->hostname ?: $asset->asset_code }}</p>
                             </div>
                             <span

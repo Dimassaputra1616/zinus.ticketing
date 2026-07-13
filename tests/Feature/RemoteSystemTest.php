@@ -91,6 +91,19 @@ class RemoteSystemTest extends TestCase
             ->assertDontSeeText($ready->name);
     }
 
+    public function test_remote_system_asset_links_preserve_the_current_page_as_return_target(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = $this->asset('PC-RETURN-001', 'Return Target PC', 'PC', '10.10.4.10');
+        $remoteUrl = route('remote-system.index', ['connection' => 'missing', 'q' => 'Return']);
+
+        $this->actingAs($admin)
+            ->get($remoteUrl)
+            ->assertOk()
+            ->assertSee(route('assets.show', ['asset' => $asset, 'return_to' => $remoteUrl]), false)
+            ->assertSee(route('assets.edit', ['asset' => $asset, 'return_to' => $remoteUrl]), false);
+    }
+
     private function asset(string $code, string $name, string $category, ?string $ipAddress = null): Asset
     {
         return Asset::create([

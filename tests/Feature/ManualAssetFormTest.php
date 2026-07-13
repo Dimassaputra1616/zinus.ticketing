@@ -152,4 +152,22 @@ class ManualAssetFormTest extends TestCase
             'status' => Asset::STATUS_IN_USE,
         ]);
     }
+
+    public function test_manual_asset_edit_form_preserves_default_manual_return_target(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = Asset::create([
+            'asset_code' => 'MANUAL-DETAIL-001',
+            'name' => 'Manual Detail Asset',
+            'category' => 'Monitor',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'manual',
+            'sync_source' => 'manual',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.manual.edit', $asset))
+            ->assertOk()
+            ->assertSee('name="redirect_to" value="' . route('admin.assets.manual.index') . '"', false);
+    }
 }

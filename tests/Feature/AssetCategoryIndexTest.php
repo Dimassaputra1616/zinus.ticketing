@@ -242,6 +242,24 @@ class AssetCategoryIndexTest extends TestCase
         ]);
     }
 
+    public function test_agent_asset_edit_form_preserves_default_detail_return_target(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = Asset::create([
+            'asset_code' => 'AGENT-PC-DETAIL-001',
+            'name' => 'Agent Detail Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('assets.edit', $asset))
+            ->assertOk()
+            ->assertSee('name="redirect_to" value="' . route('assets.show', $asset) . '"', false);
+    }
+
     public function test_monitor_inventory_shows_connection_instead_of_ip_address(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

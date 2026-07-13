@@ -74,8 +74,8 @@
                 @if ($isEdit)
                     @method('PUT')
                 @endif
-                @if ($isEdit && filled(old('redirect_to', request()->query('return_to'))))
-                    <input type="hidden" name="redirect_to" value="{{ old('redirect_to', request()->query('return_to')) }}">
+                @if ($isEdit)
+                    <input type="hidden" name="redirect_to" value="{{ old('redirect_to', $backUrl) }}">
                 @endif
 
                 <div class="grid gap-6 lg:grid-cols-2">
