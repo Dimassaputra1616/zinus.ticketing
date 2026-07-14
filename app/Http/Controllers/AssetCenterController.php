@@ -138,7 +138,9 @@ class AssetCenterController extends Controller
                   ->orWhere('serial_number', 'LIKE', "%{$search}%")
                   ->orWhere('brand', 'LIKE', "%{$search}%")
                   ->orWhere('model', 'LIKE', "%{$search}%")
-                  ->orWhere('location', 'LIKE', "%{$search}%");
+                  ->orWhere('location', 'LIKE', "%{$search}%")
+                  ->orWhere('assigned_to_name', 'LIKE', "%{$search}%")
+                  ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'LIKE', "%{$search}%"));
             });
         }
 

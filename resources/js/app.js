@@ -77,6 +77,33 @@ function initFilePreviews() {
     });
 }
 
+function initAssigneeFields() {
+    document.querySelectorAll('[data-assignee-field]').forEach((container) => {
+        const input = container.querySelector('[data-assignee-name]');
+        const hiddenUserId = container.querySelector('[data-assignee-user-id]');
+        const dataList = input?.list;
+
+        if (!input || !hiddenUserId || !dataList) {
+            return;
+        }
+
+        const userIdsByName = new Map(
+            Array.from(dataList.options).map(option => [
+                option.value.trim().toLowerCase(),
+                option.dataset.userId || '',
+            ]),
+        );
+
+        const syncSelectedUser = () => {
+            const selectedUserId = userIdsByName.get(input.value.trim().toLowerCase());
+            hiddenUserId.value = selectedUserId || '';
+        };
+
+        input.addEventListener('input', syncSelectedUser);
+        input.addEventListener('change', syncSelectedUser);
+    });
+}
+
 function initNotificationPolling() {
     const endpoint = document.body?.dataset?.notificationsEndpoint;
 
@@ -288,6 +315,7 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('DOMContentLoaded', () => {
     initLiveUpdates();
     initFilePreviews();
+    initAssigneeFields();
     initNotificationPolling();
     initScrollReveal();
     initCounters();

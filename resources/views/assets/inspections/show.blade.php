@@ -96,7 +96,7 @@
                                 'Serial Number' => $inspection->asset?->serial_number,
                                 'Category' => $inspection->asset?->category,
                                 'Department' => $inspection->asset?->department?->name,
-                                'Assigned User' => $inspection->asset?->user?->name,
+                                'Assigned User' => $inspection->asset?->assigned_to_display_name,
                                 'Location' => $inspection->asset?->location,
                             ] as $label => $value)
                                 <div class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">

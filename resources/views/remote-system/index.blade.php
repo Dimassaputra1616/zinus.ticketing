@@ -196,7 +196,7 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <p class="max-w-[180px] truncate font-medium text-slate-700">{{ $asset->user?->name ?: 'Unassigned' }}</p>
+                                        <p class="max-w-[180px] truncate font-medium text-slate-700">{{ $asset->assigned_to_display_name ?: 'Unassigned' }}</p>
                                         <p class="mt-0.5 max-w-[180px] truncate text-xs text-slate-400">{{ $asset->department?->name ?: 'No department' }}</p>
                                     </td>
                                     <td class="px-4 py-3">

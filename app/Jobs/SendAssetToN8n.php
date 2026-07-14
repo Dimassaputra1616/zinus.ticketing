@@ -49,7 +49,7 @@ class SendAssetToN8n implements ShouldQueue
                 'status' => strtoupper($this->asset->status),
                 'category' => $this->asset->categoryRel ? $this->asset->categoryRel->name : ($this->asset->category ?: '-'),
                 'department' => $this->asset->department ? $this->asset->department->name : '-',
-                'user' => $this->asset->user ? $this->asset->user->name : 'Unassigned',
+                'user' => $this->asset->assigned_to_display_name ?: 'Unassigned',
                 'brand' => $this->asset->brand,
                 'model' => $this->asset->model,
                 'serial_number' => $this->asset->serial_number,
@@ -58,7 +58,7 @@ class SendAssetToN8n implements ShouldQueue
                 'Asset Code' => $this->asset->asset_code,
                 'Asset Name' => $this->asset->name,
                 'Status' => strtoupper($this->asset->status),
-                'User' => $this->asset->user ? $this->asset->user->name : 'Unassigned',
+                'User' => $this->asset->assigned_to_display_name ?: 'Unassigned',
                 
                 'month_name' => $this->asset->created_at ? $this->asset->created_at->timezone('Asia/Jakarta')->format('F') : now()->timezone('Asia/Jakarta')->format('F'),
                 'year' => $this->asset->created_at ? $this->asset->created_at->timezone('Asia/Jakarta')->format('Y') : now()->timezone('Asia/Jakarta')->format('Y'),

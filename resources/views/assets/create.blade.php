@@ -198,21 +198,11 @@
                                         <p class="text-xs text-rose-600">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-semibold text-slate-700">{{ __('messages.assigned_to') }}</label>
-                                    <select
-                                        name="user_id"
-                                        class="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                                    >
-                                        <option value="">{{ __('messages.none') }}</option>
-                                        @foreach ($users as $user)
-                                            <option value="{{ $user->id }}" @selected(old('user_id', $asset?->user_id) == $user->id)>{{ $user->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('user_id')
-                                        <p class="text-xs text-rose-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                                @include('assets.partials.assignee-field', [
+                                    'asset' => $asset,
+                                    'users' => $users,
+                                    'inputId' => 'asset-assignee',
+                                ])
                             </div>
 
                             <div class="grid gap-4 md:grid-cols-2">

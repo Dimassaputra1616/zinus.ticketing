@@ -79,8 +79,8 @@
                         @if ($asset->location)
                             <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 shadow-sm">{{ __('messages.location') }}: {{ $asset->location }}</span>
                         @endif
-                        @if ($asset->user?->name)
-                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 shadow-sm">{{ __('messages.assigned') }}: {{ $asset->user->name }}</span>
+                        @if ($asset->assigned_to_display_name)
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200 shadow-sm">{{ __('messages.assigned') }}: {{ $asset->assigned_to_display_name }}</span>
                         @endif
                     </div>
                     <div class="flex flex-wrap gap-3">
@@ -155,7 +155,7 @@
                             ['label' => __('messages.brand_model'), 'value' => trim(($asset->brand ?? '') . ' ' . ($asset->model ?? ''))],
                             ['label' => __('messages.location'), 'value' => $asset->location],
                             ['label' => __('messages.department'), 'value' => $asset->department->name ?? null],
-                            ['label' => __('messages.assigned_to'), 'value' => $asset->user->name ?? null],
+                            ['label' => __('messages.assigned_to'), 'value' => $asset->assigned_to_display_name],
                             ['label' => __('messages.serial_number'), 'value' => $asset->serial_number],
                             ['label' => __('messages.anydesk_id') ?? 'Remote ID', 'value' => $asset->anydesk_id],
                             ['label' => __('messages.purchase_date'), 'value' => optional($asset->purchase_date)->format('Y-m-d')],

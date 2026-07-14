@@ -36,6 +36,7 @@ class StoreAssetRequest extends FormRequest
             'lifecycle_status' => ['nullable', 'string', 'in:active,in_repair,spare,assigned,disposed,lost,replaced'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'user_id' => ['nullable', 'exists:users,id'],
+            'assigned_to_name' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'purchase_date' => ['nullable', 'date'],
             'warranty_expired' => ['nullable', 'date', 'after_or_equal:purchase_date'],

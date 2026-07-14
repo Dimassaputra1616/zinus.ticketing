@@ -119,7 +119,9 @@ class AssetService
                         ->orWhere('serial_number', 'like', "%{$search}%")
                         ->orWhere('ip_address', 'like', "%{$search}%")
                         ->orWhere('specs', 'like', "%{$search}%")
-                        ->orWhere('location', 'like', "%{$search}%");
+                        ->orWhere('location', 'like', "%{$search}%")
+                        ->orWhere('assigned_to_name', 'like', "%{$search}%")
+                        ->orWhereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"));
                 });
             })
             ->orderByDesc('updated_at')
@@ -167,6 +169,7 @@ class AssetService
                         ->orWhere('brand', 'like', "%{$search}%")
                         ->orWhere('model', 'like', "%{$search}%")
                         ->orWhere('category', 'like', "%{$search}%")
+                        ->orWhere('assigned_to_name', 'like', "%{$search}%")
                         ->orWhereHas('department', fn ($q) => $q->where('name', 'like', "%{$search}%"))
                         ->orWhereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"));
                 });
@@ -209,13 +212,22 @@ class AssetService
         $assets = $this->getAssets($category, $location, $departmentId, $search);
 
         return $assets
-            ->groupBy(fn ($asset) => $asset->user_id ?? 0)
+            ->groupBy(function ($asset) {
+                if ($asset->user_id) {
+                    return 'user:' . $asset->user_id;
+                }
+
+                $manualName = trim((string) $asset->assigned_to_name);
+
+                return $manualName !== '' ? 'manual:' . Str::lower($manualName) : 'unassigned';
+            })
             ->map(function (Collection $items) {
                 $user = $items->first()?->user;
+                $manualName = $items->first()?->assigned_to_name;
 
                 return [
                     'id' => $user?->id,
-                    'name' => $user?->name ?? 'Belum ditetapkan',
+                    'name' => $user?->name ?? ($manualName ?: 'Belum ditetapkan'),
                     'email' => $user?->email,
                     'count' => $items->count(),
                     'assets' => $items->map(fn ($asset) => [
@@ -265,6 +277,16 @@ class AssetService
                     'type' => 'user',
                     'from' => $this->resolveUserName($previous['user_id'] ?? null, $userMap),
                     'to' => $this->resolveUserName($changes['user_id'] ?? null, $userMap),
+                    'actor' => $log->actor?->name ?? 'System',
+                    'created_at' => $log->created_at,
+                ]);
+            }
+
+            if (array_key_exists('assigned_to_name', $changes) && ! array_key_exists('user_id', $changes)) {
+                $entries->push([
+                    'type' => 'user',
+                    'from' => $previous['assigned_to_name'] ?? 'Belum ditetapkan',
+                    'to' => $changes['assigned_to_name'] ?? 'Belum ditetapkan',
                     'actor' => $log->actor?->name ?? 'System',
                     'created_at' => $log->created_at,
                 ]);
@@ -350,6 +372,41 @@ class AssetService
         $data['category_id'] = $category->id;
     }
 
+    protected function normalizeAssignee(array &$data): void
+    {
+        if (filled($data['user_id'] ?? null)) {
+            $data['assigned_to_name'] = User::find($data['user_id'])?->name;
+
+            return;
+        }
+
+        if (! array_key_exists('assigned_to_name', $data)) {
+            return;
+        }
+
+        $assigneeName = trim((string) $data['assigned_to_name']);
+        $data['user_id'] = null;
+
+        if ($assigneeName === '') {
+            $data['assigned_to_name'] = null;
+
+            return;
+        }
+
+        $matchedUser = User::query()
+            ->whereRaw('LOWER(name) = ?', [Str::lower($assigneeName)])
+            ->first();
+
+        if ($matchedUser) {
+            $data['user_id'] = $matchedUser->id;
+            $data['assigned_to_name'] = $matchedUser->name;
+
+            return;
+        }
+
+        $data['assigned_to_name'] = $assigneeName;
+    }
+
     protected function formatAsset(Asset $asset): array
     {
         return [
@@ -372,7 +429,7 @@ class AssetService
             'status' => $asset->status,
             'location' => $asset->location,
             'department' => $asset->department?->name,
-            'user' => $asset->user?->name,
+            'user' => $asset->assigned_to_display_name,
             'purchase_date' => optional($asset->purchase_date)->format('Y-m-d'),
             'warranty_expired' => optional($asset->warranty_expired)->format('Y-m-d'),
             'price' => $asset->price,
@@ -383,6 +440,7 @@ class AssetService
     public function store(array $data, ?User $actor): Asset
     {
         $this->assignCategoryId($data);
+        $this->normalizeAssignee($data);
         $data['sync_source'] = $data['sync_source'] ?? 'manual';
         $data['source_type'] = $data['source_type'] ?? 'manual';
         $data['lifecycle_status'] = $data['lifecycle_status'] ?? 'active';
@@ -403,6 +461,7 @@ class AssetService
     public function update(Asset $asset, array $data, ?User $actor): Asset
     {
         $this->assignCategoryId($data);
+        $this->normalizeAssignee($data);
         $data['sync_source'] = $data['sync_source'] ?? ($asset->sync_source ?? 'manual');
         $data['source_type'] = $data['source_type'] ?? ($asset->source_type ?? 'manual');
 
@@ -428,6 +487,7 @@ class AssetService
                 'lifecycle_status',
                 'department_id',
                 'user_id',
+                'assigned_to_name',
                 'location',
                 'purchase_date',
                 'warranty_expired',

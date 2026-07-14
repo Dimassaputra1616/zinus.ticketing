@@ -253,7 +253,7 @@
                     <tr><th>Kategori</th><td>{{ $inspection->asset?->category ?: '-' }}</td></tr>
                     <tr><th>Serial Number</th><td>{{ $inspection->asset?->serial_number ?: '-' }}</td></tr>
                     <tr><th>Departemen</th><td>{{ $inspection->asset?->department?->name ?: '-' }}</td></tr>
-                    <tr><th>User Terdaftar</th><td>{{ $inspection->asset?->user?->name ?: '-' }}</td></tr>
+                    <tr><th>User Terdaftar</th><td>{{ $inspection->asset?->assigned_to_display_name ?: '-' }}</td></tr>
                 </table>
             </section>
 

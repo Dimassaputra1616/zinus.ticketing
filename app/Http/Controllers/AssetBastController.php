@@ -163,7 +163,7 @@ class AssetBastController extends Controller
             'condition' => $asset->condition,
             'location' => $asset->location,
             'department' => $asset->department?->name,
-            'assigned_user' => $asset->user?->name,
+            'assigned_user' => $asset->assigned_to_display_name,
         ];
     }
 

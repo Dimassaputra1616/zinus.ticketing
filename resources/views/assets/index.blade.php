@@ -424,7 +424,7 @@
                                 </div>
                                 <div class="space-y-1">
                                     <dt class="font-semibold text-slate-500">{{ __('messages.assigned') }}</dt>
-                                    <dd class="text-slate-800">{{ $asset->user->name ?? __('messages.unassigned') }}</dd>
+                                    <dd class="text-slate-800">{{ $asset->assigned_to_display_name ?? __('messages.unassigned') }}</dd>
                                 </div>
                                 <div class="space-y-1">
                                     <dt class="font-semibold text-slate-500">{{ __('messages.location') }}</dt>
@@ -597,11 +597,11 @@
                                     </td>
                                     <td class="px-3 py-2.5 text-slate-800 break-words lg:hidden">
                                         <div class="space-y-1">
-                                            <p class="text-sm text-slate-800">{{ $asset->user->name ?? __('messages.unassigned') }}</p>
+                                            <p class="text-sm text-slate-800">{{ $asset->assigned_to_display_name ?? __('messages.unassigned') }}</p>
                                             <p class="text-xs text-slate-500">{{ $asset->location ?? '-' }}</p>
                                         </div>
                                     </td>
-                                    <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->user->name ?? __('messages.unassigned') }}</td>
+                                    <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->assigned_to_display_name ?? __('messages.unassigned') }}</td>
                                     <td class="hidden px-3 py-2.5 text-slate-800 break-words lg:table-cell">{{ $asset->location ?? '-' }}</td>
                                     <td class="px-3 py-2.5 text-right overflow-visible">
                                         <div class="flex items-center justify-end gap-2 opacity-80 transition group-hover:opacity-100">

@@ -128,7 +128,7 @@
                     </div>
                     <div>
                         <p class="text-slate-400">Assigned to</p>
-                        <p class="mt-0.5 font-semibold text-slate-700">{{ $asset->user->name ?? 'Unassigned' }}</p>
+                        <p class="mt-0.5 font-semibold text-slate-700">{{ $asset->assigned_to_display_name ?? 'Unassigned' }}</p>
                     </div>
                 </div>
                 <div class="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
@@ -194,7 +194,7 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-sm">
-                            <p class="font-medium text-slate-700">{{ $asset->user->name ?? 'Unassigned' }}</p>
+                            <p class="font-medium text-slate-700">{{ $asset->assigned_to_display_name ?? 'Unassigned' }}</p>
                             <p class="mt-0.5 text-xs text-slate-400">{{ $asset->location ?? '-' }}</p>
                         </td>
                         <td class="hidden whitespace-nowrap px-4 py-3 2xl:table-cell">

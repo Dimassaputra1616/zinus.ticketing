@@ -120,6 +120,72 @@ class ManualAssetFormTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_store_manual_assignee_name_without_master_user(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.assets.manual.store'), [
+                'asset_code' => 'MON-MANUAL-ASSIGNEE',
+                'name' => 'Manual Assignee Monitor',
+                'category' => 'Monitor',
+                'status' => Asset::STATUS_IN_USE,
+                'assigned_to_name' => 'Vendor Support Desk',
+            ])
+            ->assertRedirect(route('admin.assets.monitor'));
+
+        $asset = Asset::where('asset_code', 'MON-MANUAL-ASSIGNEE')->firstOrFail();
+
+        $this->assertNull($asset->user_id);
+        $this->assertSame('Vendor Support Desk', $asset->assigned_to_name);
+        $this->assertSame('Vendor Support Desk', $asset->assigned_to_display_name);
+    }
+
+    public function test_admin_can_store_assignee_from_master_user(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $assignee = User::factory()->create(['name' => 'Dimas Saputra']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.assets.manual.store'), [
+                'asset_code' => 'MON-MASTER-ASSIGNEE',
+                'name' => 'Master Assignee Monitor',
+                'category' => 'Monitor',
+                'status' => Asset::STATUS_IN_USE,
+                'user_id' => $assignee->id,
+                'assigned_to_name' => $assignee->name,
+            ])
+            ->assertRedirect(route('admin.assets.monitor'));
+
+        $asset = Asset::where('asset_code', 'MON-MASTER-ASSIGNEE')->firstOrFail();
+
+        $this->assertSame($assignee->id, $asset->user_id);
+        $this->assertSame('Dimas Saputra', $asset->assigned_to_name);
+        $this->assertSame('Dimas Saputra', $asset->assigned_to_display_name);
+    }
+
+    public function test_admin_can_resolve_master_assignee_by_name_without_javascript(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $assignee = User::factory()->create(['name' => 'Dimas Saputra']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.assets.manual.store'), [
+                'asset_code' => 'MON-MASTER-NAME-ASSIGNEE',
+                'name' => 'Master Name Assignee Monitor',
+                'category' => 'Monitor',
+                'status' => Asset::STATUS_IN_USE,
+                'assigned_to_name' => 'Dimas Saputra',
+            ])
+            ->assertRedirect(route('admin.assets.monitor'));
+
+        $asset = Asset::where('asset_code', 'MON-MASTER-NAME-ASSIGNEE')->firstOrFail();
+
+        $this->assertSame($assignee->id, $asset->user_id);
+        $this->assertSame('Dimas Saputra', $asset->assigned_to_name);
+        $this->assertSame('Dimas Saputra', $asset->assigned_to_display_name);
+    }
+
     public function test_admin_returns_to_manual_inventory_after_updating_asset(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

@@ -45,6 +45,7 @@
         'anydesk_id' => 'AnyDesk ID',
         'department_id' => 'Department',
         'user_id' => 'Assigned User',
+        'assigned_to_name' => 'Assigned User',
         'purchase_date' => 'Purchase Date',
         'warranty_expired' => 'Warranty End',
         'warranty_until' => 'Warranty Until',
@@ -177,7 +178,8 @@
         : ($asset->storage_gb ? $asset->storage_gb . ' GB' : $specFallback('storage', 'disk'));
     $osValue = $asset->os_name ?: $specFallback('os', 'operating system');
     $ipValue = $asset->ip_address ?: $specFallback('ip', 'ip address');
-    $rawUserValue = $specFallback('user', 'username', 'logged user');
+    $rawUserValue = $asset->assigned_to_name ?: $specFallback('user', 'username', 'logged user');
+    $assignedToDisplayName = $asset->assigned_to_display_name ?: $rawUserValue;
     $categoryProfileKey = \App\Support\AssetCategoryProfile::key($asset->category);
     $isComputerCategory = in_array($categoryProfileKey, ['pc', 'laptop'], true);
     $isMonitorCategory = $categoryProfileKey === 'monitor';
@@ -297,7 +299,7 @@
     $ownershipFields = [
         ['label' => 'Factory', 'value' => $asset->factory],
         ['label' => 'Department', 'value' => $asset->department?->name],
-        ['label' => $isSoftwareCategory ? 'License Owner' : 'Assigned User', 'value' => $asset->user?->name ?: $rawUserValue],
+        ['label' => $isSoftwareCategory ? 'License Owner' : 'Assigned User', 'value' => $assignedToDisplayName],
         ['label' => 'Location', 'value' => $asset->location ?: $asset->factory],
         ['label' => 'Purchase Date', 'value' => $formatDate($asset->purchase_date)],
         ['label' => $isSoftwareCategory ? 'License Expiry' : 'Warranty Until', 'value' => $formatDate($warrantyDate)],
@@ -344,7 +346,7 @@
                 ? 'License Assignment'
                 : ($isParentCategory ? 'Attached Assets' : 'Host Relation'),
             'value' => $isSoftwareCategory
-                ? ($asset->user?->name ?: ($asset->department?->name ?: 'Unassigned'))
+                ? ($assignedToDisplayName ?: ($asset->department?->name ?: 'Unassigned'))
                 : ($isParentCategory ? $attachedAssets->count() : ($parentAsset ? 'Linked' : 'Spare')),
             'caption' => $isSoftwareCategory
                 ? 'Current ownership scope'
@@ -502,7 +504,7 @@
                                 <div class="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                                     @foreach ([
                                         ['label' => 'Department', 'value' => $asset->department?->name],
-                                        ['label' => 'Assigned User', 'value' => $asset->user?->name ?: $rawUserValue],
+                                        ['label' => 'Assigned User', 'value' => $assignedToDisplayName],
                                         ['label' => 'Location', 'value' => $asset->location ?: $asset->factory],
                                         ['label' => 'Updated', 'value' => $formatDateTime($asset->updated_at)],
                                     ] as $heroField)
@@ -807,7 +809,7 @@
                                             <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
                                                 <span class="font-mono">{{ $parentAsset->asset_code }}</span>
                                                 <span>{{ $parentAsset->serial_number ?: 'No serial' }}</span>
-                                                <span>{{ $parentAsset->user?->name ?: 'Unassigned' }}</span>
+                                                <span>{{ $parentAsset->assigned_to_display_name ?: 'Unassigned' }}</span>
                                             </div>
                                         </div>
                                         <form method="POST" action="{{ route('admin.assets.relations.detach', $activeParentRelation->id) }}">

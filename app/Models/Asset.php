@@ -61,6 +61,7 @@ class Asset extends Model
         'status',
         'department_id',
         'user_id',
+        'assigned_to_name',
         'location',
         'purchase_date',
         'warranty_expired',
@@ -105,6 +106,11 @@ class Asset extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function getAssignedToDisplayNameAttribute(): ?string
+    {
+        return $this->user?->name ?: $this->assigned_to_name;
     }
 
     public function assetLogs(): HasMany
