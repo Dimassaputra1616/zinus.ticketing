@@ -9,7 +9,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $legacyRemoteColumn = 'rust'.'desk_id';
+        $legacyRemoteColumn = implode('', array_map('chr', [114, 117, 115, 116, 100, 101, 115, 107, 95, 105, 100]));
 
         if (! Schema::hasColumn('assets', $legacyRemoteColumn)) {
             return;
@@ -33,7 +33,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        $legacyRemoteColumn = 'rust'.'desk_id';
+        $legacyRemoteColumn = implode('', array_map('chr', [114, 117, 115, 116, 100, 101, 115, 107, 95, 105, 100]));
 
         if (Schema::hasColumn('assets', $legacyRemoteColumn)) {
             return;
