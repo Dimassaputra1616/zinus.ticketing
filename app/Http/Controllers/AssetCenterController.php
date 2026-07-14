@@ -658,7 +658,9 @@ class AssetCenterController extends Controller
                   ->orWhere('ip_address', 'like', "%{$search}%")
                   ->orWhere('specs', 'like', "%{$search}%")
                   ->orWhere('brand', 'like', "%{$search}%")
-                  ->orWhere('model', 'like', "%{$search}%");
+                  ->orWhere('model', 'like', "%{$search}%")
+                  ->orWhere('assigned_to_name', 'like', "%{$search}%")
+                  ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -692,6 +694,7 @@ class AssetCenterController extends Controller
         $factoriesList = Asset::whereNotNull('factory')->where('factory', '!=', '')->distinct()->pluck('factory');
         $departmentsList = Department::orderBy('name')->get();
         $brandsList = Asset::whereNotNull('brand')->where('brand', '!=', '')->distinct()->pluck('brand');
+        $users = User::orderBy('name')->get(['id', 'name', 'email']);
 
         return view('assets.category-index', compact(
             'assets',
@@ -706,7 +709,8 @@ class AssetCenterController extends Controller
             'location',
             'status',
             'lifecycleStatus',
-            'brand'
+            'brand',
+            'users'
         ));
     }
 

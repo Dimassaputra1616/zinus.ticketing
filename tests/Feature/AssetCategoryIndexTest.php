@@ -308,6 +308,96 @@ class AssetCategoryIndexTest extends TestCase
             ->assertSee('name="redirect_to" value="' . route('admin.assets.printer-scanner') . '"', false);
     }
 
+    public function test_category_inventory_renders_inline_assignee_editor_under_department(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $assignee = User::factory()->create(['name' => 'Dimas Saputra']);
+        $asset = Asset::create([
+            'asset_code' => 'PC-ASSIGNEE-INLINE-001',
+            'name' => 'Assigned Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+            'user_id' => $assignee->id,
+            'assigned_to_name' => $assignee->name,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.pc'))
+            ->assertOk()
+            ->assertSeeText('Dimas Saputra')
+            ->assertSee('action="' . route('assets.assignee.update', $asset) . '"', false)
+            ->assertSee('list="inline-assignee-desktop-' . $asset->id . '-list"', false)
+            ->assertSee('list="inline-assignee-mobile-' . $asset->id . '-list"', false);
+    }
+
+    public function test_admin_can_update_asset_assignee_from_category_inventory(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = Asset::create([
+            'asset_code' => 'PC-ASSIGNEE-UPDATE-001',
+            'name' => 'Assignment Update Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+        $returnTo = route('admin.assets.pc', ['search' => 'Assignment']);
+
+        $this->actingAs($admin)
+            ->patch(route('assets.assignee.update', $asset), [
+                'assigned_to_name' => 'Vendor Support Desk',
+                'redirect_to' => $returnTo,
+            ])
+            ->assertRedirect($returnTo)
+            ->assertSessionHas('success', 'Asset assignment updated.');
+
+        $asset->refresh();
+
+        $this->assertNull($asset->user_id);
+        $this->assertSame('Vendor Support Desk', $asset->assigned_to_name);
+        $this->assertSame('Vendor Support Desk', $asset->assigned_to_display_name);
+    }
+
+    public function test_inline_assignee_update_resolves_master_user_and_can_clear_assignment(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $assignee = User::factory()->create(['name' => 'Dimas Saputra']);
+        $asset = Asset::create([
+            'asset_code' => 'PC-ASSIGNEE-MASTER-001',
+            'name' => 'Assignment Master Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('assets.assignee.update', $asset), [
+                'assigned_to_name' => 'Dimas Saputra',
+                'redirect_to' => route('admin.assets.pc'),
+            ])
+            ->assertRedirect(route('admin.assets.pc'));
+
+        $asset->refresh();
+
+        $this->assertSame($assignee->id, $asset->user_id);
+        $this->assertSame('Dimas Saputra', $asset->assigned_to_name);
+
+        $this->actingAs($admin)
+            ->patch(route('assets.assignee.update', $asset), [
+                'assigned_to_name' => '',
+                'redirect_to' => route('admin.assets.pc'),
+            ])
+            ->assertRedirect(route('admin.assets.pc'));
+
+        $asset->refresh();
+
+        $this->assertNull($asset->user_id);
+        $this->assertNull($asset->assigned_to_name);
+    }
+
     public function test_admin_can_delete_asset_from_category_inventory_and_return_to_same_page(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

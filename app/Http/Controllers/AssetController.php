@@ -135,6 +135,22 @@ class AssetController extends Controller
             ->with('success', 'Asset diperbarui.');
     }
 
+    public function updateAssignee(Request $request, Asset $asset): RedirectResponse
+    {
+        $this->authorize('update', $asset);
+
+        $data = $request->validate([
+            'user_id' => ['nullable', 'exists:users,id'],
+            'assigned_to_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->assetService->update($asset, $data, $request->user());
+
+        return redirect()
+            ->to(AssetModuleNavigation::safeReturnUrl($request) ?? AssetModuleNavigation::routeForAsset($asset->fresh()))
+            ->with('success', 'Asset assignment updated.');
+    }
+
     public function destroy(Request $request, Asset $asset): RedirectResponse
     {
         $this->assetService->delete($asset, auth()->user());

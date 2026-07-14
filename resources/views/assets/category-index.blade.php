@@ -53,6 +53,18 @@
 @endphp
 
 <x-app-layout>
+    @if (session('success'))
+        <div
+            x-data="{ open: true }"
+            x-init="setTimeout(() => open = false, 2500)"
+            x-show="open"
+            x-transition
+            class="fixed right-4 top-4 z-50 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30"
+        >
+            {{ session('success') }}
+        </div>
+    @endif
+
     <div
         x-data="{
             filtersOpen: @js($advancedFiltersOpen),
@@ -347,7 +359,16 @@
                                         <td class="truncate px-4 py-3.5 font-mono text-xs text-slate-500" title="{{ $asset->serial_number }}">
                                             {{ $asset->serial_number ?? '-' }}
                                         </td>
-                                        <td class="px-4 py-3.5 text-slate-600">{{ $asset->department->name ?? '-' }}</td>
+                                        <td class="px-4 py-3.5 text-slate-600">
+                                            <div class="min-w-0">
+                                                <div class="truncate">{{ $asset->department->name ?? '-' }}</div>
+                                                @include('assets.partials.inline-assignee-editor', [
+                                                    'asset' => $asset,
+                                                    'users' => $users,
+                                                    'context' => 'desktop',
+                                                ])
+                                            </div>
+                                        </td>
                                         <td class="px-4 py-3.5 text-xs text-slate-600">
                                             {{ $asset->warranty_until ? \Carbon\Carbon::parse($asset->warranty_until)->format('d M Y') : ($asset->warranty_expired ? \Carbon\Carbon::parse($asset->warranty_expired)->format('d M Y') : '-') }}
                                         </td>
@@ -381,7 +402,16 @@
                                             {{ $technicalFieldValue ?? '-' }}
                                         </td>
                                         <td class="px-4 py-3.5 text-slate-600">{{ $locationValue }}</td>
-                                        <td class="px-4 py-3.5 text-slate-600">{{ $asset->department->name ?? '-' }}</td>
+                                        <td class="px-4 py-3.5 text-slate-600">
+                                            <div class="min-w-0">
+                                                <div class="truncate">{{ $asset->department->name ?? '-' }}</div>
+                                                @include('assets.partials.inline-assignee-editor', [
+                                                    'asset' => $asset,
+                                                    'users' => $users,
+                                                    'context' => 'desktop',
+                                                ])
+                                            </div>
+                                        </td>
                                         <td class="px-4 py-3.5">
                                             <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold ring-1 ring-inset {{ $condInfo['class'] }}">
                                                 {{ $condInfo['label'] }}
@@ -511,7 +541,14 @@
                                     </div>
                                     <div>
                                         <dt class="text-slate-400">Department</dt>
-                                        <dd class="mt-1 font-medium text-slate-700">{{ $asset->department->name ?? '-' }}</dd>
+                                        <dd class="mt-1 font-medium text-slate-700">
+                                            <div>{{ $asset->department->name ?? '-' }}</div>
+                                            @include('assets.partials.inline-assignee-editor', [
+                                                'asset' => $asset,
+                                                'users' => $users,
+                                                'context' => 'mobile',
+                                            ])
+                                        </dd>
                                     </div>
                                     <div class="col-span-2">
                                         <dt class="text-slate-400">License / Product Key</dt>
@@ -538,7 +575,14 @@
                                     </div>
                                     <div>
                                         <dt class="text-slate-400">Department</dt>
-                                        <dd class="mt-1 font-medium text-slate-700">{{ $asset->department->name ?? '-' }}</dd>
+                                        <dd class="mt-1 font-medium text-slate-700">
+                                            <div>{{ $asset->department->name ?? '-' }}</div>
+                                            @include('assets.partials.inline-assignee-editor', [
+                                                'asset' => $asset,
+                                                'users' => $users,
+                                                'context' => 'mobile',
+                                            ])
+                                        </dd>
                                     </div>
                                     <div>
                                         <dt class="text-slate-400">Condition</dt>

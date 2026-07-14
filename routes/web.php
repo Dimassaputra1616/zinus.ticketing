@@ -410,6 +410,7 @@ Route::middleware(['auth', 'approved', 'admin'])->group(function () {
     Route::get('/admin/assets/assignment', [App\Http\Controllers\AssetCenterController::class, 'assignment'])->name('admin.assets.assignment');
     Route::get('/admin/assets/audit-log', [App\Http\Controllers\AssetCenterController::class, 'auditLog'])->name('admin.assets.audit-log');
     Route::patch('/admin/assets/{asset}/lifecycle', [App\Http\Controllers\AssetCenterController::class, 'updateLifecycle'])->name('admin.assets.lifecycle.update')->whereNumber('asset');
+    Route::patch('/admin/assets/{asset}/assignee', [App\Http\Controllers\AssetController::class, 'updateAssignee'])->name('assets.assignee.update')->whereNumber('asset');
     Route::get('/admin/assets/import-export', [App\Http\Controllers\AssetCenterController::class, 'importExport'])->name('admin.assets.import-export');
     Route::post('/admin/assets/import', [App\Http\Controllers\AssetCenterController::class, 'import'])->name('admin.assets.import');
     Route::get('/admin/assets/export', [App\Http\Controllers\AssetCenterController::class, 'export'])->name('admin.assets.export');
