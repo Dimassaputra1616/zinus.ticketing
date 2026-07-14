@@ -816,18 +816,29 @@ function Get-AnyDeskExecutablePaths {
 }
 
 function Get-AnyDeskId {
+    param(
+        [int]$Attempts = 6,
+        [int]$DelaySeconds = 5
+    )
+
     foreach ($exe in Get-AnyDeskExecutablePaths) {
         if (-not (Test-Path -LiteralPath $exe)) {
             continue
         }
 
-        try {
-            $output = & $exe --get-id 2>&1 | Out-String
-            if ($output -match '([0-9]{3}\s?[0-9]{3}\s?[0-9]{3,4})') {
-                return ($matches[1] -replace '\s+', '')
+        for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+            try {
+                $output = & $exe --get-id 2>&1 | Out-String
+                if ($output -match '([0-9]{3}\s?[0-9]{3}\s?[0-9]{3,4})') {
+                    return ($matches[1] -replace '\s+', '')
+                }
+            } catch {
+                Write-Log "Failed to get ID via AnyDesk.exe: $($_.Exception.Message)" "WARN"
             }
-        } catch {
-            Write-Log "Failed to get ID via AnyDesk.exe: $($_.Exception.Message)" "WARN"
+
+            if ($attempt -lt $Attempts) {
+                Start-Sleep -Seconds $DelaySeconds
+            }
         }
     }
 

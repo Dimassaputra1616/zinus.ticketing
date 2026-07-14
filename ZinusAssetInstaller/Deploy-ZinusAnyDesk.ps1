@@ -248,15 +248,19 @@ $workerScript = {
                 Start-Service -Name $service.Name -ErrorAction SilentlyContinue
             }
 
-            Start-Sleep -Seconds 3
-
             $id = ""
-            try {
-                $output = & $AnyDeskExe --get-id 2>&1 | Out-String
-                if ($output -match '([0-9]{3}\s?[0-9]{3}\s?[0-9]{3,4})') {
-                    $id = ($matches[1] -replace '\s+', '')
-                }
-            } catch {}
+            $deadline = (Get-Date).AddSeconds(60)
+            do {
+                try {
+                    $output = & $AnyDeskExe --get-id 2>&1 | Out-String
+                    if ($output -match '([0-9]{3}\s?[0-9]{3}\s?[0-9]{3,4})') {
+                        $id = ($matches[1] -replace '\s+', '')
+                        break
+                    }
+                } catch {}
+
+                Start-Sleep -Seconds 3
+            } while ((Get-Date) -lt $deadline)
 
             [pscustomobject]@{
                 version = (Get-Item -LiteralPath $AnyDeskExe).VersionInfo.ProductVersion

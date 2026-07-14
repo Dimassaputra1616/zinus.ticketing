@@ -834,17 +834,28 @@ $collector = {
     }
 
     function Get-AnyDeskId {
+        param(
+            [int]$Attempts = 6,
+            [int]$DelaySeconds = 5
+        )
+
         foreach ($path in Get-AnyDeskExecutablePaths) {
             if (-not (Test-Path -LiteralPath $path)) {
                 continue
             }
 
-            try {
-                $output = & $path --get-id 2>&1 | Out-String
-                if ($output -match '([0-9]{3}\s?[0-9]{3}\s?[0-9]{3,4})') {
-                    return ($matches[1] -replace '\s+', '')
+            for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+                try {
+                    $output = & $path --get-id 2>&1 | Out-String
+                    if ($output -match '([0-9]{3}\s?[0-9]{3}\s?[0-9]{3,4})') {
+                        return ($matches[1] -replace '\s+', '')
+                    }
+                } catch {}
+
+                if ($attempt -lt $Attempts) {
+                    Start-Sleep -Seconds $DelaySeconds
                 }
-            } catch {}
+            }
         }
 
         return $null
