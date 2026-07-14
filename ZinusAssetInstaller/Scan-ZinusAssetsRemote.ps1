@@ -833,11 +833,52 @@ $collector = {
         return @($paths | Where-Object { $_ } | Select-Object -Unique)
     }
 
+    function Get-AnyDeskIdFromText {
+        param([string]$Text)
+
+        if ([string]::IsNullOrWhiteSpace($Text)) { return $null }
+
+        foreach ($pattern in @(
+                '(?im)^\s*ad\.anynet\.id\s*=\s*([0-9 ]{6,})\s*$',
+                '(?im)^\s*anynet\.id\s*=\s*([0-9 ]{6,})\s*$',
+                '(?im)^\s*id\s*=\s*([0-9 ]{6,})\s*$'
+            )) {
+            if ($Text -match $pattern) {
+                $id = ($matches[1] -replace '\s+', '')
+                if ($id -match '^\d{6,12}$') { return $id }
+            }
+        }
+
+        return $null
+    }
+
+    function Get-AnyDeskIdFromConfig {
+        foreach ($path in @(
+                "C:\ProgramData\AnyDesk\system.conf",
+                "C:\ProgramData\AnyDesk\service.conf",
+                "C:\ProgramData\AnyDesk\ad_svc.conf"
+            )) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+                continue
+            }
+
+            try {
+                $id = Get-AnyDeskIdFromText -Text (Get-Content -LiteralPath $path -Raw -ErrorAction Stop)
+                if ($id) { return $id }
+            } catch {}
+        }
+
+        return $null
+    }
+
     function Get-AnyDeskId {
         param(
             [int]$Attempts = 6,
             [int]$DelaySeconds = 5
         )
+
+        $configId = Get-AnyDeskIdFromConfig
+        if ($configId) { return $configId }
 
         foreach ($path in Get-AnyDeskExecutablePaths) {
             if (-not (Test-Path -LiteralPath $path)) {

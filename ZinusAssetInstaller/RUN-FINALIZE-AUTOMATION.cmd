@@ -10,12 +10,18 @@ if errorlevel 1 (
     exit /b
 )
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Invoke-ZinusAssetAutomation.ps1"
+if not exist "%~dp0Invoke-ZinusFinalizeAutomation.ps1" (
+    echo Invoke-ZinusFinalizeAutomation.ps1 tidak ditemukan di folder installer.
+    popd
+    exit /b 1
+)
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Invoke-ZinusFinalizeAutomation.ps1"
 set "EXIT_CODE=%ERRORLEVEL%"
 
 echo.
 echo ==============================================
-echo Proses automation selesai atau terhenti.
+echo Final automation selesai atau terhenti.
 echo Tekan tombol apa saja untuk keluar.
 echo ==============================================
 pause

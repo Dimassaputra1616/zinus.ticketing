@@ -407,43 +407,31 @@
                                                     <circle cx="12" cy="12" r="3" />
                                                 </svg>
                                             </a>
-                                            @if ($asset->source_type === 'manual')
-                                                <a
-                                                    href="{{ route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
-                                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
-                                                    title="Edit asset"
-                                                    aria-label="Edit {{ $deviceName }}"
+                                            <a
+                                                href="{{ $asset->source_type === 'manual' ? route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) : route('assets.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
+                                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                                                title="Edit asset"
+                                                aria-label="Edit {{ $deviceName }}"
+                                            >
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                    <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                            </a>
+                                            <form method="POST" action="{{ route('assets.destroy', $asset) }}" onsubmit="return confirm('Are you sure you want to delete this asset?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="hidden" name="redirect_to" value="{{ request()->fullUrl() }}">
+                                                <button
+                                                    type="submit"
+                                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                                                    title="Delete asset"
+                                                    aria-label="Delete {{ $deviceName }}"
                                                 >
                                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke-linecap="round" stroke-linejoin="round" />
+                                                        <path d="M3 6h18M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6m2 0v14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V6h10Z" stroke-linecap="round" stroke-linejoin="round" />
                                                     </svg>
-                                                </a>
-                                                <form method="POST" action="{{ route('admin.assets.manual.destroy', $asset) }}" onsubmit="return confirm('Are you sure you want to delete this asset?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button
-                                                        type="submit"
-                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
-                                                        title="Delete asset"
-                                                        aria-label="Delete {{ $deviceName }}"
-                                                    >
-                                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                                            <path d="M3 6h18M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6m2 0v14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V6h10Z" stroke-linecap="round" stroke-linejoin="round" />
-                                                        </svg>
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <a
-                                                    href="{{ route('assets.edit', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}"
-                                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
-                                                    title="Edit asset"
-                                                    aria-label="Edit {{ $deviceName }}"
-                                                >
-                                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke-linecap="round" stroke-linejoin="round" />
-                                                    </svg>
-                                                </a>
-                                            @endif
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -583,22 +571,21 @@
                                         <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
                                 </a>
-                                @if ($asset->source_type === 'manual')
-                                    <form method="POST" action="{{ route('admin.assets.manual.destroy', $asset) }}" onsubmit="return confirm('Are you sure you want to delete this asset?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button
-                                            type="submit"
-                                            class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-rose-600"
-                                            title="Delete asset"
-                                            aria-label="Delete {{ $deviceName }}"
-                                        >
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                                <path d="M3 6h18M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6m2 0v14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V6h10Z" stroke-linecap="round" stroke-linejoin="round" />
-                                            </svg>
-                                        </button>
-                                    </form>
-                                @endif
+                                <form method="POST" action="{{ route('assets.destroy', $asset) }}" onsubmit="return confirm('Are you sure you want to delete this asset?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <input type="hidden" name="redirect_to" value="{{ request()->fullUrl() }}">
+                                    <button
+                                        type="submit"
+                                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-rose-600"
+                                        title="Delete asset"
+                                        aria-label="Delete {{ $deviceName }}"
+                                    >
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path d="M3 6h18M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6m2 0v14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V6h10Z" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
+                                </form>
                             </div>
                         </article>
                     @empty

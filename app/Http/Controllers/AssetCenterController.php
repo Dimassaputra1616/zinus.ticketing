@@ -292,7 +292,7 @@ class AssetCenterController extends Controller
             ->with('success', 'Manual asset updated successfully.');
     }
 
-    public function manualDestroy(Asset $asset)
+    public function manualDestroy(Request $request, Asset $asset)
     {
         if ($asset->source_type !== 'manual') {
             return redirect()->route('admin.assets.manual.index')
@@ -301,7 +301,8 @@ class AssetCenterController extends Controller
 
         $this->assetService->delete($asset, Auth::user());
 
-        return redirect()->route('admin.assets.manual.index')
+        return redirect()
+            ->to(AssetModuleNavigation::safeReturnUrl($request) ?? route('admin.assets.manual.index'))
             ->with('success', 'Manual asset deleted successfully.');
     }
 

@@ -88,7 +88,7 @@ function initNotificationPolling() {
 
     const updateBadge = (type, count) => {
         const badges = document.querySelectorAll(`[data-notification-badge="${type}"]`);
-        const formatted = count > 9 ? '9+' : String(count);
+        const formatted = count > 99 ? '99+' : String(count);
         const shouldShow = count > 0;
 
         badges.forEach((badge) => {
@@ -237,12 +237,51 @@ function initStickyHeader() {
 // window.Alpine = Alpine;
 // Alpine.start();
 
-// Register Service Worker for PWA
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/build/sw.js').catch(error => {
-            console.error('Service Worker registration failed:', error);
+const localServiceWorkerHosts = new Set(['localhost', '127.0.0.1', '::1']);
+const workboxCacheNameMarkers = ['workbox-', 'precache', 'runtime'];
+
+function clearLocalServiceWorkers() {
+    navigator.serviceWorker.getRegistrations()
+        .then(registrations => {
+            registrations
+                .filter(registration => new URL(registration.scope).origin === window.location.origin)
+                .forEach(registration => registration.unregister());
+        })
+        .catch(error => {
+            console.warn('Local service worker cleanup failed:', error);
         });
+
+    if (!('caches' in window)) {
+        return;
+    }
+
+    caches.keys()
+        .then(cacheNames => Promise.all(
+            cacheNames
+                .filter(cacheName => workboxCacheNameMarkers.some(marker => cacheName.includes(marker)))
+                .map(cacheName => caches.delete(cacheName)),
+        ))
+        .catch(error => {
+            console.warn('Local service worker cache cleanup failed:', error);
+        });
+}
+
+// Register Service Worker for PWA, but keep localhost clean for Laravel development.
+if ('serviceWorker' in navigator) {
+    const isLocalServiceWorkerHost = localServiceWorkerHosts.has(window.location.hostname);
+
+    window.addEventListener('load', () => {
+        if (isLocalServiceWorkerHost) {
+            clearLocalServiceWorkers();
+
+            return;
+        }
+
+        if (import.meta.env.PROD) {
+            navigator.serviceWorker.register('/build/sw.js', { scope: '/build/' }).catch(error => {
+                console.error('Service Worker registration failed:', error);
+            });
+        }
     });
 }
 

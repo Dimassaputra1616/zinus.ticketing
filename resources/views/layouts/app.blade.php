@@ -89,17 +89,29 @@
                 transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease, border-color .2s ease, color .2s ease;
                 border-left: 3px solid transparent;
             }
-            .sidebar-nav a:hover {
+            .sidebar-nav .sidebar-main-link:hover {
                 transform: translateX(6px) translateY(-1px);
                 background: linear-gradient(120deg, rgba(83,183,122,0.15), rgba(18,130,76,0.07));
                 border-left-color: rgba(83,183,122,0.7);
                 box-shadow: 0 12px 28px rgba(0,0,0,0.25);
             }
-            .sidebar-nav a:active { transform: translateX(5px) translateY(1px); }
-            .sidebar-nav a.is-active {
+            .sidebar-nav .sidebar-main-link:active { transform: translateX(5px) translateY(1px); }
+            .sidebar-nav .sidebar-main-link.is-active {
                 background: linear-gradient(135deg, rgba(20,56,45,0.9), rgba(18,130,76,0.75));
                 border-left-color: #53B77A;
                 box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+            }
+            .sidebar-nav .sidebar-sub-link:hover {
+                transform: translateX(3px);
+                background: rgba(255,255,255,0.08);
+                border-left-color: rgba(110,231,183,0.55);
+                box-shadow: none;
+            }
+            .sidebar-nav .sidebar-sub-link.is-sub-active {
+                background: rgba(18,130,76,0.34);
+                border-left-color: #6EE7B7;
+                color: #F8FFFC;
+                box-shadow: inset 0 0 0 1px rgba(110,231,183,0.12);
             }
 
             .table-hover-row {
@@ -509,8 +521,8 @@
                         <path d="M5 10v9.5A1.5 1.5 0 0 0 6.5 21h11A1.5 1.5 0 0 0 19 19.5V10" />
                         <path d="M9 21V13h6v8" />
                     ',
-                    'visible' => true,
-                    'mobileVisible' => true,
+	                    'visible' => true,
+	                    'mobileVisible' => true,
                     'badgeCount' => 0,
                     'badgeType' => null,
                 ],
@@ -570,8 +582,8 @@
                     'icon' => '
                         <path d="M7 7h10M7 12h4m1 8 3-3h4a2 2 0 0 0 2-2V5c0-1.1-.9-2-2-2H6a2 2 0 0 0-2 2v15l3-3h5" />
                     ',
-                    'visible' => true,
-                    'mobileVisible' => true,
+	                    'visible' => ! $isAdmin,
+	                    'mobileVisible' => ! $isAdmin,
                     'badgeCount' => 0,
                     'badgeType' => null,
                 ],
@@ -654,21 +666,182 @@
                     'visible' => $isAdmin && ($user?->isSuperAdmin() || $user?->email === 'dimassputra1616@gmail.com'),
                     'mobileVisible' => false,
                     'badgeCount' => 0,
-                    'badgeType' => null,
-                ],
-            ];
-        @endphp
+	                    'badgeType' => null,
+	                ],
+	            ];
 
-        <aside
-            class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen z-50 lg:shrink-0 flex-col justify-between shadow-lg shadow-black/20 ring-1 ring-black/10 overflow-y-auto overflow-x-hidden custom-scrollbar transition-all duration-300 ease-in-out"
-            style="background-color: var(--zinus-sidebar-bg); color: var(--zinus-sidebar-text);"
-            :class="sidebarCollapsed ? 'w-[72px]' : 'w-[260px]'"
-        >
-            <div class="flex flex-col w-full h-full">
-                <div class="px-6 pt-10 pb-6 space-y-5 transition-all duration-300" :class="sidebarCollapsed ? 'px-3 pt-5 pb-3' : 'px-6 pt-10 pb-6'">
-                        <div class="flex flex-col items-center text-center space-y-3">
-                            @if(setting('app_logo'))
-                                <img src="{{ Storage::disk('public')->url(setting('app_logo')) }}" alt="{{ setting('app_name') }}" class="object-contain select-none transition-all duration-300 rounded-xl" :class="sidebarCollapsed ? 'h-10 w-10' : 'h-32 w-auto max-h-32'">
+	            $navIcons = collect($navItems)->mapWithKeys(fn ($item) => [$item['route'] => $item['icon']]);
+	            $ticketBadgeCount = (int) ($notificationCounts[$ticketNotificationType] ?? 0);
+	            $userBadgeCount = (int) ($notificationCounts[$userNotificationType] ?? 0);
+	            $conversationBadgeCount = (int) (collect($navItems)->firstWhere('route', 'admin.conversations.index')['badgeCount'] ?? 0);
+	            $canViewMasterConfig = $isAdmin && ($user?->isSuperAdmin() || $user?->email === 'dimassputra1616@gmail.com');
+	            $formatSidebarBadge = fn (int $count): string => $count > 99 ? '99+' : (string) $count;
+
+	            $desktopSidebarItems = [
+	                [
+	                    'type' => 'link',
+	                    'label' => __('messages.dashboard'),
+	                    'route' => 'dashboard',
+	                    'icon' => $navIcons['dashboard'],
+	                    'visible' => true,
+	                ],
+	                [
+	                    'type' => 'link',
+	                    'label' => __('messages.my_tickets'),
+	                    'route' => 'tickets.mine',
+	                    'icon' => $navIcons['tickets.mine'],
+	                    'visible' => ! $isAdmin,
+	                ],
+	                [
+	                    'type' => 'link',
+	                    'label' => __('messages.loan_log'),
+	                    'route' => 'loans.index',
+	                    'icon' => $navIcons['loans.index'],
+	                    'visible' => ! $isAdmin,
+	                ],
+	                [
+	                    'type' => 'group',
+	                    'key' => 'service-desk',
+	                    'label' => 'IT Service Desk',
+	                    'icon' => '
+	                        <path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Z" />
+	                        <path d="M3 11a9 9 0 0 1 18 0" />
+	                        <path d="M21 11v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z" />
+	                        <path d="M21 16v2a4 4 0 0 1-4 4h-5" />
+	                    ',
+	                    'visible' => $isAdmin,
+	                    'children' => [
+	                        ['type' => 'link', 'label' => __('messages.remote_system'), 'route' => 'remote-system.index', 'visible' => $isAdmin],
+	                        ['type' => 'link', 'label' => __('messages.ticket_list'), 'route' => 'tickets.index', 'visible' => $isAdmin, 'badgeCount' => $ticketBadgeCount, 'badgeType' => 'tickets'],
+	                        ['type' => 'link', 'label' => __('messages.live_chat'), 'route' => 'admin.conversations.index', 'visible' => $isAdmin, 'badgeCount' => $conversationBadgeCount, 'badgeType' => 'conversations'],
+	                    ],
+	                ],
+	                [
+	                    'type' => 'group',
+	                    'key' => 'asset-center',
+	                    'label' => 'Asset Center',
+	                    'icon' => $navIcons['assets.index'],
+	                    'visible' => $isAdmin,
+	                    'activeRoutes' => ['assets.*', 'admin.assets.*', 'loans.index'],
+	                    'children' => [
+	                        ['type' => 'link', 'label' => 'Asset Dashboard', 'route' => 'assets.index', 'visible' => $isAdmin],
+	                        [
+	                            'type' => 'group',
+	                            'key' => 'asset-inventory',
+	                            'label' => 'Inventory',
+	                            'visible' => $isAdmin,
+	                            'children' => [
+	                                ['type' => 'link', 'label' => 'PC', 'route' => 'admin.assets.pc', 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'Laptop', 'route' => 'admin.assets.laptop', 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'Monitor', 'route' => 'admin.assets.monitor', 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'Printer & Scanner', 'route' => 'admin.assets.printer-scanner', 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'Network Device', 'route' => 'admin.assets.network-device', 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'CCTV', 'route' => 'admin.assets.cctv', 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'Peripheral', 'route' => 'admin.assets.peripheral', 'visible' => $isAdmin],
+	                            ],
+	                        ],
+	                        [
+	                            'type' => 'group',
+	                            'key' => 'asset-operations',
+	                            'label' => 'Asset Operations',
+	                            'visible' => $isAdmin,
+	                            'children' => [
+	                                ['type' => 'link', 'label' => 'Mutation / Assignment', 'route' => 'admin.assets.assignment', 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'Loan', 'route' => 'loans.index', 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'Inspection', 'route' => 'admin.assets.inspections.index', 'activeRoutes' => ['admin.assets.inspections.*'], 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'BAST', 'route' => 'admin.assets.bast.index', 'activeRoutes' => ['admin.assets.bast.*'], 'visible' => $isAdmin],
+	                            ],
+	                        ],
+	                        [
+	                            'type' => 'group',
+	                            'key' => 'asset-governance',
+	                            'label' => 'Asset Governance',
+	                            'visible' => $isAdmin,
+	                            'children' => [
+	                                ['type' => 'link', 'label' => 'Software License', 'route' => 'admin.assets.software-license', 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'Audit Log', 'route' => 'admin.assets.audit-log', 'visible' => $isAdmin],
+	                            ],
+	                        ],
+	                        [
+	                            'type' => 'group',
+	                            'key' => 'reports-data',
+	                            'label' => 'Reports & Data',
+	                            'visible' => $isAdmin,
+	                            'children' => [
+	                                ['type' => 'link', 'label' => 'Reports', 'route' => 'admin.assets.reports.index', 'activeRoutes' => ['admin.assets.reports.*'], 'visible' => $isAdmin],
+	                                ['type' => 'link', 'label' => 'Import / Export', 'route' => 'admin.assets.import-export', 'visible' => $isAdmin],
+	                            ],
+	                        ],
+	                    ],
+	                ],
+	                [
+	                    'type' => 'group',
+	                    'key' => 'knowledge-base',
+	                    'label' => 'Knowledge Base',
+	                    'icon' => $navIcons['tutorials.index'],
+	                    'visible' => true,
+	                    'children' => [
+	                        ['type' => 'link', 'label' => __('messages.tutorials'), 'route' => 'tutorials.index', 'activeRoutes' => ['tutorials.*'], 'visible' => true],
+	                        ['type' => 'link', 'label' => 'Manage Tutorials', 'route' => 'admin.tutorials.index', 'activeRoutes' => ['admin.tutorials.*'], 'visible' => $isAdmin],
+	                    ],
+	                ],
+	                [
+	                    'type' => 'group',
+	                    'key' => 'administration',
+	                    'label' => 'Administration',
+	                    'icon' => $navIcons['users.index'],
+	                    'visible' => $isAdmin,
+	                    'children' => [
+	                        ['type' => 'link', 'label' => __('messages.manage_user'), 'route' => 'users.index', 'visible' => $isAdmin, 'badgeCount' => $userBadgeCount, 'badgeType' => 'users'],
+	                        ['type' => 'link', 'label' => __('messages.master_config'), 'route' => 'admin.settings.index', 'visible' => $canViewMasterConfig],
+	                    ],
+	                ],
+	            ];
+
+	            $collectSidebarRoutes = function (array $items) use (&$collectSidebarRoutes): array {
+	                $routes = [];
+
+	                foreach ($items as $item) {
+	                    if (! ($item['visible'] ?? true)) {
+	                        continue;
+	                    }
+
+	                    if (($item['type'] ?? 'link') === 'group') {
+	                        $routes = array_merge($routes, $item['activeRoutes'] ?? [], $collectSidebarRoutes($item['children'] ?? []));
+	                        continue;
+	                    }
+
+	                    if (! empty($item['route'])) {
+	                        $routes[] = $item['route'];
+	                    }
+
+	                    $routes = array_merge($routes, $item['activeRoutes'] ?? []);
+	                }
+
+	                return array_values(array_unique($routes));
+	            };
+
+	            $isSidebarItemActive = function (array $item) use ($collectSidebarRoutes): bool {
+	                $routes = (($item['type'] ?? 'link') === 'group')
+	                    ? array_merge($item['activeRoutes'] ?? [], $collectSidebarRoutes($item['children'] ?? []))
+	                    : array_merge([$item['route'] ?? null], $item['activeRoutes'] ?? []);
+
+	                $routes = array_values(array_filter(array_unique($routes)));
+
+	                return ! empty($routes) && request()->routeIs(...$routes);
+	            };
+	        @endphp
+
+	        <aside
+	            class="hidden lg:flex lg:sticky lg:top-0 lg:h-screen z-50 lg:shrink-0 flex-col justify-between overflow-hidden shadow-lg shadow-black/20 ring-1 ring-black/10 transition-all duration-300 ease-in-out"
+	            style="background-color: var(--zinus-sidebar-bg); color: var(--zinus-sidebar-text);"
+	            :class="sidebarCollapsed ? 'w-[72px]' : 'w-[284px]'"
+	        >
+	            <div class="flex min-h-0 w-full flex-col h-full">
+	                <div class="px-6 pt-10 pb-6 space-y-5 transition-all duration-300" :class="sidebarCollapsed ? 'px-3 pt-5 pb-3' : 'px-6 pt-10 pb-6'">
+	                        <div class="flex flex-col items-center text-center space-y-3">
+	                            @if(setting('app_logo'))
+	                                <img src="{{ Storage::disk('public')->url(setting('app_logo')) }}" alt="{{ setting('app_name') }}" class="object-contain select-none transition-all duration-300 rounded-xl" :class="sidebarCollapsed ? 'h-10 w-10' : 'h-32 w-auto max-h-32'">
                             @else
                                 <img src="/images/logo-email.png" alt="Zinus Dream" class="object-contain select-none transition-all duration-300" :class="sidebarCollapsed ? 'h-10 w-10' : 'h-32 w-auto max-h-32'">
                             @endif
@@ -690,210 +863,222 @@
                             </span>
                         </div>
                     @endif
-                    <div class="h-px w-full opacity-20" x-show="!sidebarCollapsed" x-transition style="background-color: var(--zinus-sidebar-text);"></div>
-                </div>
+	                    <div class="h-px w-full opacity-20" x-show="!sidebarCollapsed" x-transition style="background-color: var(--zinus-sidebar-text);"></div>
+	                </div>
 
-                <nav id="tour-sidebar" class="flex-1 space-y-1.5 sidebar-nav text-[14px] transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
-                    @foreach ($navItems as $item)
-                        @continue(! $item['visible'])
-                        @if ($item['route'] === 'assets.index')
-                            @php
-                                $isAssetCenterActive = request()->is('admin/assets*') || request()->is('admin/assets/*');
-                                $assetCenterItems = [
-                                    ['route' => 'assets.index', 'label' => 'Dashboard'],
-                                    ['route' => 'admin.assets.pc', 'label' => 'PC'],
-                                    ['route' => 'admin.assets.laptop', 'label' => 'Laptop'],
-                                    ['route' => 'admin.assets.monitor', 'label' => 'Monitor'],
-                                    ['route' => 'admin.assets.printer-scanner', 'label' => 'Printer & Scanner'],
-                                    ['route' => 'admin.assets.network-device', 'label' => 'Network Device'],
-                                    ['route' => 'admin.assets.cctv', 'label' => 'CCTV'],
-                                    ['route' => 'admin.assets.peripheral', 'label' => 'Peripheral'],
-                                    ['route' => 'admin.assets.software-license', 'label' => 'Software License'],
-                                    ['route' => 'admin.assets.assignment', 'label' => 'Mutation / Assignment'],
-                                    ['route' => 'admin.assets.audit-log', 'label' => 'Audit Log'],
-                                    ['route' => 'admin.assets.bast.index', 'label' => 'BAST'],
-                                    ['route' => 'admin.assets.inspections.index', 'label' => 'Inspection'],
-                                    ['route' => 'admin.assets.reports.index', 'label' => 'Reports'],
-                                    ['route' => 'admin.assets.import-export', 'label' => 'Import / Export'],
-                                ];
-                            @endphp
-                            <div
-                                x-data="{
-                                    inlineOpen: {{ $isAssetCenterActive ? 'true' : 'false' }},
-                                    flyoutOpen: false,
-                                    flyoutTop: 16,
-                                    flyoutLeft: 82
-                                }"
-                                x-effect="if (!sidebarCollapsed) flyoutOpen = false"
-                                class="w-full"
-                            >
-                                <button
-                                    type="button"
-                                    @click="
-                                        if (sidebarCollapsed) {
-                                            const rect = $el.getBoundingClientRect();
-                                            flyoutTop = Math.max(16, Math.min(rect.top - 8, window.innerHeight - 520));
-                                            flyoutLeft = rect.right + 10;
-                                            flyoutOpen = !flyoutOpen;
-                                        } else {
-                                            inlineOpen = !inlineOpen;
-                                        }
-                                    "
-                                    :title="sidebarCollapsed ? 'Buka menu Asset Center' : (inlineOpen ? 'Tutup menu Asset Center' : 'Buka menu Asset Center')"
-                                    :aria-expanded="(sidebarCollapsed ? flyoutOpen : inlineOpen).toString()"
-                                    :aria-controls="sidebarCollapsed ? 'asset-center-flyout' : 'asset-center-submenu'"
-                                    @class([
-                                        'w-full group flex items-center rounded-lg py-3 text-[14px] font-medium transition-all duration-150 border-l-[3px]',
-                                        'opacity-80 hover:text-white hover:opacity-100' => ! $isAssetCenterActive,
-                                        'text-white font-semibold' => $isAssetCenterActive,
-                                    ])
-                                    :class="sidebarCollapsed ? 'justify-center px-0' : 'px-4 gap-3'"
-                                    style="{{ $isAssetCenterActive ? 'border-left-color: var(--zinus-mint); background: rgba(255, 255, 255, 0.05);' : 'color: var(--zinus-sidebar-text); border-left-color: transparent;' }}"
-                                >
-                                    <svg
-                                        class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="1.8"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        {!! $item['icon'] !!}
-                                    </svg>
-                                    <span class="flex-1 text-left whitespace-nowrap overflow-hidden transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>Asset Center</span>
-                                    <svg
-                                        class="h-4 w-4 transition-transform duration-200"
-                                        :class="inlineOpen ? 'rotate-180' : ''"
-                                        x-show="!sidebarCollapsed"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.06z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                                <div
-                                    id="asset-center-submenu"
-                                    x-show="inlineOpen && !sidebarCollapsed"
-                                    x-transition:enter="transition ease-out duration-100"
-                                    x-transition:enter-start="transform opacity-0 scale-95"
-                                    x-transition:enter-end="transform opacity-100 scale-100"
-                                    class="mt-1 space-y-1 pl-9 text-xs"
-                                >
-                                    @foreach ($assetCenterItems as $assetCenterItem)
-                                        <a
-                                            href="{{ route($assetCenterItem['route']) }}"
-                                            class="group flex items-center rounded-md py-2 px-3 transition-colors hover:text-white {{ request()->routeIs($assetCenterItem['route']) ? 'text-white font-semibold' : 'text-emerald-100/70' }}"
-                                        >
-                                            {{ $assetCenterItem['label'] }}
-                                        </a>
-                                    @endforeach
-                                </div>
+	                <nav id="tour-sidebar" class="min-h-0 flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden sidebar-nav custom-scrollbar pb-3 text-[14px] transition-all duration-300" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
+	                    @foreach ($desktopSidebarItems as $item)
+	                        @continue(! ($item['visible'] ?? true))
+	                        @php
+	                            $itemType = $item['type'] ?? 'link';
+	                            $isActive = $isSidebarItemActive($item);
+	                            $badgeCount = (int) ($item['badgeCount'] ?? 0);
+	                            $badgeType = $item['badgeType'] ?? null;
+	                        @endphp
 
-                                <template x-teleport="body">
-                                    <div
-                                        id="asset-center-flyout"
-                                        x-show="flyoutOpen && sidebarCollapsed"
-                                        x-cloak
-                                        @click.outside="flyoutOpen = false"
-                                        @keydown.escape.window="flyoutOpen = false"
-                                        x-transition:enter="transition ease-out duration-[180ms]"
-                                        x-transition:enter-start="opacity-0 -translate-x-2 scale-95"
-                                        x-transition:enter-end="opacity-100 translate-x-0 scale-100"
-                                        x-transition:leave="transition ease-in duration-[120ms]"
-                                        x-transition:leave-start="opacity-100 translate-x-0 scale-100"
-                                        x-transition:leave-end="opacity-0 -translate-x-2 scale-95"
-                                        :style="`top: ${flyoutTop}px; left: ${flyoutLeft}px;`"
-                                        class="fixed z-[70] w-64 overflow-hidden rounded-2xl border border-emerald-100/80 bg-white/95 shadow-2xl shadow-emerald-950/20 ring-1 ring-black/5 backdrop-blur-xl"
-                                        role="menu"
-                                        aria-label="Asset Center"
-                                    >
-                                        <div class="border-b border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-4 py-3">
-                                            <div class="flex items-center justify-between gap-3">
-                                                <div>
-                                                    <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-600">Workspace</p>
-                                                    <p class="mt-0.5 text-sm font-semibold text-slate-900">Asset Center</p>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    @click="flyoutOpen = false"
-                                                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white hover:text-slate-700"
-                                                    aria-label="Tutup menu Asset Center"
-                                                >
-                                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                                                        <path d="M5 5l10 10M15 5 5 15" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <nav class="max-h-[min(430px,calc(100vh-5rem))] space-y-1 overflow-y-auto p-2 custom-scrollbar">
-                                            @foreach ($assetCenterItems as $assetCenterItem)
-                                                <a
-                                                    href="{{ route($assetCenterItem['route']) }}"
-                                                    role="menuitem"
-                                                    class="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm transition {{ request()->routeIs($assetCenterItem['route']) ? 'bg-emerald-50 font-semibold text-emerald-800 ring-1 ring-emerald-100' : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-700' }}"
-                                                >
-                                                    <span>{{ $assetCenterItem['label'] }}</span>
-                                                    @if (request()->routeIs($assetCenterItem['route']))
-                                                        <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 shadow-sm shadow-emerald-300"></span>
-                                                    @else
-                                                        <svg class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path d="m8 5 5 5-5 5" />
-                                                        </svg>
-                                                    @endif
-                                                </a>
-                                            @endforeach
-                                        </nav>
-                                    </div>
-                                </template>
-                            </div>
-                        @else
-                            @php
-                                $isActive = request()->routeIs($item['route']);
-                                $badgeCount = (int) ($item['badgeCount'] ?? 0);
-                                $badgeType = $item['badgeType'] ?? null;
-                            @endphp
-                            <a
-                                href="{{ route($item['route']) }}"
-                                @class([
-                                    'group flex items-center rounded-lg py-3 text-[14px] font-medium transition-all duration-150 border-l-[3px] border-transparent',
-                                    'opacity-80' => ! $isActive,
-                                    'is-active text-white' => $isActive,
-                                    'hover:text-white' => ! $isActive,
-                                ])
-                                :class="sidebarCollapsed ? 'justify-center px-0' : 'px-4 gap-3'"
-                                style="{{ $isActive ? 'background: linear-gradient(135deg, var(--zinus-green), var(--zinus-green-strong)); border-left-color: var(--zinus-mint); box-shadow: 0 20px 40px rgba(0,0,0,0.35);' : 'color: var(--zinus-sidebar-text);' }}"
-                            >
-                                <svg
-                                    class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    viewBox="0 0 24 24"
-                                >
-                                    {!! $item['icon'] !!}
-                                </svg>
-                                <span class="flex-1 whitespace-nowrap overflow-hidden transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>{{ $item['label'] }}</span>
-                                @if ($badgeType)
-                                    <span
-                                        class="inline-flex items-center gap-1 rounded-full bg-rose-100 py-0.5 text-[0.65rem] font-semibold uppercase text-rose-600 transition-all duration-300"
-                                        :class="sidebarCollapsed ? 'absolute -top-1 -right-1 w-2 h-2 p-0 min-w-0 rounded-full' : 'ml-auto px-2 tracking-[0.25em]'"
-                                        data-notification-badge="{{ $badgeType }}"
-                                        @if ($badgeCount === 0) hidden style="display: none;" @endif
-                                    >
-                                        <template x-if="!sidebarCollapsed">
-                                            <span class="flex items-center gap-1"><span>New</span><span class="tracking-normal" data-notification-count="{{ $badgeType }}">{{ $badgeCount > 9 ? '9+' : $badgeCount }}</span></span>
-                                        </template>
-                                    </span>
-                                @endif
-                            </a>
-                        @endif
-                    @endforeach
-                </nav>
+	                        @if ($itemType === 'group')
+	                            <div
+	                                x-data="{ open: {{ $isActive ? 'true' : 'false' }} }"
+	                                x-effect="if (sidebarCollapsed) { open = false } else if ({{ $isActive ? 'true' : 'false' }}) { open = true }"
+	                                class="w-full"
+	                            >
+	                                <button
+	                                    type="button"
+	                                    @click="if (sidebarCollapsed) { sidebarCollapsed = false; open = true } else { open = !open }"
+	                                    title="{{ $item['label'] }}"
+	                                    :aria-expanded="(!sidebarCollapsed && open).toString()"
+	                                    @class([
+	                                        'group relative flex w-full items-center rounded-lg border-l-[3px] py-3 text-[14px] font-medium transition-all duration-150',
+	                                        'text-emerald-50 font-semibold' => $isActive,
+	                                        'text-emerald-50/80 hover:bg-white/10 hover:text-white' => ! $isActive,
+	                                    ])
+	                                    :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-4'"
+	                                    style="{{ $isActive ? 'border-left-color: rgba(83,183,122,0.85); background: rgba(83,183,122,0.10);' : 'color: var(--zinus-sidebar-text); border-left-color: transparent;' }}"
+	                                >
+	                                    <svg
+	                                        class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
+	                                        xmlns="http://www.w3.org/2000/svg"
+	                                        fill="none"
+	                                        stroke="currentColor"
+	                                        stroke-width="1.8"
+	                                        stroke-linecap="round"
+	                                        stroke-linejoin="round"
+	                                        viewBox="0 0 24 24"
+	                                    >
+	                                        {!! $item['icon'] !!}
+	                                    </svg>
+	                                    <span class="min-w-0 flex-1 truncate text-left transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>{{ $item['label'] }}</span>
+	                                    <svg
+	                                        class="h-4 w-4 flex-shrink-0 transition-transform duration-200"
+	                                        :class="open ? 'rotate-90' : ''"
+	                                        x-show="!sidebarCollapsed"
+	                                        viewBox="0 0 20 20"
+	                                        fill="none"
+	                                        stroke="currentColor"
+	                                        stroke-width="2"
+	                                        stroke-linecap="round"
+	                                        stroke-linejoin="round"
+	                                        aria-hidden="true"
+	                                    >
+	                                        <path d="m7 5 5 5-5 5" />
+	                                    </svg>
+	                                </button>
+
+	                                <div
+	                                    x-cloak
+	                                    x-show="open && !sidebarCollapsed"
+	                                    x-transition:enter="transition ease-out duration-150"
+	                                    x-transition:enter-start="opacity-0 -translate-y-1"
+	                                    x-transition:enter-end="opacity-100 translate-y-0"
+	                                    x-transition:leave="transition ease-in duration-100"
+	                                    x-transition:leave-start="opacity-100 translate-y-0"
+	                                    x-transition:leave-end="opacity-0 -translate-y-1"
+	                                    class="mt-1 space-y-1 rounded-lg border-l border-emerald-300/20 pl-3"
+	                                >
+	                                    @foreach ($item['children'] ?? [] as $child)
+	                                        @continue(! ($child['visible'] ?? true))
+	                                        @php
+	                                            $childType = $child['type'] ?? 'link';
+	                                            $childActive = $isSidebarItemActive($child);
+	                                            $childBadgeCount = (int) ($child['badgeCount'] ?? 0);
+	                                            $childBadgeType = $child['badgeType'] ?? null;
+	                                        @endphp
+
+	                                        @if ($childType === 'group')
+	                                            <div
+	                                                x-data="{ open: {{ $childActive ? 'true' : 'false' }} }"
+	                                                x-effect="if ({{ $childActive ? 'true' : 'false' }}) { open = true }"
+	                                                class="w-full"
+	                                            >
+	                                                <button
+	                                                    type="button"
+	                                                    @click="open = !open"
+		                                                    @class([
+		                                                        'group flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] transition duration-200',
+		                                                        'bg-emerald-400/10 text-emerald-50' => $childActive,
+		                                                        'text-emerald-50/75 hover:bg-white/10 hover:text-white' => ! $childActive,
+		                                                    ])
+	                                                    :aria-expanded="open.toString()"
+	                                                >
+	                                                    <svg
+	                                                        class="h-3.5 w-3.5 flex-shrink-0 transition-transform duration-200"
+	                                                        :class="open ? 'rotate-90' : ''"
+	                                                        viewBox="0 0 20 20"
+	                                                        fill="none"
+	                                                        stroke="currentColor"
+	                                                        stroke-width="2"
+	                                                        stroke-linecap="round"
+	                                                        stroke-linejoin="round"
+	                                                        aria-hidden="true"
+	                                                    >
+	                                                        <path d="m7 5 5 5-5 5" />
+	                                                    </svg>
+	                                                    <span class="min-w-0 flex-1 truncate text-left">{{ $child['label'] }}</span>
+	                                                </button>
+
+	                                                <div
+	                                                    x-cloak
+	                                                    x-show="open"
+	                                                    x-transition
+	                                                    class="ml-4 mt-1 space-y-1 border-l border-emerald-300/20 pl-2"
+	                                                >
+	                                                    @foreach ($child['children'] ?? [] as $grandchild)
+	                                                        @continue(! ($grandchild['visible'] ?? true))
+	                                                        @php
+	                                                            $grandchildActive = $isSidebarItemActive($grandchild);
+	                                                            $grandchildBadgeCount = (int) ($grandchild['badgeCount'] ?? 0);
+	                                                            $grandchildBadgeType = $grandchild['badgeType'] ?? null;
+	                                                        @endphp
+		                                                        <a
+		                                                            href="{{ route($grandchild['route']) }}"
+		                                                            @class([
+		                                                                'sidebar-sub-link group flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition duration-200',
+		                                                                'is-sub-active font-semibold' => $grandchildActive,
+		                                                                'text-emerald-50/80 hover:text-white' => ! $grandchildActive,
+		                                                            ])
+		                                                            @if ($grandchildActive) aria-current="page" @endif
+		                                                        >
+	                                                            <span class="min-w-0 truncate">{{ $grandchild['label'] }}</span>
+	                                                            @if ($grandchildBadgeType)
+	                                                                <span
+		                                                                    class="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[0.65rem] font-bold leading-none text-white"
+		                                                                    data-notification-badge="{{ $grandchildBadgeType }}"
+		                                                                    @if ($grandchildBadgeCount === 0) hidden style="display: none;" @endif
+		                                                                >
+		                                                                    <span data-notification-count="{{ $grandchildBadgeType }}">{{ $formatSidebarBadge($grandchildBadgeCount) }}</span>
+		                                                                </span>
+	                                                            @endif
+	                                                        </a>
+	                                                    @endforeach
+	                                                </div>
+	                                            </div>
+	                                        @else
+		                                            <a
+		                                                href="{{ route($child['route']) }}"
+		                                                @class([
+		                                                    'sidebar-sub-link group flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition duration-200',
+		                                                    'is-sub-active font-semibold' => $childActive,
+		                                                    'text-emerald-50/80 hover:text-white' => ! $childActive,
+		                                                ])
+		                                                @if ($childActive) aria-current="page" @endif
+		                                            >
+	                                                <span class="min-w-0 truncate">{{ $child['label'] }}</span>
+	                                                @if ($childBadgeType)
+	                                                    <span
+		                                                        class="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[0.65rem] font-bold leading-none text-white"
+		                                                        data-notification-badge="{{ $childBadgeType }}"
+		                                                        @if ($childBadgeCount === 0) hidden style="display: none;" @endif
+		                                                    >
+		                                                        <span data-notification-count="{{ $childBadgeType }}">{{ $formatSidebarBadge($childBadgeCount) }}</span>
+		                                                    </span>
+	                                                @endif
+	                                            </a>
+	                                        @endif
+	                                    @endforeach
+	                                </div>
+	                            </div>
+	                        @else
+	                            <a
+	                                href="{{ route($item['route']) }}"
+	                                title="{{ $item['label'] }}"
+	                                @class([
+	                                    'sidebar-main-link group relative flex items-center rounded-lg border-l-[3px] border-transparent py-3 text-[14px] font-medium transition-all duration-150',
+	                                    'is-active text-white' => $isActive,
+	                                    'opacity-80 hover:text-white' => ! $isActive,
+	                                ])
+	                                :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-4'"
+	                                style="{{ $isActive ? 'background: linear-gradient(135deg, var(--zinus-green), var(--zinus-green-strong)); border-left-color: var(--zinus-mint); box-shadow: 0 20px 40px rgba(0,0,0,0.35);' : 'color: var(--zinus-sidebar-text);' }}"
+	                                @if ($isActive) aria-current="page" @endif
+	                            >
+	                                <svg
+	                                    class="h-[18px] w-[18px] flex-shrink-0 transition-transform duration-150 group-hover:scale-105"
+	                                    xmlns="http://www.w3.org/2000/svg"
+	                                    fill="none"
+	                                    stroke="currentColor"
+	                                    stroke-width="1.8"
+	                                    stroke-linecap="round"
+	                                    stroke-linejoin="round"
+	                                    viewBox="0 0 24 24"
+	                                >
+	                                    {!! $item['icon'] !!}
+	                                </svg>
+	                                <span class="min-w-0 flex-1 truncate transition-all duration-300" x-show="!sidebarCollapsed" x-transition.opacity>{{ $item['label'] }}</span>
+	                                @if ($badgeType)
+	                                    <span
+	                                        class="inline-flex items-center justify-center rounded-full bg-rose-500 py-0.5 text-[0.65rem] font-bold leading-none text-white transition-all duration-300"
+	                                        :class="sidebarCollapsed ? 'absolute -right-1 -top-1 h-2 w-2 min-w-0 rounded-full p-0' : 'ml-auto min-w-5 px-1.5'"
+	                                        data-notification-badge="{{ $badgeType }}"
+	                                        @if ($badgeCount === 0) hidden style="display: none;" @endif
+	                                    >
+	                                        <template x-if="!sidebarCollapsed">
+	                                            <span data-notification-count="{{ $badgeType }}">{{ $formatSidebarBadge($badgeCount) }}</span>
+	                                        </template>
+	                                    </span>
+	                                @endif
+	                            </a>
+	                        @endif
+	                    @endforeach
+	                </nav>
 
                 <!-- Toggle Collapse Button -->
                 <div class="px-3 py-2 border-t border-white/10">
@@ -1256,7 +1441,7 @@
                                     </svg>
                                     @if ($badgeCount > 0)
                                         <span class="mobile-nav-badge absolute -right-2.5 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white ring-2 ring-[#0d1f1a]">
-                                            {{ $badgeCount > 9 ? '9+' : $badgeCount }}
+                                            {{ $formatSidebarBadge($badgeCount) }}
                                         </span>
                                     @endif
                                 </div>
@@ -1294,7 +1479,7 @@
                             if (!bridge || !badge) return;
                             const count = parseInt(bridge.dataset.count || '0', 10);
                             if (count > 0) {
-                                badge.textContent = count > 9 ? '9+' : count;
+                                badge.textContent = count > 99 ? '99+' : count;
                                 badge.classList.remove('hidden');
                                 badge.classList.add('flex');
                             } else {

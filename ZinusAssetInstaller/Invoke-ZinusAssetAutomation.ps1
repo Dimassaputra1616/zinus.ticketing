@@ -27,6 +27,28 @@ function ConvertTo-Boolean {
     return ([string]$Value).Trim() -eq "True"
 }
 
+function Get-LocalIPv4Address {
+    try {
+        return @(
+            Get-NetIPAddress -AddressFamily IPv4 -ErrorAction Stop |
+                Where-Object {
+                    $_.IPAddress -and
+                    $_.IPAddress -ne "127.0.0.1" -and
+                    $_.IPAddress -notlike "169.254.*"
+                } |
+                Select-Object -ExpandProperty IPAddress -Unique
+        )
+    } catch {
+        return @(
+            [System.Net.Dns]::GetHostAddresses([System.Net.Dns]::GetHostName()) |
+                Where-Object { $_.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork } |
+                ForEach-Object { $_.IPAddressToString } |
+                Where-Object { $_ -ne "127.0.0.1" -and $_ -notlike "169.254.*" } |
+                Select-Object -Unique
+        )
+    }
+}
+
 function Merge-DiscoveryRows {
     param(
         [object[]]$BaseRows,
@@ -161,6 +183,12 @@ if ($deployAnyDesk) {
     }
 }
 
+$forceBootstrapInput = Read-Host "Paksa bootstrap policy local admin walau WinRM sudah terbuka? (Y/n) [Y]"
+$forceLocalAdminBootstrap = $true
+if ($forceBootstrapInput -match '^(n|no|tidak)$') {
+    $forceLocalAdminBootstrap = $false
+}
+
 $segments = @(
     $segmentInput.Split(",") |
         ForEach-Object { $_.Trim() } |
@@ -220,7 +248,21 @@ Write-Host "TAHAP 1/5 - Mencari perangkat online..." -ForegroundColor Cyan
 
 $discovery = @(Import-Csv -LiteralPath $discoveryPath)
 $onlineRows = @($discovery | Where-Object { ConvertTo-Boolean $_.online })
-$onlineTargets = @($onlineRows | Select-Object -ExpandProperty ip_address -Unique)
+$localIpAddresses = @(Get-LocalIPv4Address)
+$skippedLocalTargets = @(
+    $onlineRows |
+        Select-Object -ExpandProperty ip_address -Unique |
+        Where-Object { $_ -in $localIpAddresses }
+)
+$onlineTargets = @(
+    $onlineRows |
+        Select-Object -ExpandProperty ip_address -Unique |
+        Where-Object { $_ -notin $localIpAddresses }
+)
+
+if ($skippedLocalTargets.Count -gt 0) {
+    Write-Host "Lewati IP mesin ini dari target remote: $($skippedLocalTargets -join ', ')" -ForegroundColor Yellow
+}
 
 if ($onlineTargets.Count -eq 0) {
     $token = $null
@@ -244,6 +286,7 @@ Write-Host "TAHAP 2/5 - Mengaktifkan WinRM pada $($needsBootstrap.Count) perangk
     -ResultPath $bootstrapPath `
     -Credential $credential `
     -EnableLocalAccountRemoteAdmin `
+    -ForceBootstrap:$forceLocalAdminBootstrap `
     -NoFailExit
 
 Write-Host ""
@@ -299,7 +342,8 @@ for ($retry = 1; $retry -le 2; $retry++) {
 $readyTargets = @(
     $verification |
         Where-Object { ConvertTo-Boolean $_.wsman_5985 } |
-        Select-Object -ExpandProperty ip_address -Unique
+        Select-Object -ExpandProperty ip_address -Unique |
+        Where-Object { $_ -notin $localIpAddresses }
 )
 
 $bootstrapByTarget = @{}

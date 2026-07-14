@@ -135,11 +135,13 @@ class AssetController extends Controller
             ->with('success', 'Asset diperbarui.');
     }
 
-    public function destroy(Asset $asset): RedirectResponse
+    public function destroy(Request $request, Asset $asset): RedirectResponse
     {
         $this->assetService->delete($asset, auth()->user());
 
-        return redirect()->route('assets.index')->with('success', 'Asset dihapus.');
+        return redirect()
+            ->to(AssetModuleNavigation::safeReturnUrl($request) ?? AssetModuleNavigation::routeForAsset($asset))
+            ->with('success', 'Asset dihapus.');
     }
 
     public function locations(Request $request): JsonResponse

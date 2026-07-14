@@ -25,18 +25,46 @@ class AssetCategoryIndexTest extends TestCase
         }
     }
 
-    public function test_collapsed_asset_center_button_opens_the_flyout_menu(): void
+    public function test_admin_sidebar_renders_nested_asset_center_navigation(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
 
         $this->actingAs($admin)
             ->get(route('admin.assets.pc'))
             ->assertOk()
-            ->assertSee('x-teleport="body"', false)
-            ->assertSee('x-show="flyoutOpen && sidebarCollapsed"', false)
-            ->assertSee('role="menu"', false)
+            ->assertSeeText('IT Service Desk')
+            ->assertSeeText('Asset Center')
+            ->assertSeeText('Inventory')
+            ->assertSeeText('Asset Operations')
+            ->assertSeeText('Asset Governance')
+            ->assertSeeText('Reports & Data')
+            ->assertSee('title="Asset Center"', false)
             ->assertSee('href="' . route('assets.index') . '"', false)
             ->assertSee('href="' . route('admin.assets.import-export') . '"', false);
+    }
+
+    public function test_sidebar_dropdowns_open_only_for_the_active_admin_area(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        $cases = [
+            ['dashboard', [], 0],
+            ['tickets.index', ['IT Service Desk'], 1],
+            ['admin.assets.monitor', ['Asset Center', 'Inventory'], 2],
+            ['admin.assets.inspections.index', ['Asset Center', 'Asset Operations'], 2],
+            ['users.index', ['Administration'], 1],
+        ];
+
+        foreach ($cases as [$route, $expectedLabels, $openCount]) {
+            $response = $this->actingAs($admin)->get(route($route))->assertOk();
+            $sidebar = $this->sidebarMarkup($response->getContent());
+
+            $this->assertSame($openCount, substr_count($sidebar, 'x-data="{ open: true }"'), "Unexpected open dropdown count for {$route}.");
+
+            foreach ($expectedLabels as $label) {
+                $this->assertStringContainsString($label, $sidebar);
+            }
+        }
     }
 
     public function test_legacy_asset_overview_redirects_to_the_unified_dashboard(): void
@@ -260,6 +288,53 @@ class AssetCategoryIndexTest extends TestCase
             ->assertSee('name="redirect_to" value="' . route('assets.show', $asset) . '"', false);
     }
 
+    public function test_category_inventory_renders_delete_action_for_synced_assets(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = Asset::create([
+            'asset_code' => 'PRN-SYNC-DELETE-001',
+            'name' => 'Synced Finance Printer',
+            'category' => 'Printer & Scanner',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.printer-scanner'))
+            ->assertOk()
+            ->assertSee('action="' . route('assets.destroy', $asset) . '"', false)
+            ->assertSee('name="_method" value="DELETE"', false)
+            ->assertSee('name="redirect_to" value="' . route('admin.assets.printer-scanner') . '"', false);
+    }
+
+    public function test_admin_can_delete_asset_from_category_inventory_and_return_to_same_page(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $asset = Asset::create([
+            'asset_code' => 'PRN-CAT-DELETE-001',
+            'name' => 'Finance Printer To Delete',
+            'category' => 'Printer & Scanner',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+        $returnTo = route('admin.assets.printer-scanner', ['search' => 'Finance']);
+
+        $this->actingAs($admin)
+            ->delete(route('assets.destroy', $asset), [
+                'redirect_to' => $returnTo,
+            ])
+            ->assertRedirect($returnTo)
+            ->assertSessionHas('success', 'Asset dihapus.');
+
+        $this->assertSoftDeleted('assets', ['id' => $asset->id]);
+        $this->assertDatabaseHas('asset_logs', [
+            'asset_id' => $asset->id,
+            'action' => 'deleted',
+        ]);
+    }
+
     public function test_monitor_inventory_shows_connection_instead_of_ip_address(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
@@ -353,5 +428,16 @@ class AssetCategoryIndexTest extends TestCase
             ->get(route('admin.assets.network-device', ['search' => '24']))
             ->assertOk()
             ->assertSeeText('Core Switch');
+    }
+
+    private function sidebarMarkup(string $content): string
+    {
+        $start = strpos($content, 'id="tour-sidebar"');
+        $end = strpos($content, '<!-- Toggle Collapse Button -->', $start);
+
+        $this->assertNotFalse($start);
+        $this->assertNotFalse($end);
+
+        return substr($content, $start, $end - $start);
     }
 }

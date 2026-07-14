@@ -16,6 +16,12 @@ export default defineConfig({
         VitePWA({
             registerType: 'autoUpdate',
             outDir: 'public/build',
+            injectRegister: false,
+            workbox: {
+                skipWaiting: true,
+                clientsClaim: true,
+                navigateFallback: null,
+            },
             manifest: {
                 name: 'Zinus IT Support Center',
                 short_name: 'Zinus IT',

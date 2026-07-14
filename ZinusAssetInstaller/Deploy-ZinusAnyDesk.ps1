@@ -7,6 +7,8 @@ param(
     [string]$ResultPath = ".\zinus-anydesk-deploy-results.csv",
     [ValidateRange(1, 20)]
     [int]$MaxParallel = 8,
+    [ValidateRange(30, 3600)]
+    [int]$TargetTimeoutSeconds = 300,
     [Parameter(Mandatory = $true)]
     [System.Management.Automation.PSCredential]$Credential,
     [switch]$NoFailExit
@@ -100,6 +102,7 @@ $installerHash = (Get-FileHash -LiteralPath $installerFullPath -Algorithm SHA256
 Write-Host "AnyDesk installer : $installerFullPath" -ForegroundColor Cyan
 Write-Host "SHA256            : $installerHash" -ForegroundColor DarkGray
 Write-Host "Target            : $($targets.Count) PC (parallel: $MaxParallel)" -ForegroundColor Cyan
+Write-Host "Timeout per target: $TargetTimeoutSeconds detik" -ForegroundColor DarkGray
 
 $workerScript = {
     param(
@@ -138,7 +141,9 @@ $workerScript = {
         $sessionOption = New-PSSessionOption `
             -OpenTimeout 20000 `
             -OperationTimeout 120000 `
-            -CancelTimeout 5000
+            -CancelTimeout 5000 `
+            -MaxConnectionRetryCount 0 `
+            -NoMachineProfile
         $session = New-PSSession `
             -ComputerName $Target `
             -Credential $Credential `
@@ -299,27 +304,39 @@ $sessionState = [System.Management.Automation.Runspaces.InitialSessionState]::Cr
 $pool = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspacePool(1, $MaxParallel, $sessionState, $Host)
 $pool.Open()
 
-$runspaces = @()
-foreach ($target in $targets) {
+function Start-AnyDeskWorker {
+    param([string]$Target)
+
     $pipeline = [System.Management.Automation.PowerShell]::Create()
     $pipeline.RunspacePool = $pool
     $pipeline.AddScript($workerScript) | Out-Null
-    $pipeline.AddArgument($target) | Out-Null
+    $pipeline.AddArgument($Target) | Out-Null
     $pipeline.AddArgument($Credential) | Out-Null
     $pipeline.AddArgument($installerFullPath) | Out-Null
     $pipeline.AddArgument($installerExtension) | Out-Null
     $pipeline.AddArgument($RemoteStagePath) | Out-Null
 
-    $runspaces += [pscustomobject]@{
-        Target      = $target
+    return [pscustomobject]@{
+        Target      = $Target
         PowerShell  = $pipeline
         AsyncResult = $pipeline.BeginInvoke()
+        StartedAt   = Get-Date
     }
 }
 
+$pendingTargets = New-Object System.Collections.Queue
+foreach ($target in $targets) {
+    $pendingTargets.Enqueue($target)
+}
+
+$runspaces = @()
 $results = @()
 $completedCount = 0
-while ($runspaces.Count -gt 0) {
+while ($runspaces.Count -gt 0 -or $pendingTargets.Count -gt 0) {
+    while ($runspaces.Count -lt $MaxParallel -and $pendingTargets.Count -gt 0) {
+        $runspaces += Start-AnyDeskWorker -Target ([string]$pendingTargets.Dequeue())
+    }
+
     $completed = @($runspaces | Where-Object { $_.AsyncResult.IsCompleted })
     foreach ($runspace in $completed) {
         $completedCount++
@@ -358,6 +375,33 @@ while ($runspaces.Count -gt 0) {
     }
 
     $runspaces = @($runspaces | Where-Object { $completed -notcontains $_ })
+
+    $now = Get-Date
+    $timedOut = @($runspaces | Where-Object { ($now - $_.StartedAt).TotalSeconds -ge $TargetTimeoutSeconds })
+    foreach ($runspace in $timedOut) {
+        $completedCount++
+        try {
+            $runspace.PowerShell.Stop()
+        } catch {
+        } finally {
+            $runspace.PowerShell.Dispose()
+        }
+
+        $result = [pscustomobject]@{
+            computer    = $runspace.Target
+            status      = "failed"
+            action      = "none"
+            version     = ""
+            anydesk_id  = ""
+            message     = "Timeout setelah $TargetTimeoutSeconds detik. Target dilewati supaya batch tidak macet."
+            deployed_at = (Get-Date).ToString("s")
+        }
+
+        $results += $result
+        Write-Host "[$completedCount/$($targets.Count)] $($runspace.Target): FAILED - none - $($result.message)" -ForegroundColor Red
+    }
+
+    $runspaces = @($runspaces | Where-Object { $timedOut -notcontains $_ })
     if ($runspaces.Count -gt 0) {
         Start-Sleep -Milliseconds 200
     }
