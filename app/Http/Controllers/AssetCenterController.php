@@ -12,6 +12,12 @@ use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Models\AssetRelation;
 use App\Support\AssetModuleNavigation;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Color\Color;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -639,54 +645,9 @@ class AssetCenterController extends Controller
         $lifecycleStatus = $request->query('lifecycle_status');
         $brand = $request->query('brand');
 
-        $query = Asset::query()
-            ->with(['department', 'user'])
-            ->where(function ($q) use ($categories) {
-                foreach ($categories as $cat) {
-                    $q->orWhere('category', $cat)
-                      ->orWhereRaw('LOWER(category) = ?', [strtolower($cat)]);
-                }
-            });
-
-        // Search & Filters
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('asset_code', 'like', "%{$search}%")
-                  ->orWhere('serial_number', 'like', "%{$search}%")
-                  ->orWhere('hostname', 'like', "%{$search}%")
-                  ->orWhere('ip_address', 'like', "%{$search}%")
-                  ->orWhere('specs', 'like', "%{$search}%")
-                  ->orWhere('brand', 'like', "%{$search}%")
-                  ->orWhere('model', 'like', "%{$search}%")
-                  ->orWhere('assigned_to_name', 'like', "%{$search}%")
-                  ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"));
-            });
-        }
-
-        if ($factory) {
-            $query->where('factory', $factory);
-        }
-
-        if ($departmentId) {
-            $query->where('department_id', $departmentId);
-        }
-
-        if ($location) {
-            $query->where('location', 'like', "%{$location}%");
-        }
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        if ($lifecycleStatus) {
-            $query->where('lifecycle_status', $lifecycleStatus);
-        }
-
-        if ($brand) {
-            $query->where('brand', 'like', "%{$brand}%");
-        }
+        $query = Asset::query()->with(['department', 'user']);
+        $this->applyAssetCategoryFilter($query, $categories);
+        $this->applyAssetInventoryFilters($query, $request);
 
         $assets = $query->orderByDesc('updated_at')->paginate(15)->withQueryString();
 
@@ -695,11 +656,13 @@ class AssetCenterController extends Controller
         $departmentsList = Department::orderBy('name')->get();
         $brandsList = Asset::whereNotNull('brand')->where('brand', '!=', '')->distinct()->pluck('brand');
         $users = User::orderBy('name')->get(['id', 'name', 'email']);
+        $categoryGroup = $this->categoryGroupKeyForTitle($title);
 
         return view('assets.category-index', compact(
             'assets',
             'title',
             'categories',
+            'categoryGroup',
             'factoriesList',
             'departmentsList',
             'brandsList',
@@ -814,6 +777,213 @@ class AssetCenterController extends Controller
             'mutationDepartments',
             'isParentCategory'
         ));
+    }
+
+    public function qrLabel(Asset $asset)
+    {
+        $asset->load(['department', 'user']);
+
+        $qrTargetUrl = route('assets.show', $asset);
+        $qrSvg = $this->buildAssetQrSvg($qrTargetUrl);
+
+        return view('assets.qr-label', compact('asset', 'qrTargetUrl', 'qrSvg'));
+    }
+
+    public function qrLabels(Request $request)
+    {
+        $selectedIds = $this->selectedAssetIds($request);
+        $categoryGroup = (string) $request->query('category_group', '');
+        $group = $this->assetCategoryGroups()[$categoryGroup] ?? null;
+
+        $query = Asset::query()->with(['department', 'user']);
+
+        if ($selectedIds->isNotEmpty()) {
+            $query->whereKey($selectedIds);
+            $printTitle = 'Selected QR Labels';
+        } else {
+            if ($group) {
+                $this->applyAssetCategoryFilter($query, $group['categories']);
+                $printTitle = $group['title'] . ' QR Labels';
+            } else {
+                $printTitle = 'Asset QR Labels';
+            }
+
+            $this->applyAssetInventoryFilters($query, $request);
+        }
+
+        $assets = $query->orderByDesc('updated_at')->get();
+
+        if ($selectedIds->isNotEmpty()) {
+            $assets = $assets
+                ->sortBy(fn (Asset $asset) => $selectedIds->search($asset->id))
+                ->values();
+        }
+
+        $labels = $assets
+            ->map(fn (Asset $asset) => $this->assetQrLabelPayload($asset, 'zinus-qr-module-' . $asset->id))
+            ->values();
+
+        return view('assets.qr-labels', compact('labels', 'printTitle'));
+    }
+
+    private function buildAssetQrSvg(string $data, string $blockId = 'zinus-qr-module'): string
+    {
+        $svg = (new Builder(
+            writer: new SvgWriter(),
+            writerOptions: [
+                SvgWriter::WRITER_OPTION_EXCLUDE_XML_DECLARATION => true,
+                SvgWriter::WRITER_OPTION_EXCLUDE_SVG_WIDTH_AND_HEIGHT => true,
+                SvgWriter::WRITER_OPTION_COMPACT => false,
+                SvgWriter::WRITER_OPTION_BLOCK_ID => $blockId,
+            ],
+            data: $data,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            size: 420,
+            margin: 18,
+            roundBlockSizeMode: RoundBlockSizeMode::Margin,
+            foregroundColor: new Color(5, 78, 52),
+            backgroundColor: new Color(255, 255, 255),
+        ))->build()->getString();
+
+        return str_replace(
+            '<rect id="' . $blockId . '"',
+            '<rect id="' . $blockId . '" rx="1.8" ry="1.8"',
+            $svg
+        );
+    }
+
+    private function assetQrLabelPayload(Asset $asset, string $blockId): array
+    {
+        $assetCode = filled($asset->asset_code) ? $asset->asset_code : 'ASSET-' . $asset->id;
+        $assetTitle = filled($asset->name) ? $asset->name : $assetCode;
+        $qrTargetUrl = route('assets.show', $asset);
+
+        return [
+            'asset' => $asset,
+            'assetCode' => $assetCode,
+            'assetTitle' => $assetTitle,
+            'department' => $asset->department?->name ?: 'No department',
+            'assignedTo' => $asset->assigned_to_display_name ?: 'Not assigned',
+            'statusLabel' => $this->assetQrStatusLabel($asset),
+            'qrTargetUrl' => $qrTargetUrl,
+            'qrSvg' => $this->buildAssetQrSvg($qrTargetUrl, $blockId),
+        ];
+    }
+
+    private function assetQrStatusLabel(Asset $asset): string
+    {
+        $statusKey = strtolower((string) ($asset->lifecycle_status ?: $asset->status ?: 'active'));
+
+        return [
+            'active' => 'Active',
+            'assigned' => 'Assigned',
+            'in_use' => 'Active',
+            'available' => 'Spare',
+            'spare' => 'Spare',
+            'maintenance' => 'In Repair',
+            'in_repair' => 'In Repair',
+            'broken' => 'Retired',
+            'retired' => 'Retired',
+            'disposed' => 'Disposed',
+            'lost' => 'Lost',
+            'replaced' => 'Replaced',
+        ][$statusKey] ?? (string) Str::of($statusKey)->replace('_', ' ')->title();
+    }
+
+    private function selectedAssetIds(Request $request)
+    {
+        return collect($request->query('ids', []))
+            ->flatMap(fn ($value) => is_array($value) ? $value : explode(',', (string) $value))
+            ->map(fn ($value) => (int) $value)
+            ->filter(fn (int $value) => $value > 0)
+            ->unique()
+            ->values();
+    }
+
+    private function applyAssetCategoryFilter($query, array $categories): void
+    {
+        $query->where(function ($q) use ($categories) {
+            foreach ($categories as $cat) {
+                $q->orWhere('category', $cat)
+                  ->orWhereRaw('LOWER(category) = ?', [strtolower($cat)]);
+            }
+        });
+    }
+
+    private function applyAssetInventoryFilters($query, Request $request): void
+    {
+        $search = $request->query('search');
+        $factory = $request->query('factory');
+        $departmentId = $request->integer('department') ?: null;
+        $location = $request->query('location');
+        $status = $request->query('status');
+        $lifecycleStatus = $request->query('lifecycle_status');
+        $brand = $request->query('brand');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('asset_code', 'like', "%{$search}%")
+                  ->orWhere('serial_number', 'like', "%{$search}%")
+                  ->orWhere('hostname', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhere('specs', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%")
+                  ->orWhere('model', 'like', "%{$search}%")
+                  ->orWhere('assigned_to_name', 'like', "%{$search}%")
+                  ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($factory) {
+            $query->where('factory', $factory);
+        }
+
+        if ($departmentId) {
+            $query->where('department_id', $departmentId);
+        }
+
+        if ($location) {
+            $query->where('location', 'like', "%{$location}%");
+        }
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        if ($lifecycleStatus) {
+            $query->where('lifecycle_status', $lifecycleStatus);
+        }
+
+        if ($brand) {
+            $query->where('brand', 'like', "%{$brand}%");
+        }
+    }
+
+    private function assetCategoryGroups(): array
+    {
+        return [
+            'pc' => ['title' => 'PC', 'categories' => ['PC', 'PC / Laptop', 'PC/Laptop']],
+            'laptop' => ['title' => 'Laptop', 'categories' => ['Laptop', 'pc-laptop']],
+            'monitor' => ['title' => 'Monitor', 'categories' => ['Monitor']],
+            'printer-scanner' => ['title' => 'Printer & Scanner', 'categories' => ['Printer & Scanner', 'Printer', 'Scanner', 'printer-scanner']],
+            'network-device' => ['title' => 'Network Device', 'categories' => ['Network Device', 'Router', 'Switch', 'Access Point', 'network-device']],
+            'cctv' => ['title' => 'CCTV', 'categories' => ['CCTV', 'NVR/DVR', 'cctv']],
+            'peripheral' => ['title' => 'Peripheral', 'categories' => ['Peripheral', 'Keyboard', 'Mouse', 'UPS', 'Projector', 'peripheral']],
+            'software-license' => ['title' => 'Software License', 'categories' => ['Software License', 'License', 'software-license']],
+        ];
+    }
+
+    private function categoryGroupKeyForTitle(string $title): string
+    {
+        foreach ($this->assetCategoryGroups() as $key => $group) {
+            if ($group['title'] === $title) {
+                return $key;
+            }
+        }
+
+        return Str::slug($title);
     }
 
     public function attachRelation(Request $request, Asset $asset)

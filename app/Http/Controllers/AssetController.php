@@ -14,82 +14,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class AssetController extends Controller
 {
     public function __construct(private AssetService $assetService)
     {
         $this->authorizeResource(Asset::class, 'asset');
-    }
-
-    public function index(Request $request): View
-    {
-        $statusMap = [
-            'active' => Asset::STATUS_IN_USE,
-            'in_repair' => Asset::STATUS_MAINTENANCE,
-            'spare' => Asset::STATUS_AVAILABLE,
-            'retired' => Asset::STATUS_BROKEN,
-        ];
-        $statusKey = Str::of($request->query('status'))->snake()->lower()->toString();
-
-        $filters = [
-            'factory' => $request->query('factory'),
-            'department' => $request->integer('department') ?: null,
-            'category' => $request->query('category'),
-            'status' => null,
-            'search' => $request->query('search'),
-        ];
-        $perPage = (int) $request->query('per_page', 10);
-        $perPage = $perPage > 0 ? min($perPage, 100) : 10;
-
-        $base = Asset::query()->where(function ($q) {
-            $q->where('source_type', 'agent')
-              ->orWhereNull('source_type')
-              ->orWhereIn('category', ['PC', 'Laptop']);
-        })->where(function ($q) {
-            $q->where('source_type', '!=', 'manual')
-              ->orWhereNull('source_type');
-        });
-
-        $stats = [
-            'total' => (clone $base)->count(),
-            'active' => (clone $base)->where('status', $statusMap['active'])->count(),
-            'in_repair' => (clone $base)->where('status', $statusMap['in_repair'])->count(),
-            'spare' => (clone $base)->where('status', $statusMap['spare'])->count(),
-            'retired' => (clone $base)->where('status', $statusMap['retired'])->count(),
-        ];
-
-        $assetsQuery = $this->assetService->filteredQuery($filters, false);
-        $assetsQuery->where(function ($q) {
-            $q->where('source_type', 'agent')
-              ->orWhereNull('source_type')
-              ->orWhereIn('category', ['PC', 'Laptop']);
-        })->where(function ($q) {
-            $q->where('source_type', '!=', 'manual')
-              ->orWhereNull('source_type');
-        });
-
-        if (array_key_exists($statusKey, $statusMap)) {
-            $assetsQuery->where('status', $statusMap[$statusKey]);
-        }
-
-        return view('assets.index', [
-            'assets' => $assetsQuery->paginate($perPage)->withQueryString(),
-            'stats' => $stats,
-            'departments' => Department::orderBy('name')->get(),
-            'filters' => $filters,
-            'perPage' => $perPage,
-            'filterOptions' => [
-                'factories' => [
-                    'Zinus F1 Bogor',
-                    'Zinus F2 Karawang',
-                    'Zinus F3 Tangerang',
-                ],
-                'categories' => ['PC', 'Laptop'],
-                'statuses' => ['active', 'in_repair', 'spare', 'retired'],
-            ],
-        ]);
     }
 
     public function create(): View
@@ -116,13 +46,6 @@ class AssetController extends Controller
             'statusOptions' => Asset::STATUSES,
             'departments' => Department::orderBy('name')->get(),
             'users' => User::orderBy('name')->get(),
-        ]);
-    }
-
-    public function show(Asset $asset): View
-    {
-        return view('assets.show', [
-            'asset' => $asset->load(['department', 'user']),
         ]);
     }
 

@@ -50,6 +50,8 @@
         ->filter(fn ($value) => filled($value))
         ->count();
     $advancedFiltersOpen = filled($location) || filled($status) || filled($brand);
+    $bulkQrPrintQuery = array_merge(request()->query(), ['category_group' => $categoryGroup]);
+    $currentPageQrIds = $assets->pluck('id')->map(fn ($id) => (string) $id)->values();
 @endphp
 
 <x-app-layout>
@@ -68,7 +70,30 @@
     <div
         x-data="{
             filtersOpen: @js($advancedFiltersOpen),
-            mobileFiltersOpen: false
+            mobileFiltersOpen: false,
+            currentPageQrIds: @js($currentPageQrIds),
+            selectedQrIds: [],
+            bulkQrPrintUrl: @js(route('admin.assets.qr-labels')),
+            currentPageSelected() {
+                return this.currentPageQrIds.length > 0 && this.currentPageQrIds.every(id => this.selectedQrIds.includes(id));
+            },
+            toggleCurrentPageLabels(checked) {
+                if (checked) {
+                    this.selectedQrIds = Array.from(new Set([...this.selectedQrIds, ...this.currentPageQrIds]));
+                    return;
+                }
+
+                this.selectedQrIds = this.selectedQrIds.filter(id => !this.currentPageQrIds.includes(id));
+            },
+            printSelectedLabels() {
+                if (this.selectedQrIds.length === 0) {
+                    return;
+                }
+
+                const url = new URL(this.bulkQrPrintUrl);
+                this.selectedQrIds.forEach(id => url.searchParams.append('ids[]', id));
+                window.open(url.toString(), '_blank', 'noopener');
+            }
         }"
         class="min-h-screen pb-8"
     >
@@ -288,16 +313,52 @@
                         Showing {{ $assets->firstItem() ?? 0 }}-{{ $assets->lastItem() ?? 0 }} of {{ number_format($assets->total()) }}
                     </p>
                 </div>
-                @if ($activeFilterCount > 0)
-                    <p class="text-xs font-medium text-emerald-700">{{ $activeFilterCount }} active {{ Str::plural('filter', $activeFilterCount) }}</p>
-                @endif
+                <div class="flex flex-wrap items-center gap-2">
+                    @if ($activeFilterCount > 0)
+                        <p class="mr-1 text-xs font-medium text-emerald-700">{{ $activeFilterCount }} active {{ Str::plural('filter', $activeFilterCount) }}</p>
+                    @endif
+                    <a
+                        href="{{ route('admin.assets.qr-labels', $bulkQrPrintQuery) }}"
+                        target="_blank"
+                        rel="noopener"
+                        class="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="M6 9V4h12v5M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M7 14h10v6H7z" stroke-linejoin="round" />
+                        </svg>
+                        <span>Print filtered</span>
+                    </a>
+                    <button
+                        type="button"
+                        @click="printSelectedLabels()"
+                        :disabled="selectedQrIds.length === 0"
+                        class="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition disabled:cursor-not-allowed disabled:opacity-50"
+                        :class="selectedQrIds.length > 0 && 'hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="M9 11.5 11 13.5 15.5 9M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span>Print selected</span>
+                        <span x-show="selectedQrIds.length > 0" x-text="selectedQrIds.length" class="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700"></span>
+                    </button>
+                </div>
             </div>
 
             <div class="hidden overflow-hidden rounded-lg border border-slate-200 bg-white lg:block">
                 <div class="max-h-[68vh] overflow-auto">
-                    <table class="w-full min-w-[1020px] table-fixed text-left text-sm">
+                    <table class="w-full min-w-[1080px] table-fixed text-left text-sm">
                         <thead class="sticky top-0 z-10 bg-slate-50">
                             <tr class="border-b border-slate-200 text-xs font-semibold text-slate-500">
+                                <th class="w-[44px] px-4 py-3">
+                                    <input
+                                        type="checkbox"
+                                        class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                        :checked="currentPageSelected()"
+                                        @change="toggleCurrentPageLabels($event.target.checked)"
+                                        aria-label="Select current page for QR print"
+                                    >
+                                </th>
                                 @if ($isSoftwareLicense)
                                     <th class="w-[22%] px-4 py-3">Software</th>
                                     <th class="w-[15%] px-4 py-3">Asset Code</th>
@@ -344,6 +405,15 @@
                                     $technicalFieldValue = $technicalValue($asset);
                                 @endphp
                                 <tr class="group align-middle transition-colors hover:bg-emerald-50/30">
+                                    <td class="px-4 py-3.5">
+                                        <input
+                                            type="checkbox"
+                                            value="{{ $asset->id }}"
+                                            x-model="selectedQrIds"
+                                            class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                            aria-label="Select {{ $deviceName }} for QR print"
+                                        >
+                                    </td>
                                     @if ($isSoftwareLicense)
                                         <td class="px-4 py-3.5">
                                             <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="block truncate font-semibold text-slate-900 hover:text-emerald-700">
@@ -467,7 +537,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-6 py-16 text-center">
+                                    <td colspan="{{ $isSoftwareLicense ? 9 : 10 }}" class="px-6 py-16 text-center">
                                         <svg class="mx-auto h-8 w-8 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                                             <circle cx="11" cy="11" r="7" />
                                             <path d="m20 20-3.5-3.5" stroke-linecap="round" />
@@ -515,12 +585,21 @@
                         @endphp
                         <article class="p-4">
                             <div class="flex items-start justify-between gap-3">
-                                <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="min-w-0">
-                                    <h3 class="truncate text-sm font-semibold tracking-normal text-slate-900">{{ $deviceName }}</h3>
-                                    @if ($showHostname)
-                                        <p class="mt-0.5 truncate font-mono text-xs text-slate-500">{{ $asset->hostname }}</p>
-                                    @endif
-                                </a>
+                                <div class="flex min-w-0 items-start gap-3">
+                                    <input
+                                        type="checkbox"
+                                        value="{{ $asset->id }}"
+                                        x-model="selectedQrIds"
+                                        class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                        aria-label="Select {{ $deviceName }} for QR print"
+                                    >
+                                    <a href="{{ route('assets.show', ['asset' => $asset, 'return_to' => request()->fullUrl()]) }}" class="min-w-0">
+                                        <h3 class="truncate text-sm font-semibold tracking-normal text-slate-900">{{ $deviceName }}</h3>
+                                        @if ($showHostname)
+                                            <p class="mt-0.5 truncate font-mono text-xs text-slate-500">{{ $asset->hostname }}</p>
+                                        @endif
+                                    </a>
+                                </div>
                                 <span class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold ring-1 ring-inset {{ $statusInfo['class'] }}">
                                     <span class="h-1.5 w-1.5 rounded-full {{ $statusInfo['dot'] }}"></span>
                                     {{ $statusInfo['label'] }}

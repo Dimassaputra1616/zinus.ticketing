@@ -145,6 +145,93 @@ class AssetCategoryIndexTest extends TestCase
         }
     }
 
+    public function test_category_inventory_exposes_bulk_qr_print_actions(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        Asset::create([
+            'asset_code' => 'PC-BULK-ACTION-001',
+            'name' => 'Bulk Action Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.pc'))
+            ->assertOk()
+            ->assertSeeText('Print filtered')
+            ->assertSeeText('Print selected')
+            ->assertSee(route('admin.assets.qr-labels'), false)
+            ->assertSee('category_group=pc', false)
+            ->assertSee('x-model="selectedQrIds"', false);
+    }
+
+    public function test_bulk_qr_label_page_can_print_filtered_category_assets(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        Asset::create([
+            'asset_code' => 'PC-BULK-PRINT-001',
+            'name' => 'Bulk Print Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        Asset::create([
+            'asset_code' => 'LAP-BULK-PRINT-001',
+            'name' => 'Bulk Print Laptop',
+            'category' => 'Laptop',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.qr-labels', [
+                'category_group' => 'pc',
+                'search' => 'Bulk Print',
+            ]))
+            ->assertOk()
+            ->assertSeeText('PC QR Labels')
+            ->assertSeeText('PC-BULK-PRINT-001')
+            ->assertDontSeeText('LAP-BULK-PRINT-001')
+            ->assertSee('<svg', false);
+    }
+
+    public function test_bulk_qr_label_page_can_print_selected_assets(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $selected = Asset::create([
+            'asset_code' => 'PC-SELECTED-QR-001',
+            'name' => 'Selected QR Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        Asset::create([
+            'asset_code' => 'PC-NOT-SELECTED-QR-001',
+            'name' => 'Not Selected QR Workstation',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.qr-labels', ['ids' => [$selected->id]]))
+            ->assertOk()
+            ->assertSeeText('Selected QR Labels')
+            ->assertSeeText('PC-SELECTED-QR-001')
+            ->assertDontSeeText('PC-NOT-SELECTED-QR-001')
+            ->assertSee('<svg', false);
+    }
+
     public function test_identical_device_name_and_hostname_are_not_repeated_within_responsive_views(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

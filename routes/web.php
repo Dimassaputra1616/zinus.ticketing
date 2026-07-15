@@ -435,6 +435,8 @@ Route::middleware(['auth', 'approved', 'admin'])->group(function () {
     Route::patch('/admin/assets/relations/{relation}/detach', [App\Http\Controllers\AssetCenterController::class, 'detachRelation'])->name('admin.assets.relations.detach');
 
     // Override original show detail route
+    Route::get('/admin/assets/qr-labels', [App\Http\Controllers\AssetCenterController::class, 'qrLabels'])->name('admin.assets.qr-labels');
+    Route::get('/admin/assets/{asset}/qr-label', [App\Http\Controllers\AssetCenterController::class, 'qrLabel'])->name('admin.assets.qr-label')->whereNumber('asset');
     Route::get('/admin/assets/{asset}', [App\Http\Controllers\AssetCenterController::class, 'showDetail'])->name('assets.show')->whereNumber('asset');
     Route::get('/admin/assets/{asset}/edit', [App\Http\Controllers\AssetController::class, 'edit'])->name('assets.edit')->whereNumber('asset');
     Route::post('/admin/assets', [App\Http\Controllers\AssetController::class, 'store'])->name('assets.store');

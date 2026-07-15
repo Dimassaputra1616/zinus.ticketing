@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Asset;
 use App\Models\AssetRelation;
+use App\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -103,6 +104,8 @@ class AssetRelationTest extends TestCase
             ->assertSee('Relationship Workspace')
             ->assertSee('Asset Mutation Timeline')
             ->assertSee('Original Agent Payload')
+            ->assertSee('QR Label')
+            ->assertSee('href="' . route('admin.assets.qr-label', $asset) . '"', false)
             ->assertDontSee('Raw Specs');
 
         $technicalInventoryHtml = \Illuminate\Support\Str::between(
@@ -119,6 +122,34 @@ class AssetRelationTest extends TestCase
         $this->assertStringContainsString('monitor-frontdesk-01', $technicalInventoryHtml);
         $this->assertStringContainsString(e(route('assets.show', $monitor)), $technicalInventoryHtml);
         $this->assertStringNotContainsString('Desk Monitor', $technicalInventoryHtml);
+    }
+
+    public function test_asset_qr_label_page_renders_branded_print_label(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $assignee = User::factory()->create(['name' => 'Dimas Saputra']);
+        $department = Department::create(['name' => 'IT']);
+        $asset = $this->asset('PC-QR-001', 'QR Workstation', 'PC');
+        $asset->update([
+            'department_id' => $department->id,
+            'user_id' => $assignee->id,
+            'hostname' => 'pc-qr-001',
+            'serial_number' => 'SN-QR-001',
+            'location' => 'Zinus F3 Tangerang',
+            'lifecycle_status' => 'assigned',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.qr-label', $asset))
+            ->assertOk()
+            ->assertSee('Zinus Asset Passport')
+            ->assertSee('PC-QR-001')
+            ->assertSee('QR Workstation')
+            ->assertSee('Dimas Saputra')
+            ->assertSee('Zinus F3 Tangerang')
+            ->assertSee('Scan To Verify')
+            ->assertSee(route('assets.show', $asset), false)
+            ->assertSee('<svg', false);
     }
 
     public function test_asset_mutation_timeline_formats_status_values_for_display(): void

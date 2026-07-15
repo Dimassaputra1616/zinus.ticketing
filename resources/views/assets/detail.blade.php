@@ -452,6 +452,21 @@
                         Inspect Device
                     </a>
                     <a
+                        href="{{ route('admin.assets.qr-label', $asset) }}"
+                        target="_blank"
+                        class="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                            <path d="M14 14h3v3" />
+                            <path d="M21 14v7h-7" />
+                            <path d="M17 17h4" />
+                        </svg>
+                        QR Label
+                    </a>
+                    <a
                         href="{{ $asset->source_type === 'manual' ? route('admin.assets.manual.edit', ['asset' => $asset, 'return_to' => $assetReturnTo]) : route('assets.edit', ['asset' => $asset, 'return_to' => $assetReturnTo]) }}"
                         class="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                     >
