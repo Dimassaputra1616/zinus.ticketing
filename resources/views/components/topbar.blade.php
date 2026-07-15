@@ -43,7 +43,7 @@
     </style>
 @endonce
 
-<header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#d0e4de]">
+<header class="relative z-40 bg-white/80 backdrop-blur-md border-b border-[#d0e4de] lg:sticky lg:top-0">
     <div class="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
         <div class="space-y-2 w-full lg:w-auto mt-1">
             <div class="flex flex-wrap items-center gap-2 mb-1">

@@ -826,6 +826,27 @@ class AssetCenterController extends Controller
         return view('assets.qr-labels', compact('labels', 'printTitle'));
     }
 
+    public function scan(Request $request)
+    {
+        $scanValue = trim((string) $request->query('q', ''));
+        $assetResults = collect();
+        $hasSearch = filled($scanValue);
+
+        if ($hasSearch) {
+            $asset = $this->assetFromScanValue($scanValue);
+
+            if ($asset) {
+                return redirect()
+                    ->route('assets.show', $asset)
+                    ->with('success', 'Asset ditemukan dari scan.');
+            }
+
+            $assetResults = $this->searchAssetsForScan($scanValue);
+        }
+
+        return view('assets.scan', compact('scanValue', 'assetResults', 'hasSearch'));
+    }
+
     private function buildAssetQrSvg(string $data, string $blockId = 'zinus-qr-module'): string
     {
         $svg = (new Builder(
@@ -851,6 +872,62 @@ class AssetCenterController extends Controller
             '<rect id="' . $blockId . '" rx="1.8" ry="1.8"',
             $svg
         );
+    }
+
+    private function assetFromScanValue(string $value): ?Asset
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $assetId = $this->assetIdFromScanValue($value);
+
+        if ($assetId) {
+            return Asset::find($assetId);
+        }
+
+        $normalized = Str::lower($value);
+
+        return Asset::query()
+            ->where(function ($query) use ($normalized) {
+                foreach (['asset_code', 'hostname', 'serial_number', 'ip_address'] as $column) {
+                    $query->orWhereRaw("LOWER({$column}) = ?", [$normalized]);
+                }
+            })
+            ->first();
+    }
+
+    private function assetIdFromScanValue(string $value): ?int
+    {
+        $path = parse_url($value, PHP_URL_PATH) ?: $value;
+
+        if (preg_match('#/admin/assets/(\d+)(?:/|$)#', $path, $matches)) {
+            return (int) $matches[1];
+        }
+
+        if (preg_match('/^asset[:#\s-]+(\d+)$/i', $value, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+
+    private function searchAssetsForScan(string $value)
+    {
+        $needle = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], trim($value)) . '%';
+
+        return Asset::query()
+            ->with(['department', 'user'])
+            ->where(function ($query) use ($needle) {
+                foreach (['asset_code', 'name', 'hostname', 'serial_number', 'ip_address', 'location', 'brand', 'model'] as $column) {
+                    $query->orWhere($column, 'like', $needle);
+                }
+            })
+            ->latest('updated_at')
+            ->limit(8)
+            ->get();
     }
 
     private function assetQrLabelPayload(Asset $asset, string $blockId): array

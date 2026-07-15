@@ -1,4 +1,5 @@
 import './bootstrap';
+import jsQR from 'jsqr';
 
 // Alpine is included in Livewire 3, so we don't need to import it separately
 // import Alpine from 'alpinejs';
@@ -6,6 +7,7 @@ import initLiveUpdates from './live-updates';
 import { safeUUID } from './utils/uuid';
 
 window.safeUUID = safeUUID;
+window.ZinusQrDecoder = jsQR;
 
 function formatFileSize(bytes) {
     if (!Number.isFinite(bytes) || bytes <= 0) {
