@@ -1413,93 +1413,151 @@
                 <!-- Compact PWA Bottom Navigation -->
                 <style>
                     @keyframes badgePulse { 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.15) } }
-                    .mobile-nav-pill,
-                    .mobile-nav-scan { transition: transform .2s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease; }
-                    .mobile-nav-pill:active,
-                    .mobile-nav-scan:active { transform: translateY(1px) scale(.98); }
+                    @keyframes scanSweep {
+                        0%, 100% { opacity: .25; transform: translateY(-11px); }
+                        45%, 55% { opacity: .9; }
+                        50% { opacity: .75; transform: translateY(11px); }
+                    }
+                    .mobile-nav-pill { transition: transform .2s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease; }
+                    .mobile-nav-pill:active { transform: translateY(1px) scale(.98); }
+                    .mobile-nav-scan { transition: color .2s ease; }
+                    .mobile-nav-scan-core {
+                        isolation: isolate;
+                        position: relative;
+                        display: flex;
+                        height: 3.65rem;
+                        width: 3.65rem;
+                        align-items: center;
+                        justify-content: center;
+                        overflow: hidden;
+                        border: 1px solid rgba(167, 243, 208, .48);
+                        border-radius: 1.35rem;
+                        background: linear-gradient(155deg, #34d399 0%, #10b981 48%, #0f766e 100%);
+                        color: #ecfdf5;
+                        box-shadow: 0 16px 34px rgba(16, 185, 129, .34), 0 8px 18px rgba(2, 6, 23, .34), inset 0 1px 0 rgba(255, 255, 255, .36);
+                        transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+                    }
+                    .mobile-nav-scan-core::before {
+                        content: "";
+                        position: absolute;
+                        inset: -28%;
+                        z-index: 0;
+                        background: radial-gradient(circle at 35% 20%, rgba(255, 255, 255, .44), transparent 34%), radial-gradient(circle at 78% 82%, rgba(6, 78, 59, .28), transparent 38%);
+                    }
+                    .mobile-nav-scan-core::after {
+                        content: "";
+                        position: absolute;
+                        left: .9rem;
+                        right: .9rem;
+                        top: 50%;
+                        height: 2px;
+                        border-radius: 9999px;
+                        background: rgba(236, 253, 245, .9);
+                        box-shadow: 0 0 12px rgba(167, 243, 208, .95);
+                        animation: scanSweep 2.4s ease-in-out infinite;
+                    }
+                    .mobile-nav-scan:active .mobile-nav-scan-core { transform: translateY(1px) scale(.97); }
+                    .mobile-nav-scan.is-active .mobile-nav-scan-core {
+                        background: linear-gradient(155deg, #d1fae5 0%, #34d399 46%, #10b981 100%);
+                        color: #064e3b;
+                        box-shadow: 0 18px 38px rgba(52, 211, 153, .44), 0 8px 20px rgba(2, 6, 23, .36), inset 0 1px 0 rgba(255, 255, 255, .6);
+                    }
+                    @media (prefers-reduced-motion: reduce) {
+                        .mobile-nav-scan-core::after {
+                            animation: none;
+                            opacity: .55;
+                            transform: translateY(0);
+                        }
+                    }
                     .mobile-nav-badge { animation: badgePulse 2s ease-in-out infinite; }
+                    .pwa-bottom-nav {
+                        display: grid !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        overflow: visible;
+                    }
+                    .pwa-bottom-nav > a,
+                    .pwa-bottom-nav > span {
+                        min-width: 0;
+                        width: 100%;
+                    }
                 </style>
-                <div class="fixed inset-x-0 bottom-0 z-50 lg:hidden bg-[#071d17]/95 shadow-[0_-12px_30px_rgba(2,6,23,0.25)] backdrop-blur-xl" style="padding-bottom: max(env(safe-area-inset-bottom), 6px)">
-                    <nav class="relative mx-auto flex max-w-md items-end justify-around gap-1 border-t border-white/10 px-2 pb-1.5 pt-2">
+                <div data-pwa-bottom-nav-shell class="fixed bottom-0 left-0 z-50 lg:hidden shadow-[0_-12px_30px_rgba(2,6,23,0.25)] backdrop-blur-xl" style="right: auto; bottom: var(--pwa-bottom-offset, max(0px, calc(100vh - 100dvh))); width: 100vw; max-width: 100vw; background-color: rgba(7, 29, 23, .96); padding-bottom: max(env(safe-area-inset-bottom), 6px)">
+                    <nav class="pwa-bottom-nav relative mx-auto items-end gap-1 border-t border-white/10 px-2 pb-1.5 pt-2" style="grid-template-columns: repeat({{ $isAdmin ? 5 : 4 }}, minmax(0, 1fr)) !important;">
                         <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent"></div>
 
                         @php
-                            $mobileNavItems = collect($navItems)->where('mobileVisible', true)->values();
-                            $mobileLeadingItems = $mobileNavItems->take(2);
-                            $mobileTrailingItems = $mobileNavItems->slice(2)->values();
-                            $showMobileScan = $isAdmin;
+                            $mobileNavByRoute = collect($navItems)->keyBy('route');
+                            $mobileSlots = $isAdmin
+                                ? [
+                                    ['type' => 'item', 'item' => $mobileNavByRoute->get('dashboard')],
+                                    ['type' => 'item', 'item' => $mobileNavByRoute->get('tickets.index')],
+                                    ['type' => 'scan'],
+                                    ['type' => 'item', 'item' => $mobileNavByRoute->get('tutorials.index')],
+                                    ['type' => 'item', 'item' => $mobileNavByRoute->get('assets.index')],
+                                ]
+                                : [
+                                    ['type' => 'item', 'item' => $mobileNavByRoute->get('dashboard')],
+                                    ['type' => 'item', 'item' => $mobileNavByRoute->get('tickets.mine')],
+                                    ['type' => 'item', 'item' => $mobileNavByRoute->get('loans.index')],
+                                    ['type' => 'item', 'item' => $mobileNavByRoute->get('tutorials.index')],
+                                ];
                             $isScanActive = request()->routeIs('admin.assets.scan');
                         @endphp
 
-                        @foreach ($mobileLeadingItems as $item)
+                        @foreach ($mobileSlots as $slot)
                             @php
-                                $isActive = request()->routeIs($item['route']);
-                                $badgeCount = (int) ($item['badgeCount'] ?? 0);
+                                $item = $slot['item'] ?? null;
                             @endphp
-                            <a
-                                href="{{ route($item['route']) }}"
-                                class="mobile-nav-pill relative flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl {{ $isActive ? 'bg-white/10 text-emerald-200' : 'text-white/45 hover:bg-white/5 hover:text-white/75' }}"
-                            >
-                                <div class="relative flex items-center justify-center">
-                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="{{ $isActive ? '2.1' : '1.8' }}" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                        {!! $item['icon'] !!}
-                                    </svg>
-                                    @if ($badgeCount > 0)
-                                        <span class="mobile-nav-badge absolute -right-2.5 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white ring-2 ring-[#071d17]">
-                                            {{ $formatSidebarBadge($badgeCount) }}
-                                        </span>
-                                    @endif
-                                </div>
-                                <span class="max-w-full truncate text-[10px] font-semibold tracking-normal">{{ $item['mobileLabel'] }}</span>
-                                @if ($isActive)
-                                    <span class="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-emerald-300"></span>
-                                @endif
-                            </a>
-                        @endforeach
 
-                        @if ($showMobileScan)
-                            <a
-                                href="{{ route('admin.assets.scan') }}"
-                                class="mobile-nav-scan relative -mt-5 flex w-[68px] shrink-0 flex-col items-center justify-end gap-1 text-center {{ $isScanActive ? 'text-emerald-100' : 'text-white/70' }}"
-                                aria-label="Scan asset"
-                            >
-                                <span class="flex h-14 w-14 items-center justify-center rounded-2xl {{ $isScanActive ? 'bg-emerald-400 text-emerald-950 shadow-[0_12px_28px_rgba(52,211,153,0.36)] ring-4 ring-emerald-300/20' : 'bg-emerald-600 text-white shadow-[0_12px_28px_rgba(16,185,129,0.28)] ring-4 ring-emerald-400/10' }}">
-                                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M4 7V5a1 1 0 0 1 1-1h2" />
-                                        <path d="M17 4h2a1 1 0 0 1 1 1v2" />
-                                        <path d="M20 17v2a1 1 0 0 1-1 1h-2" />
-                                        <path d="M7 20H5a1 1 0 0 1-1-1v-2" />
-                                        <path d="M7 12h10" />
-                                    </svg>
-                                </span>
-                                <span class="text-[10px] font-bold tracking-normal">Scan</span>
-                            </a>
-                        @endif
-
-                        @foreach ($mobileTrailingItems as $item)
-                            @php
-                                $isActive = request()->routeIs($item['route']);
-                                $badgeCount = (int) ($item['badgeCount'] ?? 0);
-                            @endphp
-                            <a
-                                href="{{ route($item['route']) }}"
-                                class="mobile-nav-pill relative flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl {{ $isActive ? 'bg-white/10 text-emerald-200' : 'text-white/45 hover:bg-white/5 hover:text-white/75' }}"
-                            >
-                                <div class="relative flex items-center justify-center">
-                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="{{ $isActive ? '2.1' : '1.8' }}" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                        {!! $item['icon'] !!}
-                                    </svg>
-                                    @if ($badgeCount > 0)
-                                        <span class="mobile-nav-badge absolute -right-2.5 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white ring-2 ring-[#071d17]">
-                                            {{ $formatSidebarBadge($badgeCount) }}
-                                        </span>
+                            @if (($slot['type'] ?? null) === 'scan')
+                                <a
+                                    href="{{ route('admin.assets.scan') }}"
+                                    class="mobile-nav-scan {{ $isScanActive ? 'is-active text-emerald-100' : 'text-emerald-50/80 hover:text-emerald-50' }} relative -mt-5 flex h-[76px] min-w-0 flex-col items-center justify-end gap-1 text-center"
+                                    aria-label="Scan asset"
+                                >
+                                    <span class="mobile-nav-scan-core">
+                                        <svg class="relative z-10 h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.95" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M4 7V5a1 1 0 0 1 1-1h2" />
+                                            <path d="M17 4h2a1 1 0 0 1 1 1v2" />
+                                            <path d="M20 17v2a1 1 0 0 1-1 1h-2" />
+                                            <path d="M7 20H5a1 1 0 0 1-1-1v-2" />
+                                            <path d="M8.5 8.5h7" />
+                                            <path d="M8.5 15.5h7" />
+                                        </svg>
+                                    </span>
+                                    <span class="max-w-full truncate text-[10px] font-black tracking-normal">Scan</span>
+                                    @if ($isScanActive)
+                                        <span class="absolute bottom-0.5 left-1/2 h-1 w-5 -translate-x-1/2 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,.9)]"></span>
                                     @endif
-                                </div>
-                                <span class="max-w-full truncate text-[10px] font-semibold tracking-normal">{{ $item['mobileLabel'] }}</span>
-                                @if ($isActive)
-                                    <span class="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-emerald-300"></span>
-                                @endif
-                            </a>
+                                </a>
+                            @elseif ($item)
+                                @php
+                                    $isActive = request()->routeIs($item['route']);
+                                    $badgeCount = (int) ($item['badgeCount'] ?? 0);
+                                @endphp
+                                <a
+                                    href="{{ route($item['route']) }}"
+                                    class="mobile-nav-pill relative flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl {{ $isActive ? 'bg-white/10 text-emerald-200' : 'text-white/45 hover:bg-white/5 hover:text-white/75' }}"
+                                >
+                                    <div class="relative flex items-center justify-center">
+                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="{{ $isActive ? '2.1' : '1.8' }}" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                            {!! $item['icon'] !!}
+                                        </svg>
+                                        @if ($badgeCount > 0)
+                                            <span class="mobile-nav-badge absolute -right-2.5 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white ring-2 ring-[#071d17]">
+                                                {{ $formatSidebarBadge($badgeCount) }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <span class="max-w-full truncate text-[10px] font-semibold tracking-normal">{{ $item['mobileLabel'] }}</span>
+                                    @if ($isActive)
+                                        <span class="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-emerald-300"></span>
+                                    @endif
+                                </a>
+                            @else
+                                <span aria-hidden="true"></span>
+                            @endif
                         @endforeach
                     </nav>
                 </div>
@@ -1513,6 +1571,27 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                const pwaBottomNavShell = document.querySelector('[data-pwa-bottom-nav-shell]');
+                const syncPwaBottomNavOffset = () => {
+                    if (!pwaBottomNavShell) return;
+
+                    const visualViewport = window.visualViewport;
+                    if (!visualViewport) {
+                        pwaBottomNavShell.style.setProperty('--pwa-bottom-offset', '0px');
+                        return;
+                    }
+
+                    const layoutHeight = window.innerHeight || document.documentElement.clientHeight || visualViewport.height;
+                    const visualBottomGap = Math.max(0, Math.round(layoutHeight - visualViewport.height - visualViewport.offsetTop));
+                    pwaBottomNavShell.style.setProperty('--pwa-bottom-offset', `${visualBottomGap}px`);
+                };
+
+                syncPwaBottomNavOffset();
+                window.addEventListener('resize', syncPwaBottomNavOffset, { passive: true });
+                window.addEventListener('orientationchange', syncPwaBottomNavOffset, { passive: true });
+                window.visualViewport?.addEventListener('resize', syncPwaBottomNavOffset, { passive: true });
+                window.visualViewport?.addEventListener('scroll', syncPwaBottomNavOffset, { passive: true });
+
                 document.querySelectorAll('[data-file-preview]').forEach(wrapper => {
                     const input = wrapper.querySelector('[data-file-preview-input]');
                     const list = wrapper.querySelector('[data-file-preview-list]');

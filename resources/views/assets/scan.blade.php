@@ -120,6 +120,7 @@
                                 <button
                                     type="button"
                                     @click="start()"
+                                    x-show="!scanning"
                                     :disabled="starting || scanning"
                                     class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 text-sm font-semibold text-white shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-500"
                                 >

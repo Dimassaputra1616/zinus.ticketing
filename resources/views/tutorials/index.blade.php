@@ -55,7 +55,7 @@
 
         <section class="space-y-6 mt-6">
             <!-- Search and Filter -->
-            <div class="flex flex-col md:flex-row items-center gap-4 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-[#CFEADF] shadow-sm">
+            <div class="flex w-full max-w-full flex-col items-stretch gap-4 rounded-2xl border border-[#CFEADF] bg-white/50 p-4 shadow-sm backdrop-blur-sm md:flex-row md:items-center">
                 <form action="{{ route('tutorials.index') }}" method="GET" class="flex-1 w-full relative">
                     <input
                         type="text"
@@ -70,7 +70,7 @@
                     </svg>
                 </form>
                 
-                <div class="flex items-center gap-2 w-full md:w-auto">
+                <div class="flex w-full min-w-0 flex-wrap items-center gap-2 md:w-auto md:flex-nowrap">
                     @foreach($categories as $category)
                         @php
                             $isActive = request('category') == $category->id;
@@ -78,7 +78,7 @@
                         <a 
                             href="{{ route('tutorials.index', ['category' => $category->id]) }}"
                             @class([
-                                'px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm flex items-center gap-2',
+                                'flex shrink-0 items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold shadow-sm transition-all',
                                 'text-white shadow-emerald-200/50' => $isActive,
                                 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700' => ! $isActive,
                             ])
@@ -91,7 +91,7 @@
                         </a>
                     @endforeach
                     @if(request('category') || request('search'))
-                        <a href="{{ route('tutorials.index') }}" class="text-xs text-rose-500 font-semibold hover:underline px-2">Reset</a>
+                        <a href="{{ route('tutorials.index') }}" class="shrink-0 px-2 text-xs font-semibold text-rose-500 hover:underline">Reset</a>
                     @endif
                 </div>
             </div>
