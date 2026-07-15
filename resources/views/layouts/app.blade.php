@@ -5,7 +5,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ setting('app_name', config('app.name', 'Zinus Dream')) }}</title>
+        @php
+            $appTitle = setting('app_name', config('app.name', 'Zinus Dream'));
+            $pageTitle = match (true) {
+                request()->routeIs('dashboard') => 'Home',
+                request()->routeIs('tickets.show'),
+                request()->routeIs('user.tickets.show') => __('messages.title_ticket_detail'),
+                request()->routeIs('tickets.mine') => __('messages.title_my_tickets'),
+                request()->routeIs('tickets.index') => __('messages.title_ticket_list'),
+                request()->routeIs('tickets.create') => 'Buat Tiket',
+                request()->routeIs('users.*') => __('messages.title_manage_users'),
+                request()->routeIs('loans.*') => __('messages.title_loan_log'),
+                request()->routeIs('admin.assets.scan') => 'Scan Asset',
+                request()->routeIs('assets.*'),
+                request()->routeIs('admin.assets.*') => __('messages.title_manage_assets'),
+                request()->routeIs('admin.conversations.index') => __('messages.title_live_chat'),
+                request()->routeIs('admin.conversations.show') => 'Detail Percakapan',
+                request()->routeIs('remote-system.*') => __('messages.title_remote_system'),
+                request()->routeIs('admin.settings.index') => __('messages.title_master_config'),
+                request()->routeIs('tutorials.index') => 'Pusat Panduan Mandiri',
+                request()->routeIs('tutorials.show') => 'Detail Panduan',
+                request()->routeIs('admin.tutorials.index') => 'Manajemen Tutorial',
+                request()->routeIs('admin.tutorials.create') => 'Tambah Tutorial',
+                request()->routeIs('admin.tutorials.edit') => 'Edit Tutorial',
+                request()->routeIs('profile.edit') => __('Profile'),
+                default => null,
+            };
+        @endphp
+        <title>{{ $pageTitle ? "{$pageTitle} - {$appTitle}" : $appTitle }}</title>
         <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
         <link rel="shortcut icon" href="{{ asset('favicon.png') }}">
 
@@ -1418,7 +1445,7 @@
                         45%, 55% { opacity: .9; }
                         50% { opacity: .75; transform: translateY(11px); }
                     }
-                    .mobile-nav-pill { transition: transform .2s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease; }
+                    .mobile-nav-pill { transition: transform .2s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease, border-color .2s ease; }
                     .mobile-nav-pill:active { transform: translateY(1px) scale(.98); }
                     .mobile-nav-scan { transition: color .2s ease; }
                     .mobile-nav-scan-core {
@@ -1482,9 +1509,9 @@
                         width: 100%;
                     }
                 </style>
-                <div data-pwa-bottom-nav-shell class="fixed bottom-0 left-0 z-50 lg:hidden shadow-[0_-12px_30px_rgba(2,6,23,0.25)] backdrop-blur-xl" style="right: auto; bottom: var(--pwa-bottom-offset, max(0px, calc(100vh - 100dvh))); width: 100vw; max-width: 100vw; background-color: rgba(7, 29, 23, .96); padding-bottom: max(env(safe-area-inset-bottom), 6px)">
-                    <nav class="pwa-bottom-nav relative mx-auto items-end gap-1 border-t border-white/10 px-2 pb-1.5 pt-2" style="grid-template-columns: repeat({{ $isAdmin ? 5 : 4 }}, minmax(0, 1fr)) !important;">
-                        <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent"></div>
+                <div data-pwa-bottom-nav-shell class="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 lg:hidden" style="bottom: var(--pwa-bottom-offset, max(0px, calc(100vh - 100dvh))); padding-bottom: max(env(safe-area-inset-bottom), 10px)">
+                    <nav class="pwa-bottom-nav pointer-events-auto relative mx-auto max-w-md items-end gap-1.5 rounded-[1.65rem] border border-white/10 px-2 pb-1.5 pt-2 shadow-[0_18px_48px_rgba(2,6,23,0.34)] backdrop-blur-2xl" style="grid-template-columns: repeat({{ $isAdmin ? 5 : 4 }}, minmax(0, 1fr)) !important; background: linear-gradient(180deg, rgba(10, 44, 35, .94), rgba(4, 24, 19, .96));">
+                        <div class="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/35 to-transparent"></div>
 
                         @php
                             $mobileNavByRoute = collect($navItems)->keyBy('route');
@@ -1538,7 +1565,7 @@
                                 @endphp
                                 <a
                                     href="{{ route($item['route']) }}"
-                                    class="mobile-nav-pill relative flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl {{ $isActive ? 'bg-white/10 text-emerald-200' : 'text-white/45 hover:bg-white/5 hover:text-white/75' }}"
+                                    class="mobile-nav-pill relative flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border {{ $isActive ? 'border-emerald-200/10 bg-emerald-300/[0.12] text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]' : 'border-transparent text-white/45 hover:border-white/5 hover:bg-white/5 hover:text-white/75' }}"
                                 >
                                     <div class="relative flex items-center justify-center">
                                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="{{ $isActive ? '2.1' : '1.8' }}" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
