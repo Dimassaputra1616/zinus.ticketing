@@ -1508,8 +1508,14 @@
                         min-width: 0;
                         width: 100%;
                     }
+                    [data-pwa-bottom-nav-shell] {
+                        position: fixed !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        top: auto !important;
+                    }
                 </style>
-                <div data-pwa-bottom-nav-shell class="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 lg:hidden" style="bottom: var(--pwa-bottom-offset, max(0px, calc(100vh - 100dvh))); padding-bottom: max(env(safe-area-inset-bottom), 10px)">
+                <div data-pwa-bottom-nav-shell class="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 lg:hidden" style="top: auto; bottom: var(--pwa-bottom-offset, 0px); padding-bottom: max(env(safe-area-inset-bottom), 10px)">
                     <nav class="pwa-bottom-nav pointer-events-auto relative mx-auto max-w-md items-end gap-1.5 rounded-[1.65rem] border border-white/10 px-2 pb-1.5 pt-2 shadow-[0_18px_48px_rgba(2,6,23,0.34)] backdrop-blur-2xl" style="grid-template-columns: repeat({{ $isAdmin ? 5 : 4 }}, minmax(0, 1fr)) !important; background: linear-gradient(180deg, rgba(10, 44, 35, .94), rgba(4, 24, 19, .96));">
                         <div class="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/35 to-transparent"></div>
 
@@ -1610,7 +1616,8 @@
 
                     const layoutHeight = window.innerHeight || document.documentElement.clientHeight || visualViewport.height;
                     const visualBottomGap = Math.max(0, Math.round(layoutHeight - visualViewport.height - visualViewport.offsetTop));
-                    pwaBottomNavShell.style.setProperty('--pwa-bottom-offset', `${visualBottomGap}px`);
+                    const safeBottomGap = visualBottomGap <= 96 ? visualBottomGap : 0;
+                    pwaBottomNavShell.style.setProperty('--pwa-bottom-offset', `${safeBottomGap}px`);
                 };
 
                 syncPwaBottomNavOffset();
