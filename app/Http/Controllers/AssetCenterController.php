@@ -12,10 +12,10 @@ use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Models\AssetRelation;
 use App\Support\AssetModuleNavigation;
-use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\QrCode;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Http\Request;
@@ -849,14 +849,7 @@ class AssetCenterController extends Controller
 
     private function buildAssetQrSvg(string $data, string $blockId = 'zinus-qr-module'): string
     {
-        $svg = (new Builder(
-            writer: new SvgWriter(),
-            writerOptions: [
-                SvgWriter::WRITER_OPTION_EXCLUDE_XML_DECLARATION => true,
-                SvgWriter::WRITER_OPTION_EXCLUDE_SVG_WIDTH_AND_HEIGHT => true,
-                SvgWriter::WRITER_OPTION_COMPACT => false,
-                SvgWriter::WRITER_OPTION_BLOCK_ID => $blockId,
-            ],
+        $qrCode = new QrCode(
             data: $data,
             encoding: new Encoding('UTF-8'),
             errorCorrectionLevel: ErrorCorrectionLevel::High,
@@ -865,7 +858,14 @@ class AssetCenterController extends Controller
             roundBlockSizeMode: RoundBlockSizeMode::Margin,
             foregroundColor: new Color(5, 78, 52),
             backgroundColor: new Color(255, 255, 255),
-        ))->build()->getString();
+        );
+
+        $svg = (new SvgWriter())->write($qrCode, options: [
+            SvgWriter::WRITER_OPTION_EXCLUDE_XML_DECLARATION => true,
+            SvgWriter::WRITER_OPTION_EXCLUDE_SVG_WIDTH_AND_HEIGHT => true,
+            SvgWriter::WRITER_OPTION_COMPACT => false,
+            SvgWriter::WRITER_OPTION_BLOCK_ID => $blockId,
+        ])->getString();
 
         return str_replace(
             '<rect id="' . $blockId . '"',
