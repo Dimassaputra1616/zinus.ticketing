@@ -57,6 +57,7 @@ class AssetSyncTest extends TestCase
             'asset_code' => 'SN-001',
             'name' => 'laptop-01',
             'anydesk_id' => '123456789',
+            'status' => Asset::STATUS_IN_USE,
         ]);
     }
 
@@ -154,6 +155,32 @@ class AssetSyncTest extends TestCase
         $this->assertEquals($department->id, $asset->department_id);
         $this->assertEquals('Intel Core i7', $asset->cpu);
         $this->assertEquals('10.62.38.10', $asset->ip_address);
+    }
+
+    public function test_sync_preserves_existing_operational_status(): void
+    {
+        $asset = Asset::create([
+            'asset_code' => 'SN-STATUS-001',
+            'name' => 'pc-status-001',
+            'hostname' => 'pc-status-001',
+            'serial_number' => 'SN-STATUS-001',
+            'status' => Asset::STATUS_MAINTENANCE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->syncAsset([
+            'hostname' => 'pc-status-001',
+            'serial_number' => 'SN-STATUS-001',
+            'status' => 'active',
+            'cpu' => 'Intel Core i9',
+        ])->assertOk()
+            ->assertJsonPath('data.mode', 'updated');
+
+        $asset->refresh();
+
+        $this->assertEquals(Asset::STATUS_MAINTENANCE, $asset->status);
+        $this->assertEquals('Intel Core i9', $asset->cpu);
     }
 
     public function test_sync_resolves_hostname_conflict(): void
@@ -469,5 +496,45 @@ class AssetSyncTest extends TestCase
             'child_asset_id' => $monitor->id,
             'ended_at' => null,
         ]);
+    }
+
+    public function test_monitor_sync_preserves_existing_operational_status(): void
+    {
+        $this->syncAsset([
+            'hostname' => 'pc-monitor-status',
+            'serial_number' => 'PC-SN-MON-STATUS',
+            'category' => 'PC',
+            'monitors' => [
+                [
+                    'asset_code' => 'MON-STATUS-001',
+                    'hostname' => 'pc-monitor-status-MON-1',
+                    'serial_number' => 'MON-SN-STATUS-001',
+                    'model' => 'Status Display',
+                ],
+            ],
+        ])->assertOk();
+
+        $monitor = Asset::where('asset_code', 'MON-STATUS-001')->firstOrFail();
+        $monitor->update(['status' => Asset::STATUS_MAINTENANCE]);
+
+        $this->syncAsset([
+            'hostname' => 'pc-monitor-status',
+            'serial_number' => 'PC-SN-MON-STATUS',
+            'category' => 'PC',
+            'monitors' => [
+                [
+                    'asset_code' => 'MON-STATUS-001',
+                    'hostname' => 'pc-monitor-status-MON-1',
+                    'serial_number' => 'MON-SN-STATUS-001',
+                    'model' => 'Updated Status Display',
+                ],
+            ],
+        ])->assertOk()
+            ->assertJsonPath('data.monitors.updated', 1);
+
+        $monitor->refresh();
+
+        $this->assertEquals(Asset::STATUS_MAINTENANCE, $monitor->status);
+        $this->assertEquals('Updated Status Display', $monitor->model);
     }
 }

@@ -132,7 +132,7 @@ class AssetSyncController extends Controller
                 }
             }
 
-            $status = $this->normalizeStatus($data['status'] ?? null);
+            $incomingStatus = $this->incomingStatus($data);
 
             // Guard against overwriting or violating unique constraints with manually managed assets
             $manualConflict = Asset::withTrashed()
@@ -297,7 +297,7 @@ class AssetSyncController extends Controller
                 'os_name' => $data['os_name'] ?? null,
                 'ip_address' => $data['ip_address'] ?? null,
                 'anydesk_id' => $data['anydesk_id'] ?? null,
-                'status' => $status,
+                'status' => $incomingStatus ?? Asset::STATUS_IN_USE,
                 'department_id' => $departmentId,
                 'location' => $factory,
                 'notes' => null,
@@ -307,6 +307,8 @@ class AssetSyncController extends Controller
             ];
 
             if ($existingAsset) {
+                unset($payload['status']);
+
                 if ($existingAsset->department_id) {
                     unset($payload['department_id']);
                 }
@@ -501,6 +503,8 @@ class AssetSyncController extends Controller
                     ];
 
                     if ($existingMonitor) {
+                        unset($payload['status']);
+
                         if ($existingMonitor->department_id) {
                             unset($payload['department_id']);
                         }
@@ -981,6 +985,15 @@ class AssetSyncController extends Controller
         $normalized = $status ? Str::snake(Str::lower($status)) : null;
 
         return $map[$normalized] ?? Asset::STATUS_AVAILABLE;
+    }
+
+    protected function incomingStatus(array $data): ?string
+    {
+        if (! array_key_exists('status', $data) || blank($data['status'])) {
+            return null;
+        }
+
+        return $this->normalizeStatus($data['status']);
     }
 
     protected function resolveTokenScope(string $token): ?array

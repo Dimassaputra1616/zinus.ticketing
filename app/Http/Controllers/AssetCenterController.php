@@ -12,12 +12,13 @@ use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Models\AssetRelation;
 use App\Support\AssetModuleNavigation;
-use Endroid\QrCode\Color\Color;
-use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel as EndroidErrorCorrectionLevel;
-use Endroid\QrCode\QrCode as EndroidQrCode;
-use Endroid\QrCode\RoundBlockSizeMode;
-use Endroid\QrCode\Writer\SvgWriter;
+use BaconQrCode\Common\ErrorCorrectionLevel as BaconErrorCorrectionLevel;
+use BaconQrCode\Renderer\Color\Rgb;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\Fill;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer as BaconQrWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -849,21 +850,28 @@ class AssetCenterController extends Controller
 
     private function buildAssetQrSvg(string $data, string $blockId = 'zinus-qr-module'): string
     {
-        $qrCode = new EndroidQrCode(
-            data: $data,
-            encoding: new Encoding('UTF-8'),
-            errorCorrectionLevel: EndroidErrorCorrectionLevel::High,
-            size: 420,
-            margin: 16,
-            roundBlockSizeMode: RoundBlockSizeMode::Margin,
-            foregroundColor: new Color(5, 78, 52),
-            backgroundColor: new Color(255, 255, 255),
+        $renderer = new ImageRenderer(
+            new RendererStyle(
+                size: 420,
+                margin: 2,
+                fill: Fill::uniformColor(
+                    new Rgb(255, 255, 255),
+                    new Rgb(5, 78, 52),
+                ),
+            ),
+            new SvgImageBackEnd(),
         );
 
-        return (new SvgWriter())->write($qrCode, options: [
-            SvgWriter::WRITER_OPTION_BLOCK_ID => $blockId,
-            SvgWriter::WRITER_OPTION_EXCLUDE_XML_DECLARATION => true,
-        ])->getString();
+        $svg = (new BaconQrWriter($renderer))->writeString(
+            $data,
+            'UTF-8',
+            BaconErrorCorrectionLevel::H(),
+        );
+
+        $svg = preg_replace('/<\?xml[^>]*>\s*/', '', $svg) ?: $svg;
+        $id = htmlspecialchars(preg_replace('/[^A-Za-z0-9_-]+/', '-', $blockId), ENT_QUOTES, 'UTF-8');
+
+        return preg_replace('/<svg\b/', '<svg id="' . $id . '"', $svg, 1) ?: $svg;
     }
 
     private function assetFromScanValue(string $value): ?Asset
