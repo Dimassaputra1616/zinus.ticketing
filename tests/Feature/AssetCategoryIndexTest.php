@@ -593,6 +593,51 @@ class AssetCategoryIndexTest extends TestCase
         $this->assertSame(2, substr_count($visibleText, 'USB'));
     }
 
+    public function test_network_and_cctv_inventory_show_monitoring_health(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+
+        Asset::create([
+            'asset_code' => 'NET-10-62-38-1',
+            'name' => 'Core Gateway',
+            'category' => 'Network Device',
+            'ip_address' => '10.62.38.1',
+            'status' => Asset::STATUS_IN_USE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+            'monitoring_status' => Asset::MONITORING_STATUS_ONLINE,
+            'monitoring_latency_ms' => 8,
+            'monitoring_source' => 'ping',
+            'last_seen_at' => now(),
+        ]);
+
+        Asset::create([
+            'asset_code' => 'CCTV-10-62-38-20',
+            'name' => 'Gate Camera',
+            'category' => 'CCTV',
+            'ip_address' => '10.62.38.20',
+            'status' => Asset::STATUS_IN_USE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+            'monitoring_status' => Asset::MONITORING_STATUS_OFFLINE,
+            'monitoring_error' => 'No ping or management port response',
+            'monitoring_checked_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.network-device'))
+            ->assertOk()
+            ->assertSeeText('Monitoring')
+            ->assertSeeText('Online')
+            ->assertSeeText('8 ms');
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.cctv'))
+            ->assertOk()
+            ->assertSeeText('Monitoring')
+            ->assertSeeText('Offline');
+    }
+
     public function test_inventory_can_be_searched_by_structured_specification(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

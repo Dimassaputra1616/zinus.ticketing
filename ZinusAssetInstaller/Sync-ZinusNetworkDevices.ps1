@@ -10,6 +10,8 @@ param(
     [string]$SnmpCommunity = "public",
     [ValidateRange(250, 10000)]
     [int]$SnmpTimeoutMs = 1500,
+    [ValidateRange(100, 10000)]
+    [int]$ProbeTimeoutMs = 750,
     [switch]$SkipSnmp,
     [switch]$IncludeGateways,
     [switch]$DryRun
@@ -344,11 +346,22 @@ function Normalize-AssetValue {
 }
 
 function Get-NetworkCategory {
-    param([string]$LikelyType)
+    param(
+        [string]$LikelyType,
+        [string]$Hostname = "",
+        [string]$Evidence = ""
+    )
+
+    $text = @($LikelyType, $Hostname, $Evidence) -join " "
+
+    if ($text -match "(?i)\b(CCTV|CAMERA|IPCAM|IP-CAM|NVR|DVR|HIKVISION|DAHUA|UNIVIEW|ONVIF|RTSP)\b") {
+        return "CCTV"
+    }
 
     switch -Regex ($LikelyType) {
         "Printer" { return "Printer" }
         "NAS|storage" { return "NAS" }
+        "Network|gateway|router|switch|access" { return "Network Device" }
         default { return "Network Device" }
     }
 }
@@ -363,6 +376,15 @@ function Get-BrandFromText {
     if ($Text -match "(?i)QNAP") { return "QNAP" }
     if ($Text -match "(?i)Canon") { return "Canon" }
     if ($Text -match "(?i)Epson") { return "Epson" }
+    if ($Text -match "(?i)Hikvision|HIK") { return "Hikvision" }
+    if ($Text -match "(?i)Dahua") { return "Dahua" }
+    if ($Text -match "(?i)Uniview|\bUNV\b") { return "Uniview" }
+    if ($Text -match "(?i)MikroTik|RouterOS") { return "MikroTik" }
+    if ($Text -match "(?i)Ubiquiti|UniFi") { return "Ubiquiti" }
+    if ($Text -match "(?i)TP-?Link") { return "TP-Link" }
+    if ($Text -match "(?i)Ruijie") { return "Ruijie" }
+    if ($Text -match "(?i)Cisco") { return "Cisco" }
+    if ($Text -match "(?i)D-?Link") { return "D-Link" }
     return ""
 }
 
@@ -390,11 +412,90 @@ function Get-ModelFromText {
         return ($Description -replace "\s+", " ").Trim()
     }
 
+    if ($Category -in @("CCTV", "Network Device") -and -not [string]::IsNullOrWhiteSpace($Description)) {
+        return ($Description -replace "\s+", " ").Trim()
+    }
+
     if ($Hostname -match "^(HP|BRN)(.+)$") {
         return $Hostname
     }
 
     return ""
+}
+
+function Test-TcpPort {
+    param(
+        [string]$IpAddress,
+        [int]$Port,
+        [int]$TimeoutMs
+    )
+
+    $client = New-Object System.Net.Sockets.TcpClient
+    $async = $null
+    try {
+        $async = $client.BeginConnect($IpAddress, $Port, $null, $null)
+        if (-not $async.AsyncWaitHandle.WaitOne($TimeoutMs, $false)) {
+            return $false
+        }
+
+        $client.EndConnect($async)
+        return $true
+    } catch {
+        return $false
+    } finally {
+        if ($async -and $async.AsyncWaitHandle) {
+            $async.AsyncWaitHandle.Close()
+        }
+        $client.Close()
+    }
+}
+
+function Test-DeviceReachability {
+    param(
+        [string]$IpAddress,
+        [string]$Category,
+        [int]$TimeoutMs
+    )
+
+    $watch = [System.Diagnostics.Stopwatch]::StartNew()
+    try {
+        $ping = New-Object System.Net.NetworkInformation.Ping
+        $reply = $ping.Send($IpAddress, $TimeoutMs)
+        if ($reply.Status -eq [System.Net.NetworkInformation.IPStatus]::Success) {
+            return [pscustomobject]@{
+                status     = "online"
+                latency_ms = [int]$reply.RoundtripTime
+                source     = "ping"
+                error      = ""
+            }
+        }
+    } catch {}
+
+    $ports = switch ($Category) {
+        "Printer" { @(80, 443, 515, 631, 9100) }
+        "NAS" { @(80, 443, 22, 445, 5000, 5001) }
+        "CCTV" { @(80, 443, 554, 8000, 8080, 8899) }
+        default { @(80, 443, 22, 23, 8080, 8443) }
+    }
+
+    foreach ($port in $ports) {
+        if (Test-TcpPort -IpAddress $IpAddress -Port $port -TimeoutMs $TimeoutMs) {
+            $watch.Stop()
+            return [pscustomobject]@{
+                status     = "online"
+                latency_ms = [int][math]::Max(1, $watch.ElapsedMilliseconds)
+                source     = "tcp:$port"
+                error      = ""
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        status     = "offline"
+        latency_ms = $null
+        source     = "probe"
+        error      = "No ping or management port response"
+    }
 }
 
 function New-NetworkAssetPayload {
@@ -404,7 +505,7 @@ function New-NetworkAssetPayload {
     )
 
     $ip = [string]$Row.ip_address
-    $category = Get-NetworkCategory -LikelyType ([string]$Row.likely_device_type)
+    $category = Get-NetworkCategory -LikelyType ([string]$Row.likely_device_type) -Hostname ([string]$Row.hostname) -Evidence ([string]$Row.evidence)
     $description = if ($SnmpProfile) { [string]$SnmpProfile.sysDescr } else { "" }
     $snmpName = if ($SnmpProfile) { [string]$SnmpProfile.sysName } else { "" }
     $printerName = if ($SnmpProfile) { [string]$SnmpProfile.printerName } else { "" }
@@ -421,6 +522,7 @@ function New-NetworkAssetPayload {
     $assetPrefix = switch ($category) {
         "Printer" { "PRINTER" }
         "NAS" { "NAS" }
+        "CCTV" { "CCTV" }
         default { "NET" }
     }
     $assetCode = if ($serial) { $serial } else { "$assetPrefix-$($ip -replace '\.', '-')" }
@@ -469,6 +571,9 @@ function New-NetworkSyncResult {
         identity_source      = $Payload.identity_source
         is_identity_verified = $Payload.is_identity_verified
         snmp_status          = $SnmpStatus
+        monitoring_status    = $Payload.monitoring_status
+        monitoring_latency_ms = $Payload.monitoring_latency_ms
+        monitoring_source    = $Payload.monitoring_source
         status               = $Status
         message              = $Message
         synced_at            = (Get-Date).ToString("s")
@@ -481,15 +586,16 @@ if (-not (Test-Path -LiteralPath $DeviceListPath)) {
 
 $rows = @(Import-Csv -LiteralPath $DeviceListPath)
 if (-not $IncludeGateways) {
-    $rows = @($rows | Where-Object { $_.likely_device_type -in @("Printer", "NAS / storage") })
+    $rows = @($rows | Where-Object { $_.likely_device_type -in @("Printer", "NAS / storage", "CCTV / camera") })
 }
 
 if ($rows.Count -eq 0) {
-    throw "Tidak ada printer/NAS untuk disync dari $DeviceListPath."
+    throw "Tidak ada printer/NAS/CCTV/network device untuk disync dari $DeviceListPath."
 }
 
 Write-Host "Network device sync target: $($rows.Count) device" -ForegroundColor Cyan
 Write-Host "SNMP community          : $(if ($SkipSnmp) { 'dilewati' } else { $SnmpCommunity })" -ForegroundColor DarkGray
+Write-Host "Probe timeout           : $ProbeTimeoutMs ms" -ForegroundColor DarkGray
 if ($DryRun) {
     Write-Host "Mode                   : Dry run, tidak kirim ke server" -ForegroundColor Yellow
 }
@@ -508,6 +614,26 @@ foreach ($row in $rows) {
     }
 
     $payload = New-NetworkAssetPayload -Row $row -SnmpProfile $snmpProfile
+    $probe = Test-DeviceReachability -IpAddress ([string]$payload.ip_address) -Category ([string]$payload.category) -TimeoutMs $ProbeTimeoutMs
+    $checkedAt = (Get-Date).ToString("o")
+    if ($snmpStatus -eq "ok") {
+        $payload["monitoring_status"] = "online"
+        $payload["monitoring_checked_at"] = $checkedAt
+        $payload["last_seen_at"] = $checkedAt
+        $payload["monitoring_latency_ms"] = $probe.latency_ms
+        $payload["monitoring_error"] = ""
+        $payload["monitoring_source"] = if ($probe.status -eq "online") { $probe.source } else { "snmp" }
+    } else {
+        $payload["monitoring_status"] = $probe.status
+        $payload["monitoring_checked_at"] = $checkedAt
+        if ($probe.status -eq "online") {
+            $payload["last_seen_at"] = $checkedAt
+        }
+        $payload["monitoring_latency_ms"] = $probe.latency_ms
+        $payload["monitoring_error"] = $probe.error
+        $payload["monitoring_source"] = $probe.source
+    }
+
     try {
         if ($DryRun) {
             $message = ($payload | ConvertTo-Json -Depth 8 -Compress)

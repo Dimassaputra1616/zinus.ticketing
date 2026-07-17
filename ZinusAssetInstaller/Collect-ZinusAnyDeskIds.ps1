@@ -69,7 +69,7 @@ function Resolve-AnyDeskTargets {
     if (-not $IncludeNonWindows -and (Test-Path -LiteralPath $ExcludeDeviceListPath)) {
         $excludeIps = @(
             Import-Csv -LiteralPath $ExcludeDeviceListPath |
-                Where-Object { $_.ip_address -and $_.likely_device_type -in @("Printer", "NAS / storage", "Network device / gateway") } |
+                Where-Object { $_.ip_address -and $_.likely_device_type -in @("Printer", "NAS / storage", "Network device / gateway", "CCTV / camera") } |
                 Select-Object -ExpandProperty ip_address -Unique
         )
 

@@ -230,7 +230,7 @@ function Get-NonWindowsExcludeIps {
         Import-Csv -LiteralPath $Path |
             Where-Object {
                 $_.ip_address -and
-                $_.likely_device_type -in @("Printer", "NAS / storage", "Network device / gateway")
+                $_.likely_device_type -in @("Printer", "NAS / storage", "Network device / gateway", "CCTV / camera")
             } |
             Select-Object -ExpandProperty ip_address -Unique
     )
@@ -668,19 +668,20 @@ if (-not $SkipRemoteScan -and $readyTargets.Count -gt 0) {
 if (-not $SkipNetworkDevices) {
     $networkRetryRows = @(New-NetworkDeviceRetryList -DeviceListPath $DeviceListPath -OutputPath $NetworkDeviceRetryListPath)
     if ($networkRetryRows.Count -gt 0) {
-        Write-Phase "TAHAP 6/6A - Retry printer IP/NAS yang gagal"
+        Write-Phase "TAHAP 6/6A - Retry printer/NAS/CCTV/network yang gagal"
         & $networkDeviceScript `
             -DeviceListPath $NetworkDeviceRetryListPath `
             -Token $Token `
             -Factory $Factory `
             -Department $Department `
             -ServerUrl $ServerUrl `
+            -IncludeGateways `
             -ResultPath $NetworkDeviceResultPath
     } else {
-        Write-Info "Tidak ada printer IP/NAS gagal untuk retry."
+        Write-Info "Tidak ada printer/NAS/CCTV/network gagal untuk retry."
     }
 } else {
-    Write-Info "Sync printer IP/NAS dilewati sesuai parameter."
+    Write-Info "Sync printer/NAS/CCTV/network dilewati sesuai parameter."
 }
 
 if (-not $SkipLocalPrinters -and $readyTargets.Count -gt 0) {

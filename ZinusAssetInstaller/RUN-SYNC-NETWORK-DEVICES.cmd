@@ -12,14 +12,14 @@ if not exist "%SCRIPT_DIR%Sync-ZinusNetworkDevices.ps1" (
 
 if not exist "%SCRIPT_DIR%zinus-remediation-non-windows-devices.csv" (
     echo zinus-remediation-non-windows-devices.csv tidak ditemukan.
-    echo Jalankan automation/discovery dulu supaya daftar printer dan NAS tersedia.
+    echo Jalankan automation/discovery dulu supaya daftar printer, NAS, CCTV, dan network device tersedia.
     popd
     exit /b 1
 )
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "$token = Read-Host 'Masukkan Asset Sync token';" ^
-    "& '%SCRIPT_DIR%Sync-ZinusNetworkDevices.ps1' -Token $token -ResultPath '%SCRIPT_DIR%zinus-network-device-sync-results.csv'"
+    "& '%SCRIPT_DIR%Sync-ZinusNetworkDevices.ps1' -Token $token -IncludeGateways -ResultPath '%SCRIPT_DIR%zinus-network-device-sync-results.csv'"
 
 set "EXIT_CODE=%ERRORLEVEL%"
 popd

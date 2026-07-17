@@ -22,6 +22,12 @@
     $isSoftwareLicense = $title === 'Software License';
     $categoryProfileKey = \App\Support\AssetCategoryProfile::key($title);
     $usesConnectionColumn = in_array($categoryProfileKey, ['monitor', 'peripheral'], true);
+    $usesMonitoringColumn = in_array($categoryProfileKey, ['network', 'cctv'], true);
+    $monitoringMeta = [
+        'online' => ['label' => 'Online', 'class' => 'bg-emerald-50 text-emerald-700 ring-emerald-200', 'dot' => 'bg-emerald-500'],
+        'offline' => ['label' => 'Offline', 'class' => 'bg-rose-50 text-rose-700 ring-rose-200', 'dot' => 'bg-rose-500'],
+        'unknown' => ['label' => 'Unknown', 'class' => 'bg-slate-100 text-slate-700 ring-slate-200', 'dot' => 'bg-slate-400'],
+    ];
     $searchPlaceholder = match (true) {
         $isSoftwareLicense => 'Name, product key, asset code',
         $usesConnectionColumn => 'Name, connection, serial, asset code',
@@ -45,6 +51,33 @@
         }
 
         return $specValues['connection'] ?? $specValues['interface'] ?? null;
+    };
+    $monitoringInfo = function ($asset) use ($monitoringMeta) {
+        $rawMonitoring = $asset->monitoring_status ?: 'unknown';
+        $monitoringKey = Str::of($rawMonitoring)->lower()->replace(' ', '_')->toString();
+        $info = $monitoringMeta[$monitoringKey] ?? [
+            'label' => Str::of($rawMonitoring)->replace('_', ' ')->title(),
+            'class' => 'bg-slate-100 text-slate-700 ring-slate-200',
+            'dot' => 'bg-slate-400',
+        ];
+
+        $detailParts = [];
+        if ($monitoringKey === 'online' && $asset->monitoring_latency_ms !== null) {
+            $detailParts[] = $asset->monitoring_latency_ms . ' ms';
+        }
+
+        $timestamp = $asset->last_seen_at ?: $asset->monitoring_checked_at;
+        if ($timestamp) {
+            $detailParts[] = ($asset->last_seen_at ? 'Seen ' : 'Checked ') . $timestamp->format('d M H:i');
+        }
+        if (empty($detailParts) && filled($asset->monitoring_error)) {
+            $detailParts[] = Str::limit($asset->monitoring_error, 34);
+        }
+
+        $info['detail'] = implode(' - ', $detailParts);
+        $info['title'] = $asset->monitoring_error ?: $info['detail'];
+
+        return $info;
     };
     $activeFilterCount = collect([$search, $factory, $departmentId, $location, $status, $lifecycleStatus, $brand])
         ->filter(fn ($value) => filled($value))
@@ -347,7 +380,7 @@
 
             <div class="hidden overflow-hidden rounded-lg border border-slate-200 bg-white lg:block">
                 <div class="max-h-[68vh] overflow-auto">
-                    <table class="w-full min-w-[1080px] table-fixed text-left text-sm">
+                    <table class="w-full {{ $usesMonitoringColumn ? 'min-w-[1180px]' : 'min-w-[1080px]' }} table-fixed text-left text-sm">
                         <thead class="sticky top-0 z-10 bg-slate-50">
                             <tr class="border-b border-slate-200 text-xs font-semibold text-slate-500">
                                 <th class="w-[44px] px-4 py-3">
@@ -370,7 +403,10 @@
                                     <th class="w-[17%] px-4 py-3">Device</th>
                                     <th class="w-[13%] px-4 py-3">Asset Code</th>
                                     <th class="w-[13%] px-4 py-3">Brand / Model</th>
-                                    <th class="w-[13%] px-4 py-3">{{ $technicalColumnLabel }}</th>
+                                    <th class="w-[12%] px-4 py-3">{{ $technicalColumnLabel }}</th>
+                                    @if ($usesMonitoringColumn)
+                                        <th class="w-[11%] px-4 py-3">Monitoring</th>
+                                    @endif
                                     <th class="w-[10%] px-4 py-3">Location</th>
                                     <th class="w-[10%] px-4 py-3">Department</th>
                                     <th class="w-[8%] px-4 py-3">Condition</th>
@@ -403,6 +439,7 @@
                                         && strcasecmp(trim((string) $asset->hostname), trim((string) $deviceName)) !== 0;
                                     $locationValue = $asset->location ?: ($asset->factory ?: '-');
                                     $technicalFieldValue = $technicalValue($asset);
+                                    $assetMonitoringInfo = $usesMonitoringColumn ? $monitoringInfo($asset) : null;
                                 @endphp
                                 <tr class="group align-middle transition-colors hover:bg-emerald-50/30">
                                     <td class="px-4 py-3.5">
@@ -471,6 +508,17 @@
                                         <td class="truncate px-4 py-3.5 font-mono text-xs text-slate-500" title="{{ $technicalFieldValue }}">
                                             {{ $technicalFieldValue ?? '-' }}
                                         </td>
+                                        @if ($usesMonitoringColumn)
+                                            <td class="px-4 py-3.5" title="{{ $assetMonitoringInfo['title'] }}">
+                                                <span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold ring-1 ring-inset {{ $assetMonitoringInfo['class'] }}">
+                                                    <span class="h-1.5 w-1.5 rounded-full {{ $assetMonitoringInfo['dot'] }}"></span>
+                                                    {{ $assetMonitoringInfo['label'] }}
+                                                </span>
+                                                @if ($assetMonitoringInfo['detail'])
+                                                    <div class="mt-1 truncate text-[11px] text-slate-500">{{ $assetMonitoringInfo['detail'] }}</div>
+                                                @endif
+                                            </td>
+                                        @endif
                                         <td class="px-4 py-3.5 text-slate-600">{{ $locationValue }}</td>
                                         <td class="px-4 py-3.5 text-slate-600">
                                             <div class="min-w-0">
@@ -537,7 +585,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ $isSoftwareLicense ? 9 : 10 }}" class="px-6 py-16 text-center">
+                                    <td colspan="{{ $isSoftwareLicense ? 9 : ($usesMonitoringColumn ? 11 : 10) }}" class="px-6 py-16 text-center">
                                         <svg class="mx-auto h-8 w-8 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                                             <circle cx="11" cy="11" r="7" />
                                             <path d="m20 20-3.5-3.5" stroke-linecap="round" />
@@ -582,6 +630,7 @@
                                 && strcasecmp(trim((string) $asset->hostname), trim((string) $deviceName)) !== 0;
                             $locationValue = $asset->location ?: ($asset->factory ?: '-');
                             $technicalFieldValue = $technicalValue($asset);
+                            $assetMonitoringInfo = $usesMonitoringColumn ? $monitoringInfo($asset) : null;
                         @endphp
                         <article class="p-4">
                             <div class="flex items-start justify-between gap-3">
@@ -648,6 +697,20 @@
                                         <dt class="text-slate-400">{{ $technicalColumnLabel }}</dt>
                                         <dd class="mt-1 truncate font-mono text-slate-600">{{ $technicalFieldValue ?? '-' }}</dd>
                                     </div>
+                                    @if ($usesMonitoringColumn)
+                                        <div>
+                                            <dt class="text-slate-400">Monitoring</dt>
+                                            <dd class="mt-1" title="{{ $assetMonitoringInfo['title'] }}">
+                                                <span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-semibold ring-1 ring-inset {{ $assetMonitoringInfo['class'] }}">
+                                                    <span class="h-1.5 w-1.5 rounded-full {{ $assetMonitoringInfo['dot'] }}"></span>
+                                                    {{ $assetMonitoringInfo['label'] }}
+                                                </span>
+                                                @if ($assetMonitoringInfo['detail'])
+                                                    <div class="mt-1 truncate text-slate-500">{{ $assetMonitoringInfo['detail'] }}</div>
+                                                @endif
+                                            </dd>
+                                        </div>
+                                    @endif
                                     <div>
                                         <dt class="text-slate-400">Location</dt>
                                         <dd class="mt-1 font-medium text-slate-700">{{ $locationValue }}</dd>

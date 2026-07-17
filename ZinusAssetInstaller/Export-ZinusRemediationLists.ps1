@@ -41,12 +41,13 @@ function Export-List {
 
 $failure = Import-ZinusCsv -Path $FailureAnalysisPath
 $quality = Import-ZinusCsv -Path $DataQualityPath
+$nonWindowsTypes = @("Printer", "NAS / storage", "Network device / gateway", "CCTV / camera")
 
 $windowsRemoteBlocked = @(
     $failure |
         Where-Object {
             $_.failure_stage -eq "remote_access" -and
-            $_.likely_device_type -notin @("Printer", "NAS / storage", "Network device / gateway")
+            $_.likely_device_type -notin $nonWindowsTypes
         } |
         Sort-Object ip_address |
         ForEach-Object {
@@ -88,7 +89,7 @@ $accessDenied = @(
 
 $nonWindows = @(
     $failure |
-        Where-Object { $_.likely_device_type -in @("Printer", "NAS / storage", "Network device / gateway") } |
+        Where-Object { $_.likely_device_type -in $nonWindowsTypes } |
         Sort-Object likely_device_type, ip_address |
         ForEach-Object {
             [pscustomobject]@{
@@ -101,6 +102,8 @@ $nonWindows = @(
                     "Use SNMP/printer page/manual asset entry; WinRM inventory is not applicable."
                 } elseif ($_.likely_device_type -eq "NAS / storage") {
                     "Use NAS API/SNMP/manual asset entry; WinRM inventory is not applicable."
+                } elseif ($_.likely_device_type -eq "CCTV / camera") {
+                    "Use CCTV/NVR UI or ONVIF/RTSP metadata; inventory as CCTV."
                 } else {
                     "Verify gateway/switch/firewall role; inventory as network device."
                 }

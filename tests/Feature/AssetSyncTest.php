@@ -106,6 +106,53 @@ class AssetSyncTest extends TestCase
         ]);
     }
 
+    public function test_asset_sync_records_monitoring_health_fields(): void
+    {
+        $checkedAt = now()->subMinutes(5)->toISOString();
+
+        $this->syncAsset([
+            'asset_code' => 'CCTV-10-62-38-10',
+            'hostname' => 'cam-gate-01',
+            'category' => 'CCTV',
+            'ip_address' => '10.62.38.10',
+            'identity_source' => 'ip_address',
+            'monitoring_status' => 'online',
+            'monitoring_checked_at' => $checkedAt,
+            'monitoring_latency_ms' => 12,
+            'monitoring_source' => 'tcp:554',
+        ])->assertOk()
+            ->assertJsonPath('counts.pc_created', 1);
+
+        $asset = Asset::where('asset_code', 'CCTV-10-62-38-10')->firstOrFail();
+
+        $this->assertEquals(Asset::MONITORING_STATUS_ONLINE, $asset->monitoring_status);
+        $this->assertEquals(12, $asset->monitoring_latency_ms);
+        $this->assertEquals('tcp:554', $asset->monitoring_source);
+        $this->assertNotNull($asset->last_seen_at);
+
+        $lastSeenTimestamp = $asset->last_seen_at->timestamp;
+
+        $this->syncAsset([
+            'asset_code' => 'CCTV-10-62-38-10',
+            'hostname' => 'cam-gate-01',
+            'category' => 'CCTV',
+            'ip_address' => '10.62.38.10',
+            'identity_source' => 'ip_address',
+            'monitoring_status' => 'offline',
+            'monitoring_checked_at' => now()->toISOString(),
+            'monitoring_error' => 'No ping or management port response',
+            'monitoring_source' => 'probe',
+        ])->assertOk()
+            ->assertJsonPath('data.mode', 'updated');
+
+        $asset->refresh();
+
+        $this->assertEquals(Asset::MONITORING_STATUS_OFFLINE, $asset->monitoring_status);
+        $this->assertEquals('probe', $asset->monitoring_source);
+        $this->assertEquals('No ping or management port response', $asset->monitoring_error);
+        $this->assertSame($lastSeenTimestamp, $asset->last_seen_at->timestamp);
+    }
+
     public function test_asset_sync_accepts_missing_serial_with_fallback_identity(): void
     {
         $response = $this->syncAsset([

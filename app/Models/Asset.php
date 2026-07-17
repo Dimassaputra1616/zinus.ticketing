@@ -26,6 +26,16 @@ class Asset extends Model
         self::STATUS_BROKEN,
     ];
 
+    public const MONITORING_STATUS_ONLINE = 'online';
+    public const MONITORING_STATUS_OFFLINE = 'offline';
+    public const MONITORING_STATUS_UNKNOWN = 'unknown';
+
+    public const MONITORING_STATUSES = [
+        self::MONITORING_STATUS_ONLINE,
+        self::MONITORING_STATUS_OFFLINE,
+        self::MONITORING_STATUS_UNKNOWN,
+    ];
+
     public const REMOTE_ENDPOINT_CATEGORIES = [
         'PC',
         'Laptop',
@@ -58,6 +68,12 @@ class Asset extends Model
         'condition',
         'lifecycle_status',
         'last_synced_at',
+        'monitoring_status',
+        'monitoring_checked_at',
+        'last_seen_at',
+        'monitoring_latency_ms',
+        'monitoring_error',
+        'monitoring_source',
         'status',
         'department_id',
         'user_id',
@@ -76,6 +92,9 @@ class Asset extends Model
         'warranty_until' => 'date',
         'price' => 'decimal:2',
         'last_synced_at' => 'datetime',
+        'monitoring_checked_at' => 'datetime',
+        'last_seen_at' => 'datetime',
+        'monitoring_latency_ms' => 'integer',
     ];
 
     public function category(): BelongsTo

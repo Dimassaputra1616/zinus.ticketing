@@ -158,7 +158,7 @@ function Get-NonWindowsExcludeIps {
         Import-Csv -LiteralPath $Path |
             Where-Object {
                 $_.ip_address -and
-                $_.likely_device_type -in @("Printer", "NAS / storage", "Network device / gateway")
+                $_.likely_device_type -in @("Printer", "NAS / storage", "Network device / gateway", "CCTV / camera")
             } |
             Select-Object -ExpandProperty ip_address -Unique
     )
@@ -444,19 +444,20 @@ if (-not $SkipRemoteScan -and $finalTargets.Ready -gt 0) {
 
 if (-not $SkipNetworkDevices) {
     if (Test-Path -LiteralPath $DeviceListPath) {
-        Write-Phase "TAHAP 6/7 - Sync printer IP + NAS"
+        Write-Phase "TAHAP 6/7 - Sync printer IP + NAS + CCTV + network device"
         & $networkDeviceScript `
             -DeviceListPath $DeviceListPath `
             -Token $Token `
             -Factory $Factory `
             -Department $Department `
             -ServerUrl $ServerUrl `
+            -IncludeGateways `
             -ResultPath $NetworkDeviceResultPath
     } else {
-        Write-Host "Device list tidak ada, sync printer IP/NAS dilewati: $DeviceListPath" -ForegroundColor Yellow
+        Write-Host "Device list tidak ada, sync printer/NAS/CCTV/network dilewati: $DeviceListPath" -ForegroundColor Yellow
     }
 } else {
-    Write-Info "Sync printer IP/NAS dilewati sesuai parameter."
+    Write-Info "Sync printer/NAS/CCTV/network dilewati sesuai parameter."
 }
 
 if (-not $SkipLocalPrinters -and $finalTargets.Ready -gt 0) {

@@ -85,6 +85,14 @@ function Resolve-LikelyDeviceType {
     $name = ([string]$Hostname).Trim()
     $text = "$name $Reason"
 
+    if ($text -match '(?i)\b(CCTV|CAMERA|IPCAM|IP-CAM|NVR|DVR|HIKVISION|DAHUA|UNIVIEW|ONVIF|RTSP)\b' -or $Detection -match 'TCP:.*\b(554|8000|8899)\b') {
+        return [pscustomobject]@{
+            type       = "CCTV / camera"
+            confidence = "medium"
+            evidence   = $(if ($name) { "Hostname/evidence terlihat seperti CCTV: $name" } else { "Port kamera/NVR terdeteksi: $(Get-OpenPorts -Detection $Detection)" })
+        }
+    }
+
     if ($name -match '(?i)\b(TRUENAS|NAS|SYNOLOGY|QNAP|STORAGE)\b') {
         return [pscustomobject]@{
             type       = "NAS / storage"
@@ -173,7 +181,7 @@ function Resolve-RecommendedAction {
 
     switch ($Category) {
         "smb_closed" {
-            if ($LikelyType -eq "Printer" -or $LikelyType -eq "NAS / storage" -or $LikelyType -eq "Network device / gateway") {
+            if ($LikelyType -eq "Printer" -or $LikelyType -eq "NAS / storage" -or $LikelyType -eq "Network device / gateway" -or $LikelyType -eq "CCTV / camera") {
                 return "Jangan pakai WinRM/PsExec. Inventaris lewat SNMP/API atau catat sebagai network device."
             }
             return "Buka SMB 445/admin share sementara atau deploy agent lewat GPO/Intune/PDQ/manual."

@@ -11,6 +11,7 @@ use App\Models\AssetSyncLog;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -76,6 +77,10 @@ class AssetSyncController extends Controller
                 'model' => $asset->model,
                 'serial_number' => $asset->serial_number,
                 'ip_address' => $asset->ip_address,
+                'monitoring_status' => $asset->monitoring_status,
+                'monitoring_checked_at' => $asset->monitoring_checked_at?->toISOString(),
+                'last_seen_at' => $asset->last_seen_at?->toISOString(),
+                'monitoring_latency_ms' => $asset->monitoring_latency_ms,
                 'last_synced_at' => $asset->last_synced_at?->toISOString(),
                 'updated_at' => $asset->updated_at?->toISOString(),
             ] : null,
@@ -103,6 +108,12 @@ class AssetSyncController extends Controller
             'os_name' => ['nullable', 'string', 'max:150'],
             'ip_address' => ['nullable', 'string', 'max:150'],
             'status' => ['nullable', 'string', 'max:50'],
+            'monitoring_status' => ['nullable', 'string', 'max:30'],
+            'monitoring_checked_at' => ['nullable', 'date'],
+            'last_seen_at' => ['nullable', 'date'],
+            'monitoring_latency_ms' => ['nullable', 'integer', 'min:0', 'max:600000'],
+            'monitoring_error' => ['nullable', 'string', 'max:1000'],
+            'monitoring_source' => ['nullable', 'string', 'max:50'],
             'agent_version' => ['nullable', 'string', 'max:50'],
             'agent_sha256' => ['nullable', 'string'],
             'idempotency_key' => ['nullable', 'string'],
@@ -140,7 +151,7 @@ class AssetSyncController extends Controller
         }
         $assetCode = Str::limit($assetCode, 191, '');
         $identitySource = $this->cleanAssetString($data['identity_source'] ?? null, 50);
-        if (! in_array($identitySource, ['serial', 'uuid', 'hostname'], true)) {
+        if (! in_array($identitySource, ['serial', 'uuid', 'hostname', 'hostname_ip', 'ip_address'], true)) {
             $identitySource = $serialNumber ? 'serial' : 'hostname';
         }
         $isIdentityVerified = filter_var($data['is_identity_verified'] ?? (bool) $serialNumber, FILTER_VALIDATE_BOOLEAN);
@@ -195,6 +206,7 @@ class AssetSyncController extends Controller
             }
 
             $incomingStatus = $this->incomingStatus($data);
+            $monitoringPayload = $this->monitoringPayload($data);
 
             // Guard against overwriting or violating unique constraints with manually managed assets
             $manualConflict = Asset::withTrashed()
@@ -367,6 +379,7 @@ class AssetSyncController extends Controller
                 'source_type' => 'agent',
                 'last_synced_at' => now(),
             ];
+            $payload = array_merge($payload, $monitoringPayload);
 
             if ($existingAsset) {
                 unset($payload['status']);
@@ -1098,6 +1111,112 @@ class AssetSyncController extends Controller
         }
 
         return $this->normalizeStatus($data['status']);
+    }
+
+    protected function monitoringPayload(array $data): array
+    {
+        $monitoringKeys = [
+            'monitoring_status',
+            'monitoring_checked_at',
+            'last_seen_at',
+            'monitoring_latency_ms',
+            'monitoring_error',
+            'monitoring_source',
+        ];
+        $hasMonitoring = false;
+        foreach ($monitoringKeys as $key) {
+            if (array_key_exists($key, $data)) {
+                $hasMonitoring = true;
+                break;
+            }
+        }
+
+        if (! $hasMonitoring) {
+            return [];
+        }
+
+        $status = $this->incomingMonitoringStatus($data);
+        $checkedAt = $this->parseAssetDateTime($data['monitoring_checked_at'] ?? null);
+        $lastSeenAt = $this->parseAssetDateTime($data['last_seen_at'] ?? null);
+
+        if (! $status) {
+            $status = $lastSeenAt ? Asset::MONITORING_STATUS_ONLINE : Asset::MONITORING_STATUS_UNKNOWN;
+        }
+        if (! $checkedAt) {
+            $checkedAt = now();
+        }
+
+        $payload = [
+            'monitoring_status' => $status,
+            'monitoring_checked_at' => $checkedAt,
+        ];
+
+        if ($status === Asset::MONITORING_STATUS_ONLINE) {
+            $payload['last_seen_at'] = $lastSeenAt ?: $checkedAt;
+        } elseif ($lastSeenAt) {
+            $payload['last_seen_at'] = $lastSeenAt;
+        }
+
+        if (array_key_exists('monitoring_latency_ms', $data)) {
+            $latency = $data['monitoring_latency_ms'];
+            $payload['monitoring_latency_ms'] = is_numeric($latency) ? (int) $latency : null;
+        } elseif ($status !== Asset::MONITORING_STATUS_ONLINE) {
+            $payload['monitoring_latency_ms'] = null;
+        }
+
+        if (array_key_exists('monitoring_error', $data)) {
+            $payload['monitoring_error'] = $this->cleanAssetString($data['monitoring_error'], 1000);
+        } elseif ($status === Asset::MONITORING_STATUS_ONLINE) {
+            $payload['monitoring_error'] = null;
+        }
+
+        if (array_key_exists('monitoring_source', $data)) {
+            $payload['monitoring_source'] = $this->cleanAssetString($data['monitoring_source'], 50);
+        } else {
+            $payload['monitoring_source'] = 'asset-sync';
+        }
+
+        return $payload;
+    }
+
+    protected function incomingMonitoringStatus(array $data): ?string
+    {
+        if (! array_key_exists('monitoring_status', $data) || blank($data['monitoring_status'])) {
+            return null;
+        }
+
+        $normalized = Str::snake(Str::lower((string) $data['monitoring_status']));
+        $map = [
+            'online' => Asset::MONITORING_STATUS_ONLINE,
+            'up' => Asset::MONITORING_STATUS_ONLINE,
+            'alive' => Asset::MONITORING_STATUS_ONLINE,
+            'ok' => Asset::MONITORING_STATUS_ONLINE,
+            'success' => Asset::MONITORING_STATUS_ONLINE,
+            'reachable' => Asset::MONITORING_STATUS_ONLINE,
+            'offline' => Asset::MONITORING_STATUS_OFFLINE,
+            'down' => Asset::MONITORING_STATUS_OFFLINE,
+            'failed' => Asset::MONITORING_STATUS_OFFLINE,
+            'error' => Asset::MONITORING_STATUS_OFFLINE,
+            'unreachable' => Asset::MONITORING_STATUS_OFFLINE,
+            'timeout' => Asset::MONITORING_STATUS_OFFLINE,
+            'unknown' => Asset::MONITORING_STATUS_UNKNOWN,
+            'skipped' => Asset::MONITORING_STATUS_UNKNOWN,
+        ];
+
+        return $map[$normalized] ?? Asset::MONITORING_STATUS_UNKNOWN;
+    }
+
+    protected function parseAssetDateTime(mixed $value): ?Carbon
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     protected function resolveTokenScope(string $token): ?array
