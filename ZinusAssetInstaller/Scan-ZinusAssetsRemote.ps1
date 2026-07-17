@@ -279,6 +279,108 @@ $collector = {
         return $null
     }
 
+    function Limit-Text {
+        param(
+            [string]$Value,
+            [int]$MaxLength = 255
+        )
+
+        if ([string]::IsNullOrWhiteSpace($Value)) { return "" }
+
+        $clean = (($Value -replace '[\r\n\t]+', ' ') -replace '\s{2,}', ' ').Trim()
+        if ($clean.Length -le $MaxLength) { return $clean }
+
+        if ($MaxLength -le 3) { return $clean.Substring(0, $MaxLength) }
+        return $clean.Substring(0, $MaxLength - 3) + "..."
+    }
+
+    function Format-HealthStatus {
+        param([object]$Status)
+
+        $text = Normalize-AssetValue -Value ([string]$Status) -Placeholders $commonPlaceholders
+        if (-not $text) { return "Unknown" }
+
+        switch -Regex ($text) {
+            "(?i)healthy|ok|good|normal" { return "Good" }
+            "(?i)warning|degraded|stressed" { return "Warning" }
+            "(?i)unhealthy|critical|failed|lost" { return "Critical" }
+            default { return $text }
+        }
+    }
+
+    function Get-StorageReliabilitySummary {
+        param([object]$PhysicalDisk)
+
+        try {
+            $counter = Get-StorageReliabilityCounter -PhysicalDisk $PhysicalDisk -ErrorAction Stop
+        } catch {
+            return @()
+        }
+
+        if (-not $counter) { return @() }
+
+        $parts = @()
+        if ($null -ne $counter.Wear) { $parts += "wear_used=$([int]$counter.Wear)%" }
+        if ($null -ne $counter.Temperature) { $parts += "temp=$([int]$counter.Temperature)C" }
+        if ($null -ne $counter.PowerOnHours) { $parts += "power_on=$([int]$counter.PowerOnHours)h" }
+        if ($null -ne $counter.ReadErrorsTotal -and [int64]$counter.ReadErrorsTotal -gt 0) { $parts += "read_errors=$($counter.ReadErrorsTotal)" }
+        if ($null -ne $counter.WriteErrorsTotal -and [int64]$counter.WriteErrorsTotal -gt 0) { $parts += "write_errors=$($counter.WriteErrorsTotal)" }
+
+        return $parts
+    }
+
+    function Get-SmartFailurePredictionSummary {
+        try {
+            $statuses = @(Get-CimInstance -Namespace root\wmi -ClassName MSStorageDriver_FailurePredictStatus -ErrorAction Stop)
+        } catch {
+            return ""
+        }
+
+        if ($statuses.Count -eq 0) { return "" }
+
+        $failed = @($statuses | Where-Object { $_.PredictFailure }).Count
+        if ($failed -gt 0) { return "SMART pre-fail=$failed/$($statuses.Count)" }
+
+        return "SMART pre-fail=0/$($statuses.Count)"
+    }
+
+    function Get-PhysicalStorageHealthSummary {
+        $summaries = @()
+
+        try {
+            $physicalDisks = @(Get-PhysicalDisk -ErrorAction Stop)
+        } catch {
+            $physicalDisks = @()
+        }
+
+        foreach ($physicalDisk in $physicalDisks) {
+            $name = Normalize-AssetValue -Value ([string]$physicalDisk.FriendlyName) -Placeholders $commonPlaceholders
+            $mediaType = Normalize-AssetValue -Value ([string]$physicalDisk.MediaType) -Placeholders $commonPlaceholders
+            if (-not $mediaType -or $mediaType -eq "Unspecified") {
+                $mediaType = Normalize-AssetValue -Value ([string]$physicalDisk.BusType) -Placeholders $commonPlaceholders
+            }
+            if (-not $mediaType) { $mediaType = "Disk" }
+
+            $sizeGb = if ($physicalDisk.Size) { [int][math]::Round($physicalDisk.Size / 1GB) } else { $null }
+            $health = Format-HealthStatus -Status $physicalDisk.HealthStatus
+            $operational = Normalize-AssetValue -Value ((@($physicalDisk.OperationalStatus) -join ",")) -Placeholders $commonPlaceholders
+
+            $parts = @($mediaType)
+            if ($name) { $parts += (Limit-Text -Value $name -MaxLength 34) }
+            if ($sizeGb) { $parts += "${sizeGb}GB" }
+            $parts += "health=$health"
+            if ($operational -and $operational -ne "OK") { $parts += "op=$operational" }
+            $parts += Get-StorageReliabilitySummary -PhysicalDisk $physicalDisk
+
+            $summaries += (Limit-Text -Value ($parts -join " ") -MaxLength 110)
+        }
+
+        $smartSummary = Get-SmartFailurePredictionSummary
+        if ($smartSummary) { $summaries += $smartSummary }
+
+        return @($summaries | Where-Object { $_ })
+    }
+
     function Get-DiskInfo {
         $result = @()
         $disks = @(Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" -ErrorAction SilentlyContinue)
@@ -913,6 +1015,7 @@ $collector = {
     $cpuInfo = (Get-CimInstance Win32_Processor | Select-Object -First 1).Name
     $csInfo = Get-CimInstance Win32_ComputerSystem
     $disks = Get-DiskInfo
+    $storageHealth = @(Get-PhysicalStorageHealthSummary)
     $serialNumber = Get-SerialNumber
     $systemUuid = Get-SystemUuid
     $identity = Get-AssetIdentity -SerialNumber $serialNumber -Uuid $systemUuid -Hostname $hostname
@@ -939,11 +1042,20 @@ $collector = {
 
     $storageGb = $null
     $storageDetail = $null
+    $storageDetailParts = @()
     if ($disks) {
         $storageGb = [int][math]::Round(($disks | Measure-Object -Property size_gb -Sum).Sum)
-        $storageDetail = ($disks | ForEach-Object {
+        $storageDetailParts += @($disks | ForEach-Object {
             "$($_.drive): $($_.size_gb) GB ($($_.free_gb) GB free)"
-        }) -join "; "
+        })
+    }
+
+    if ($storageHealth.Count -gt 0) {
+        $storageDetailParts += "Health: " + ($storageHealth -join " | ")
+    }
+
+    if ($storageDetailParts.Count -gt 0) {
+        $storageDetail = Limit-Text -Value ($storageDetailParts -join "; ") -MaxLength 255
     }
 
     $category = Resolve-AssetCategory -Hostname $hostname -Brand $brand -Model $model

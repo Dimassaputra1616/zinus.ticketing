@@ -153,6 +153,26 @@ class AssetSyncTest extends TestCase
         $this->assertSame($lastSeenTimestamp, $asset->last_seen_at->timestamp);
     }
 
+    public function test_asset_sync_truncates_long_storage_detail(): void
+    {
+        $longStorageDetail = str_repeat('SSD Samsung health=Good wear_used=2% temp=35C; ', 20);
+
+        $this->syncAsset([
+            'asset_code' => 'SN-STORAGE-DETAIL-001',
+            'hostname' => 'pc-storage-detail-001',
+            'serial_number' => 'SN-STORAGE-DETAIL-001',
+            'category' => 'PC',
+            'storage_gb' => 512,
+            'storage_detail' => $longStorageDetail,
+        ])->assertOk()
+            ->assertJsonPath('counts.pc_created', 1);
+
+        $asset = Asset::where('asset_code', 'SN-STORAGE-DETAIL-001')->firstOrFail();
+
+        $this->assertLessThanOrEqual(255, strlen($asset->storage_detail));
+        $this->assertStringContainsString('SSD Samsung health=Good', $asset->storage_detail);
+    }
+
     public function test_asset_sync_accepts_missing_serial_with_fallback_identity(): void
     {
         $response = $this->syncAsset([
