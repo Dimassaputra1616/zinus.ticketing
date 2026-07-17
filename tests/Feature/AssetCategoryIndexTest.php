@@ -209,6 +209,7 @@ class AssetCategoryIndexTest extends TestCase
             'asset_code' => 'PC-SELECTED-QR-001',
             'name' => 'Selected QR Workstation',
             'category' => 'PC',
+            'serial_number' => 'SN-SELECTED-QR-001',
             'status' => Asset::STATUS_AVAILABLE,
             'source_type' => 'agent',
             'sync_source' => 'agent',
@@ -227,7 +228,9 @@ class AssetCategoryIndexTest extends TestCase
             ->get(route('admin.assets.qr-labels', ['ids' => [$selected->id]]))
             ->assertOk()
             ->assertSeeText('Selected QR Labels')
-            ->assertSeeText('PC-SELECTED-QR-001')
+            ->assertSeeText('Selected QR Workstation')
+            ->assertSeeText('SN-SELECTED-QR-001')
+            ->assertSeeInOrder(['Selected QR Workstation', 'SN-SELECTED-QR-001'], false)
             ->assertDontSeeText('PC-NOT-SELECTED-QR-001')
             ->assertSee('data-print-layout="packed-labels"', false)
             ->assertSee('grid-template-columns: repeat(auto-fill, minmax(62mm, 62mm));', false)

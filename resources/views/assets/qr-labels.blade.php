@@ -491,8 +491,8 @@
                                 </div>
 
                                 <div>
-                                    <div class="asset-code">{{ $label['assetCode'] }}</div>
-                                    <div class="asset-title">{{ $label['assetTitle'] }}</div>
+                                    <div class="asset-code">{{ $label['deviceName'] ?? $label['assetTitle'] }}</div>
+                                    <div class="asset-title">{{ $label['serialNumber'] ?? $label['assetCode'] }}</div>
                                 </div>
 
                                 <div class="meta-grid">

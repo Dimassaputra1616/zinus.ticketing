@@ -1,11 +1,13 @@
 @php
     $assetCode = filled($asset->asset_code) ? $asset->asset_code : 'ASSET-' . $asset->id;
-    $assetTitle = filled($asset->name) ? $asset->name : $assetCode;
+    $deviceName = filled($asset->name) ? $asset->name : ($asset->hostname ?: $assetCode);
+    $assetTitle = $deviceName;
     $category = filled($asset->category) ? $asset->category : 'Asset';
     $department = $asset->department?->name ?: 'No department';
     $location = $asset->location ?: $asset->factory ?: 'No location';
     $assignedTo = $asset->assigned_to_display_name ?: 'Not assigned';
     $serial = $asset->serial_number ?: 'No serial';
+    $labelSerial = $asset->serial_number ?: $assetCode;
     $identity = $asset->hostname ?: $asset->asset_code ?: $serial;
     $statusKey = strtolower((string) ($asset->lifecycle_status ?: $asset->status ?: 'active'));
     $statusLabel = [
@@ -699,8 +701,8 @@
                 <div class="content-panel">
                     <div>
                         <div class="eyebrow">Zinus Asset Passport</div>
-                        <h1 class="asset-code">{{ $assetCode }}</h1>
-                        <p class="asset-title">{{ $assetTitle }}</p>
+                        <h1 class="asset-code">{{ $deviceName }}</h1>
+                        <p class="asset-title">{{ $labelSerial }}</p>
                         <p class="category">{{ $category }}</p>
                     </div>
 
@@ -766,8 +768,8 @@
                     </div>
 
                     <div>
-                        <div class="print-code">{{ $assetCode }}</div>
-                        <div class="print-title">{{ $assetTitle }}</div>
+                        <div class="print-code">{{ $deviceName }}</div>
+                        <div class="print-title">{{ $labelSerial }}</div>
                     </div>
 
                     <div class="print-meta">

@@ -970,13 +970,16 @@ class AssetCenterController extends Controller
     private function assetQrLabelPayload(Asset $asset, string $blockId): array
     {
         $assetCode = filled($asset->asset_code) ? $asset->asset_code : 'ASSET-' . $asset->id;
-        $assetTitle = filled($asset->name) ? $asset->name : $assetCode;
+        $deviceName = filled($asset->name) ? $asset->name : ($asset->hostname ?: $assetCode);
+        $serialNumber = filled($asset->serial_number) ? $asset->serial_number : $assetCode;
         $qrTargetUrl = route('assets.show', $asset);
 
         return [
             'asset' => $asset,
             'assetCode' => $assetCode,
-            'assetTitle' => $assetTitle,
+            'assetTitle' => $deviceName,
+            'deviceName' => $deviceName,
+            'serialNumber' => $serialNumber,
             'department' => $asset->department?->name ?: 'No department',
             'assignedTo' => $asset->assigned_to_display_name ?: 'Not assigned',
             'statusLabel' => $this->assetQrStatusLabel($asset),
