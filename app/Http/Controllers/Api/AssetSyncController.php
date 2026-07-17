@@ -382,7 +382,9 @@ class AssetSyncController extends Controller
             $payload = array_merge($payload, $monitoringPayload);
 
             if ($existingAsset) {
-                unset($payload['status']);
+                if (! $this->shouldAutoActivateExistingAsset($existingAsset, $categoryName, $incomingStatus)) {
+                    unset($payload['status']);
+                }
 
                 if ($existingAsset->department_id) {
                     unset($payload['department_id']);
@@ -1111,6 +1113,37 @@ class AssetSyncController extends Controller
         }
 
         return $this->normalizeStatus($data['status']);
+    }
+
+    protected function shouldAutoActivateExistingAsset(Asset $asset, ?string $incomingCategory, ?string $incomingStatus): bool
+    {
+        $currentStatus = $asset->status ? $this->normalizeStatus($asset->status) : null;
+        if ($currentStatus !== Asset::STATUS_AVAILABLE) {
+            return false;
+        }
+
+        if ($incomingStatus !== null && $incomingStatus !== Asset::STATUS_IN_USE) {
+            return false;
+        }
+
+        return $this->isComputerSyncCategory($incomingCategory)
+            || $this->isComputerSyncCategory($asset->category);
+    }
+
+    protected function isComputerSyncCategory(?string $category): bool
+    {
+        $normalized = Str::of($category ?? '')
+            ->lower()
+            ->replace(['_', '-'], ' ')
+            ->squish()
+            ->toString();
+
+        if ($normalized === '') {
+            return false;
+        }
+
+        return in_array($normalized, ['pc', 'pc / laptop', 'pc laptop', 'pc/laptop'], true)
+            || Str::contains($normalized, 'laptop');
     }
 
     protected function monitoringPayload(array $data): array

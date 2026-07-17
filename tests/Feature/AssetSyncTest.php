@@ -275,6 +275,33 @@ class AssetSyncTest extends TestCase
         $this->assertEquals('Intel Core i9', $asset->cpu);
     }
 
+    public function test_sync_auto_activates_spare_computer_when_agent_reports_it(): void
+    {
+        $asset = Asset::create([
+            'asset_code' => 'SN-SPARE-ACTIVE-001',
+            'name' => 'pc-spare-active-001',
+            'hostname' => 'pc-spare-active-001',
+            'serial_number' => 'SN-SPARE-ACTIVE-001',
+            'category' => 'PC',
+            'status' => Asset::STATUS_AVAILABLE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+        ]);
+
+        $this->syncAsset([
+            'hostname' => 'pc-spare-active-001',
+            'serial_number' => 'SN-SPARE-ACTIVE-001',
+            'category' => 'PC',
+            'cpu' => 'Intel Core i5',
+        ])->assertOk()
+            ->assertJsonPath('data.mode', 'updated');
+
+        $asset->refresh();
+
+        $this->assertEquals(Asset::STATUS_IN_USE, $asset->status);
+        $this->assertEquals('Intel Core i5', $asset->cpu);
+    }
+
     public function test_sync_resolves_hostname_conflict(): void
     {
         // Create existing asset via agent sync with hostname
