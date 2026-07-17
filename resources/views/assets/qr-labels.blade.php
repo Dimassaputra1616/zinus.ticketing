@@ -391,8 +391,8 @@
         }
 
         @page {
-            size: 62mm 29mm;
-            margin: 0;
+            size: auto;
+            margin: 8mm;
         }
 
         @media print {
@@ -402,7 +402,7 @@
 
             html,
             body {
-                width: 62mm !important;
+                width: auto !important;
                 min-height: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
@@ -421,27 +421,26 @@
             }
 
             .preview {
-                display: block;
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(62mm, 62mm));
+                grid-auto-rows: 29mm;
+                gap: 2mm;
+                align-content: start;
+                justify-content: start;
+                width: 100%;
+                margin: 0;
                 padding: 0;
             }
 
             .label-page {
+                display: flex;
                 width: 62mm;
                 height: 29mm;
                 margin: 0;
                 padding: 0.8mm 1mm;
                 overflow: hidden;
-                break-after: page;
-                break-before: auto;
                 break-inside: avoid;
-                page-break-after: always;
-                page-break-before: auto;
                 page-break-inside: avoid;
-            }
-
-            .label-page:last-child {
-                break-after: auto;
-                page-break-after: auto;
             }
         }
     </style>
@@ -464,7 +463,7 @@
             <p>No asset matched the current selection or filters. Go back to inventory and adjust the filters.</p>
         </section>
     @else
-        <main class="preview" aria-label="Bulk QR label preview">
+        <main class="preview" data-print-layout="packed-labels" aria-label="Bulk QR label preview">
             @foreach ($labels as $label)
                 <section class="label-page" aria-label="QR label for {{ $label['assetCode'] }}">
                     <div class="sticker">

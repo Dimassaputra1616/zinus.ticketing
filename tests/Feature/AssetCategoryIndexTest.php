@@ -229,6 +229,9 @@ class AssetCategoryIndexTest extends TestCase
             ->assertSeeText('Selected QR Labels')
             ->assertSeeText('PC-SELECTED-QR-001')
             ->assertDontSeeText('PC-NOT-SELECTED-QR-001')
+            ->assertSee('data-print-layout="packed-labels"', false)
+            ->assertSee('grid-template-columns: repeat(auto-fill, minmax(62mm, 62mm));', false)
+            ->assertDontSee('page-break-after: always', false)
             ->assertSee('<svg', false);
     }
 
