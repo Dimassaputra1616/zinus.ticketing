@@ -13,12 +13,7 @@ use App\Http\Requests\UpdateAssetRequest;
 use App\Models\AssetRelation;
 use App\Support\AssetModuleNavigation;
 use BaconQrCode\Common\ErrorCorrectionLevel as BaconErrorCorrectionLevel;
-use BaconQrCode\Renderer\Color\Rgb;
-use BaconQrCode\Renderer\Image\SvgImageBackEnd;
-use BaconQrCode\Renderer\ImageRenderer;
-use BaconQrCode\Renderer\RendererStyle\Fill;
-use BaconQrCode\Renderer\RendererStyle\RendererStyle;
-use BaconQrCode\Writer as BaconQrWriter;
+use BaconQrCode\Encoder\Encoder as BaconQrEncoder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -850,28 +845,70 @@ class AssetCenterController extends Controller
 
     private function buildAssetQrSvg(string $data, string $blockId = 'zinus-qr-module'): string
     {
-        $renderer = new ImageRenderer(
-            new RendererStyle(
-                size: 420,
-                margin: 2,
-                fill: Fill::uniformColor(
-                    new Rgb(255, 255, 255),
-                    new Rgb(5, 78, 52),
-                ),
-            ),
-            new SvgImageBackEnd(),
-        );
+        if (class_exists(BaconQrEncoder::class) && class_exists(BaconErrorCorrectionLevel::class)) {
+            try {
+                return $this->buildAssetQrSvgFromMatrix($data, $blockId);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
-        $svg = (new BaconQrWriter($renderer))->writeString(
-            $data,
-            'UTF-8',
-            BaconErrorCorrectionLevel::H(),
-        );
+        return $this->buildExternalAssetQrSvg($data, $blockId);
+    }
 
-        $svg = preg_replace('/<\?xml[^>]*>\s*/', '', $svg) ?: $svg;
-        $id = htmlspecialchars(preg_replace('/[^A-Za-z0-9_-]+/', '-', $blockId), ENT_QUOTES, 'UTF-8');
+    private function buildAssetQrSvgFromMatrix(string $data, string $blockId): string
+    {
+        $matrix = BaconQrEncoder::encode($data, BaconErrorCorrectionLevel::H(), 'UTF-8')->getMatrix();
+        $matrixSize = $matrix->getWidth();
+        $margin = 2;
+        $moduleSize = 420 / ($matrixSize + ($margin * 2));
+        $path = '';
 
-        return preg_replace('/<svg\b/', '<svg id="' . $id . '"', $svg, 1) ?: $svg;
+        for ($y = 0; $y < $matrixSize; $y++) {
+            for ($x = 0; $x < $matrixSize; $x++) {
+                if ((int) $matrix->get($x, $y) !== 1) {
+                    continue;
+                }
+
+                $left = ($x + $margin) * $moduleSize;
+                $top = ($y + $margin) * $moduleSize;
+                $right = $left + $moduleSize;
+                $bottom = $top + $moduleSize;
+                $path .= 'M' . $this->formatQrNumber($left) . ',' . $this->formatQrNumber($top)
+                    . 'H' . $this->formatQrNumber($right)
+                    . 'V' . $this->formatQrNumber($bottom)
+                    . 'H' . $this->formatQrNumber($left)
+                    . 'Z';
+            }
+        }
+
+        $id = $this->sanitizeSvgId($blockId);
+
+        return '<svg id="' . $id . '" xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420" role="img" aria-label="Asset QR Code">'
+            . '<rect width="420" height="420" fill="#ffffff"/>'
+            . '<path fill="#054e34" d="' . $path . '"/>'
+            . '</svg>';
+    }
+
+    private function buildExternalAssetQrSvg(string $data, string $blockId): string
+    {
+        $id = $this->sanitizeSvgId($blockId);
+        $src = 'https://api.qrserver.com/v1/create-qr-code/?size=420x420&ecc=H&color=054e34&bgcolor=ffffff&data=' . rawurlencode($data);
+        $escapedSrc = htmlspecialchars($src, ENT_QUOTES, 'UTF-8');
+
+        return '<svg id="' . $id . '" xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420" role="img" aria-label="Asset QR Code">'
+            . '<image href="' . $escapedSrc . '" x="0" y="0" width="420" height="420"/>'
+            . '</svg>';
+    }
+
+    private function sanitizeSvgId(string $id): string
+    {
+        return htmlspecialchars(preg_replace('/[^A-Za-z0-9_-]+/', '-', $id), ENT_QUOTES, 'UTF-8');
+    }
+
+    private function formatQrNumber(float $value): string
+    {
+        return rtrim(rtrim(number_format($value, 3, '.', ''), '0'), '.');
     }
 
     private function assetFromScanValue(string $value): ?Asset
