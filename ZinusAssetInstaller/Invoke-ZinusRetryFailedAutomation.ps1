@@ -34,6 +34,7 @@ param(
     [switch]$SkipRemoteScan,
     [switch]$SkipNetworkDevices,
     [switch]$SkipLocalPrinters,
+    [switch]$DisableExistingAssetSkip,
     [System.Management.Automation.PSCredential]$Credential
 )
 
@@ -585,6 +586,7 @@ Write-Host "Zinus retry failed automation" -ForegroundColor Green
 Write-Info "Server : $ServerUrl"
 Write-Info "Factory: $Factory"
 Write-Info "Dept   : $Department"
+$skipExistingAssets = -not [bool]$DisableExistingAssetSkip
 
 Write-Phase "TAHAP 1/6 - Kumpulkan target gagal"
 $retryTargets = @(Get-RetryTargets -DeviceListPath $DeviceListPath)
@@ -654,6 +656,7 @@ if (-not $SkipRemoteScan -and $readyTargets.Count -gt 0) {
         -Department $Department `
         -ServerUrl $ServerUrl `
         -MaxParallel $RemoteScanMaxParallel `
+        -SkipExisting:$skipExistingAssets `
         -NoFailExit `
         -ResultPath $RemoteScanResultPath
 } elseif ($SkipRemoteScan) {

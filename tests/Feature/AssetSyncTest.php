@@ -30,6 +30,51 @@ class AssetSyncTest extends TestCase
             ->postJson('/api/asset-sync', $payload);
     }
 
+    protected function lookupAsset(array $query): \Illuminate\Testing\TestResponse
+    {
+        return $this->withHeader('Authorization', 'Bearer ' . $this->token)
+            ->getJson('/api/asset-sync/lookup?' . http_build_query($query));
+    }
+
+    public function test_asset_sync_lookup_finds_existing_computer_target(): void
+    {
+        $asset = Asset::create([
+            'asset_code' => 'PC-LOOKUP-001',
+            'name' => 'pc-lookup-001',
+            'hostname' => 'pc-lookup-001',
+            'serial_number' => 'SN-LOOKUP-001',
+            'ip_address' => '10.62.38.77',
+            'category' => 'PC',
+            'status' => Asset::STATUS_IN_USE,
+            'source_type' => 'agent',
+            'sync_source' => 'agent',
+            'last_synced_at' => now(),
+        ]);
+
+        $this->lookupAsset([
+            'target' => '10.62.38.77',
+            'scope' => 'computer',
+        ])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('exists', true)
+            ->assertJsonPath('matched_by', 'ip_address')
+            ->assertJsonPath('asset.id', $asset->id)
+            ->assertJsonPath('asset.asset_code', 'PC-LOOKUP-001');
+    }
+
+    public function test_asset_sync_lookup_reports_missing_target(): void
+    {
+        $this->lookupAsset([
+            'target' => '10.62.38.88',
+            'scope' => 'computer',
+        ])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('exists', false)
+            ->assertJsonPath('asset', null);
+    }
+
     public function test_asset_sync_creates_new_asset(): void
     {
         $payload = [

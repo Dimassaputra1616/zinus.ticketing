@@ -20,6 +20,68 @@ use Throwable;
 
 class AssetSyncController extends Controller
 {
+    public function lookup(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'target' => ['nullable', 'string', 'max:191'],
+            'asset_code' => ['nullable', 'string', 'max:191'],
+            'hostname' => ['nullable', 'string', 'max:191'],
+            'serial_number' => ['nullable', 'string', 'max:191'],
+            'ip_address' => ['nullable', 'string', 'max:150'],
+            'scope' => ['nullable', 'string', 'in:any,computer,monitor'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($request, $validator->errors()->toArray());
+        }
+
+        $data = $validator->validated();
+        $criteria = $this->assetLookupCriteria($data);
+
+        if (empty($criteria)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'At least one lookup value is required.',
+            ], 422);
+        }
+
+        $scope = $data['scope'] ?? 'any';
+        $asset = Asset::query()
+            ->where(function ($query) use ($criteria) {
+                foreach ($criteria as $criterion) {
+                    $query->orWhere($criterion['column'], $criterion['value']);
+                }
+            })
+            ->when($scope === 'computer', function ($query) {
+                $query->whereIn('category', ['PC', 'Laptop', 'PC / Laptop', 'PC/Laptop', 'pc-laptop']);
+            })
+            ->when($scope === 'monitor', function ($query) {
+                $query->where('category', 'Monitor');
+            })
+            ->latest('last_synced_at')
+            ->latest('updated_at')
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'exists' => (bool) $asset,
+            'matched_by' => $asset ? $this->matchedLookupColumn($asset, $criteria) : null,
+            'asset' => $asset ? [
+                'id' => $asset->id,
+                'asset_code' => $asset->asset_code,
+                'hostname' => $asset->hostname,
+                'name' => $asset->name,
+                'category' => $asset->category,
+                'brand' => $asset->brand,
+                'model' => $asset->model,
+                'serial_number' => $asset->serial_number,
+                'ip_address' => $asset->ip_address,
+                'last_synced_at' => $asset->last_synced_at?->toISOString(),
+                'updated_at' => $asset->updated_at?->toISOString(),
+            ] : null,
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -824,6 +886,48 @@ class AssetSyncController extends Controller
         ];
 
         return $manufacturerNames[$code] ?? $candidate;
+    }
+
+    protected function assetLookupCriteria(array $data): array
+    {
+        $criteria = [];
+
+        foreach (['asset_code', 'hostname', 'serial_number', 'ip_address'] as $column) {
+            $value = $this->cleanAssetString($data[$column] ?? null, $column === 'ip_address' ? 150 : 191);
+            if ($value) {
+                $criteria[] = ['column' => $column, 'value' => $value];
+            }
+        }
+
+        $target = $this->cleanAssetString($data['target'] ?? null);
+        if ($target) {
+            if (filter_var($target, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                $criteria[] = ['column' => 'ip_address', 'value' => $target];
+            } else {
+                foreach (['hostname', 'name', 'asset_code', 'serial_number'] as $column) {
+                    $criteria[] = ['column' => $column, 'value' => $target];
+                }
+            }
+        }
+
+        $unique = [];
+        foreach ($criteria as $criterion) {
+            $key = $criterion['column'] . ':' . $criterion['value'];
+            $unique[$key] = $criterion;
+        }
+
+        return array_values($unique);
+    }
+
+    protected function matchedLookupColumn(Asset $asset, array $criteria): ?string
+    {
+        foreach ($criteria as $criterion) {
+            if ((string) $asset->{$criterion['column']} === (string) $criterion['value']) {
+                return $criterion['column'];
+            }
+        }
+
+        return null;
     }
 
     protected function cleanAssetString(mixed $value, int $limit = 191): ?string

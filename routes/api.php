@@ -6,6 +6,10 @@ use App\Http\Controllers\Api\ConversationApiController;
 use App\Http\Controllers\Api\ReportController;
 
 // Asset sync endpoint (existing)
+Route::get('/asset-sync/lookup', [AssetSyncController::class, 'lookup'])
+    ->middleware('asset.sync')
+    ->name('api.asset-sync.lookup');
+
 Route::post('/asset-sync', [AssetSyncController::class, 'store'])
     ->middleware('asset.sync')
     ->name('api.asset-sync');

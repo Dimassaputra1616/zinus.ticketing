@@ -6,7 +6,12 @@ param(
     [string]$DefaultServerUrl = "https://app.it-ticketing.web.id/api/asset-sync",
     [string]$DefaultFactory = "GCI-HWANG",
     [string]$DefaultDepartment = "IT",
-    [string]$PsExecPath = ".\PsExec.exe"
+    [string]$PsExecPath = ".\PsExec.exe",
+    [ValidateRange(0, 20)]
+    [int]$MissingRetryCount = 5,
+    [ValidateRange(5, 3600)]
+    [int]$MissingRetryDelaySeconds = 30,
+    [switch]$DisableExistingAssetSkip
 )
 
 $ErrorActionPreference = "Stop"
@@ -412,20 +417,63 @@ $anyDeskFailedCount = @($anyDeskResults | Where-Object { $_.status -eq "failed" 
 Write-Host ""
 Write-Host "TAHAP 5/5 - Menarik dan mengirim aset dari $($readyTargets.Count) PC siap..." -ForegroundColor Cyan
 if ($readyTargets.Count -gt 0) {
-    & $scanScript `
-        -ComputerName $readyTargets `
-        -ComputerList "" `
-        -Token $token `
-        -Factory $factory `
-        -Department $department `
-        -ServerUrl $serverUrl `
-        -PortTimeoutMs 5000 `
-        -MaxParallel 12 `
-        -RetryCount 2 `
-        -RetryDelaySeconds 8 `
-        -ResultPath $scanPath `
-        -Credential $credential `
-        -NoFailExit
+    $skipExistingAssets = -not [bool]$DisableExistingAssetSkip
+    $remainingScanTargets = @($readyTargets)
+    $allScanResults = @()
+    $maxScanAttempts = 1 + $MissingRetryCount
+
+    for ($scanAttempt = 1; $scanAttempt -le $maxScanAttempts -and $remainingScanTargets.Count -gt 0; $scanAttempt++) {
+        $attemptPath = if ($scanAttempt -eq 1) {
+            $scanPath
+        } else {
+            Join-Path $PSScriptRoot ("zinus-auto-scan-results-retry-{0}.csv" -f ($scanAttempt - 1))
+        }
+
+        Write-Host "Scan attempt $scanAttempt/$maxScanAttempts untuk $($remainingScanTargets.Count) target..." -ForegroundColor Cyan
+        & $scanScript `
+            -ComputerName $remainingScanTargets `
+            -ComputerList "" `
+            -Token $token `
+            -Factory $factory `
+            -Department $department `
+            -ServerUrl $serverUrl `
+            -PortTimeoutMs 5000 `
+            -MaxParallel 12 `
+            -RetryCount 2 `
+            -RetryDelaySeconds 8 `
+            -SkipExisting:$skipExistingAssets `
+            -ResultPath $attemptPath `
+            -Credential $credential `
+            -NoFailExit
+
+        $attemptResults = if (Test-Path $attemptPath) { @(Import-Csv -LiteralPath $attemptPath) } else { @() }
+        $allScanResults += $attemptResults
+        $remainingScanTargets = @(
+            $attemptResults |
+                Where-Object { $_.status -in @("failed", "skipped") } |
+                Select-Object -ExpandProperty computer -Unique
+        )
+
+        if ($remainingScanTargets.Count -gt 0 -and $scanAttempt -lt $maxScanAttempts) {
+            Write-Host "$($remainingScanTargets.Count) target belum ketarik; retry dalam $MissingRetryDelaySeconds detik..." -ForegroundColor Yellow
+            Start-Sleep -Seconds $MissingRetryDelaySeconds
+        }
+    }
+
+    $finalScanResults = @(
+        $allScanResults |
+            Group-Object -Property computer |
+            ForEach-Object {
+                $preferred = @($_.Group | Where-Object { $_.status -in @("success", "skipped_existing") } | Select-Object -Last 1)
+                if ($preferred.Count -gt 0) {
+                    $preferred[0]
+                } else {
+                    $_.Group | Select-Object -Last 1
+                }
+            }
+    )
+
+    $finalScanResults | Export-Csv -Path $scanPath -NoTypeInformation -Encoding UTF8
 } else {
     @() | Export-Csv -Path $scanPath -NoTypeInformation -Encoding UTF8
     Write-Host "Belum ada PC dengan WinRM siap; tahap pengambilan aset dilewati." -ForegroundColor Yellow
@@ -433,7 +481,8 @@ if ($readyTargets.Count -gt 0) {
 
 $scanResults = if (Test-Path $scanPath) { @(Import-Csv -LiteralPath $scanPath) } else { @() }
 $successCount = @($scanResults | Where-Object { $_.status -eq "success" }).Count
-$failedCount = @($scanResults | Where-Object { $_.status -ne "success" }).Count
+$skippedExistingCount = @($scanResults | Where-Object { $_.status -eq "skipped_existing" }).Count
+$failedCount = @($scanResults | Where-Object { $_.status -notin @("success", "skipped_existing") }).Count
 
 $token = $null
 
@@ -443,6 +492,7 @@ Write-Host "AUTOMATION SELESAI" -ForegroundColor Green
 Write-Host "Ditemukan online : $($onlineTargets.Count)"
 Write-Host "WinRM siap       : $($readyTargets.Count)"
 Write-Host "Aset sukses      : $successCount"
+Write-Host "Aset sudah ada   : $skippedExistingCount"
 Write-Host "Scan gagal       : $failedCount"
 if ($deployAnyDesk) {
     Write-Host "AnyDesk siap     : $anyDeskReadyCount"

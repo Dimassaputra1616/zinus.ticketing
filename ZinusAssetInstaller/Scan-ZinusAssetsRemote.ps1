@@ -9,6 +9,7 @@ param(
     [string]$Factory = "GCI-HWANG",
     [string]$Department = "IT",
     [string]$ServerUrl = "https://app.it-ticketing.web.id/api/asset-sync",
+    [string]$LookupUrl = "",
     [string]$AgentVersion = "1.1.0-remote-scan",
     [string]$ResultPath = ".\zinus-asset-remote-scan-results.csv",
     [int]$WsManPort = 5985,
@@ -19,6 +20,7 @@ param(
     [int]$RetryCount = 1,
     [ValidateRange(1, 60)]
     [int]$RetryDelaySeconds = 5,
+    [switch]$SkipExisting,
     [switch]$SkipPreflight,
     [switch]$NoFailExit,
     [System.Management.Automation.PSCredential]$Credential
@@ -108,7 +110,9 @@ function New-ScanResult {
         [int]$MonitorVerifiedCount = 0,
         [string]$MonitorIdentitySources = "",
         [string]$IpAddress = "",
-        [string]$AnyDeskId = ""
+        [string]$AnyDeskId = "",
+        [string]$ExistingAssetId = "",
+        [string]$MatchedBy = ""
     )
 
     [pscustomobject]@{
@@ -128,6 +132,8 @@ function New-ScanResult {
         monitor_identity_sources = $MonitorIdentitySources
         ip_address               = $IpAddress
         anydesk_id               = $AnyDeskId
+        existing_asset_id        = $ExistingAssetId
+        matched_by               = $MatchedBy
         scanned_at               = (Get-Date).ToString("s")
     }
 }
@@ -987,6 +993,8 @@ $workerScript = {
         [int]$PortTimeoutMs,
         [int]$RetryCount,
         [int]$RetryDelaySeconds,
+        [string]$LookupUrl,
+        [bool]$SkipExisting,
         [bool]$SkipPreflight,
         [System.Management.Automation.PSCredential]$Credential,
         [scriptblock]$collector
@@ -1032,7 +1040,9 @@ $workerScript = {
             [int]$MonitorVerifiedCount = 0,
             [string]$MonitorIdentitySources = "",
             [string]$IpAddress = "",
-            [string]$AnyDeskId = ""
+            [string]$AnyDeskId = "",
+            [string]$ExistingAssetId = "",
+            [string]$MatchedBy = ""
         )
 
         [pscustomobject]@{
@@ -1052,11 +1062,73 @@ $workerScript = {
             monitor_identity_sources = $MonitorIdentitySources
             ip_address               = $IpAddress
             anydesk_id               = $AnyDeskId
+            existing_asset_id        = $ExistingAssetId
+            matched_by               = $MatchedBy
             scanned_at               = (Get-Date).ToString("s")
         }
     }
 
+    function Resolve-LookupUrl {
+        param(
+            [string]$ServerUrl,
+            [string]$LookupUrl
+        )
+
+        if (-not [string]::IsNullOrWhiteSpace($LookupUrl)) {
+            return $LookupUrl
+        }
+
+        if ($ServerUrl -match '(?i)/asset-sync/?$') {
+            return ($ServerUrl -replace '(?i)/asset-sync/?$', '/asset-sync/lookup')
+        }
+
+        return ($ServerUrl.TrimEnd('/') + '/lookup')
+    }
+
+    function Get-ExistingAssetLookup {
+        param(
+            [string]$Target,
+            [string]$Token,
+            [string]$ServerUrl,
+            [string]$LookupUrl
+        )
+
+        $effectiveLookupUrl = Resolve-LookupUrl -ServerUrl $ServerUrl -LookupUrl $LookupUrl
+        $encodedTarget = [System.Uri]::EscapeDataString($Target)
+        $separator = if ($effectiveLookupUrl.Contains("?")) { "&" } else { "?" }
+        $uri = "$effectiveLookupUrl${separator}target=$encodedTarget&scope=computer"
+
+        return Invoke-RestMethod -Uri $uri -Method Get -Headers @{ Authorization = "Bearer $Token" }
+    }
+
     $lastMessage = ""
+    if ($SkipExisting) {
+        try {
+            $lookup = Get-ExistingAssetLookup -Target $target -Token $Token -ServerUrl $ServerUrl -LookupUrl $LookupUrl
+            if ($lookup -and [bool]$lookup.exists) {
+                $asset = $lookup.asset
+                return New-ScanResult `
+                    -Computer $target `
+                    -Status "skipped_existing" `
+                    -Message "Existing asset found; remote scan skipped." `
+                    -AssetCode ([string]$asset.asset_code) `
+                    -Hostname ([string]$asset.hostname) `
+                    -Category ([string]$asset.category) `
+                    -Brand ([string]$asset.brand) `
+                    -Model ([string]$asset.model) `
+                    -SerialNumber ([string]$asset.serial_number) `
+                    -IpAddress ([string]$asset.ip_address) `
+                    -ExistingAssetId ([string]$asset.id) `
+                    -MatchedBy ([string]$lookup.matched_by)
+            }
+        } catch {
+            $lookupMessage = $_.Exception.Message
+            if ($lookupMessage -match '(?i)Unauthorized|401|403') {
+                return New-ScanResult -Computer $target -Status "failed" -Message "Asset lookup unauthorized: $lookupMessage"
+            }
+        }
+    }
+
     for ($attempt = 1; $attempt -le ($RetryCount + 1); $attempt++) {
         try {
             if (-not $SkipPreflight) {
@@ -1185,6 +1257,8 @@ foreach ($target in $targets) {
     $pipeline.AddArgument($PortTimeoutMs) | Out-Null
     $pipeline.AddArgument($RetryCount) | Out-Null
     $pipeline.AddArgument($RetryDelaySeconds) | Out-Null
+    $pipeline.AddArgument($LookupUrl) | Out-Null
+    $pipeline.AddArgument([bool]$SkipExisting) | Out-Null
     $pipeline.AddArgument($SkipPreflight) | Out-Null
     $pipeline.AddArgument($Credential) | Out-Null
     $pipeline.AddArgument($collector) | Out-Null
