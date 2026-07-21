@@ -1,4 +1,89 @@
 <x-app-layout>
+    <style>
+        .automation-page { min-height: 100vh; padding-bottom: 2rem; }
+        .automation-stack > * + * { margin-top: 1.25rem; }
+        .automation-header { border-bottom: 1px solid #e2e8f0; padding: .25rem 0 1.25rem; }
+        .automation-header-row { display: flex; flex-direction: column; gap: 1rem; }
+        .automation-breadcrumb { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; color: #64748b; font-size: .75rem; font-weight: 500; }
+        .automation-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+        .automation-title { margin: 0; color: #020617; font-size: 1.875rem; font-weight: 650; line-height: 1.15; }
+        .automation-status { display: inline-flex; align-items: center; gap: .5rem; border-radius: .375rem; padding: .25rem .625rem; font-size: .75rem; font-weight: 700; border: 1px solid; }
+        .automation-status::before { content: ""; width: .375rem; height: .375rem; border-radius: 999px; background: currentColor; }
+        .automation-status--ready { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+        .automation-status--warning { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+        .automation-env-grid { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: .5rem; color: #475569; font-size: .75rem; }
+        .automation-env-card, .automation-panel { border: 1px solid #e2e8f0; border-radius: .5rem; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+        .automation-env-card { padding: .5rem .75rem; }
+        .automation-env-label, .automation-label { color: #475569; font-size: .75rem; font-weight: 700; }
+        .automation-env-value { margin-top: .25rem; color: #0f172a; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .automation-grid { display: grid; gap: 1.25rem; }
+        .automation-panel { padding: 1rem; }
+        .automation-main > * + *, .automation-side > * + *, .automation-command-list > * + *, .automation-output-list > * + *, .automation-form > * + * { margin-top: 1.25rem; }
+        .automation-panel-title { margin: 0; color: #0f172a; font-size: .875rem; font-weight: 800; }
+        .automation-panel-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
+        .automation-badge { border-radius: .375rem; background: #f1f5f9; color: #475569; padding: .25rem .5rem; font-size: .6875rem; font-weight: 800; }
+        .automation-command { width: 100%; border: 1px solid #e2e8f0; border-radius: .5rem; background: #fff; padding: .75rem; text-align: left; transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
+        .automation-command:hover { border-color: #cbd5e1; background: #f8fafc; }
+        .automation-command--active { border-color: #6ee7b7; background: #ecfdf5; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }
+        .automation-command-row { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+        .automation-command-title { color: #0f172a; font-size: .875rem; font-weight: 800; }
+        .automation-command-summary { margin-top: .25rem; color: #64748b; font-size: .75rem; line-height: 1.45; }
+        .automation-script-badge { margin-top: .125rem; border: 1px solid #e2e8f0; border-radius: .375rem; background: #fff; color: #64748b; padding: .25rem .5rem; font-size: .625rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
+        .automation-output-row { border: 1px solid #f1f5f9; border-radius: .5rem; background: #f8fafc; padding: .625rem .75rem; }
+        .automation-output-main { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+        .automation-file-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .75rem; }
+        .automation-file-status { border-radius: .375rem; padding: .125rem .375rem; font-size: .625rem; font-weight: 800; }
+        .automation-file-status--ready { background: #d1fae5; color: #047857; }
+        .automation-file-status--missing { background: #e2e8f0; color: #64748b; }
+        .automation-file-meta { margin-top: .25rem; color: #64748b; font-size: .6875rem; }
+        .automation-form-panel { padding: 1.25rem; }
+        .automation-form-grid { display: grid; gap: 1rem; }
+        .automation-form-grid-2, .automation-form-grid-3, .automation-token-grid { display: grid; gap: 1rem; }
+        .automation-field > label { display: block; margin-bottom: .375rem; }
+        .automation-input { width: 100%; border: 1px solid #cbd5e1; border-radius: .5rem; background: #fff; color: #0f172a; font-size: .875rem; padding: .625rem .75rem; }
+        .automation-input:focus { border-color: #10b981; outline: 0; box-shadow: 0 0 0 3px rgba(16, 185, 129, .15); }
+        .automation-input:disabled { background: #f1f5f9; color: #94a3b8; }
+        .automation-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .automation-option-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+        .automation-option { display: inline-flex; height: 2.25rem; align-items: center; gap: .5rem; border: 1px solid #e2e8f0; border-radius: .5rem; background: #fff; padding: 0 .75rem; color: #334155; font-size: .75rem; font-weight: 700; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+        .automation-submit-row { display: flex; flex-direction: column; gap: .75rem; border-top: 1px solid #f1f5f9; padding-top: 1rem; }
+        .automation-script-name { color: #64748b; font-size: .75rem; }
+        .automation-run { display: inline-flex; height: 2.5rem; align-items: center; justify-content: center; gap: .5rem; border: 0; border-radius: .5rem; background: #059669; color: #fff; padding: 0 1rem; font-size: .875rem; font-weight: 800; box-shadow: 0 1px 2px rgba(15, 23, 42, .08); }
+        .automation-run:hover { background: #047857; }
+        .automation-run:disabled { cursor: not-allowed; background: #cbd5e1; }
+        .automation-run svg { width: 1rem; height: 1rem; }
+        .automation-spinner { animation: automation-spin .7s linear infinite; }
+        .automation-terminal { overflow: hidden; border: 1px solid #0f172a; border-radius: .5rem; background: #020617; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+        .automation-terminal-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, .1); background: #0f172a; padding: .5rem 1rem; }
+        .automation-terminal-title { margin-left: .5rem; color: #cbd5e1; font-size: .75rem; font-weight: 800; }
+        .automation-dot { display: inline-block; width: .625rem; height: .625rem; border-radius: 999px; }
+        .automation-dot--red { background: #fb7185; }
+        .automation-dot--green { background: #34d399; }
+        .automation-terminal-actions { display: flex; align-items: center; gap: .5rem; }
+        .automation-terminal-button { border: 1px solid rgba(255, 255, 255, .1); border-radius: .375rem; background: transparent; color: #cbd5e1; padding: .25rem .5rem; font-size: .75rem; font-weight: 800; }
+        .automation-terminal-button:hover { background: rgba(255, 255, 255, .1); }
+        .automation-terminal-body { min-height: 360px; max-height: 620px; overflow: auto; white-space: pre-wrap; margin: 0; padding: 1rem; color: #d1fae5; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .75rem; line-height: 1.5rem; }
+        @media (min-width: 640px) {
+            .automation-submit-row { flex-direction: row; align-items: center; justify-content: space-between; }
+            .automation-env-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1024px) {
+            .automation-header-row { flex-direction: row; align-items: flex-end; justify-content: space-between; }
+            .automation-env-grid { min-width: 520px; }
+            .automation-form-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .automation-form-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .automation-token-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+            .automation-span-full { grid-column: 1 / -1; }
+        }
+        @media (min-width: 1280px) {
+            .automation-grid { grid-template-columns: 360px minmax(0, 1fr); }
+        }
+        @keyframes automation-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
     <div
         x-data="assetAutomationConsole({
             runUrl: @js(route('admin.assets.automation-console.run')),
@@ -6,186 +91,185 @@
             commands: @js($commands),
             environment: @js($environment),
         })"
-        class="min-h-screen space-y-5 pb-8"
+        class="automation-page automation-stack"
     >
-        <header class="border-b border-slate-200 pb-5 pt-1">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div class="min-w-0">
-                    <div class="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500">
+        <header class="automation-header">
+            <div class="automation-header-row">
+                <div>
+                    <div class="automation-breadcrumb">
                         <span>Asset Management</span>
-                        <svg class="h-3.5 w-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <svg style="width:.875rem;height:.875rem;color:#cbd5e1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
-                        <span class="text-slate-700">Automation Console</span>
+                        <span style="color:#334155">Automation Console</span>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <h1 class="text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">Automation Console</h1>
+                    <div class="automation-title-row">
+                        <h1 class="automation-title">Automation Console</h1>
                         <span
-                            class="inline-flex items-center gap-2 rounded-md px-2.5 py-1 text-xs font-semibold ring-1"
-                            :class="environment.can_execute ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-amber-50 text-amber-700 ring-amber-200'"
+                            class="automation-status"
+                            :class="environment.can_execute ? 'automation-status--ready' : 'automation-status--warning'"
                         >
-                            <span class="h-1.5 w-1.5 rounded-full" :class="environment.can_execute ? 'bg-emerald-500' : 'bg-amber-500'"></span>
                             <span x-text="environment.can_execute ? 'Ready' : 'Needs setup'"></span>
                         </span>
                     </div>
                 </div>
 
-                <div class="grid gap-2 text-xs text-slate-600 sm:grid-cols-3 lg:min-w-[520px]">
-                    <div class="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                        <div class="font-semibold text-slate-500">PowerShell</div>
-                        <div class="mt-1 truncate font-mono text-slate-900" x-text="environment.powershell || 'Not detected'"></div>
+                <div class="automation-env-grid">
+                    <div class="automation-env-card">
+                        <div class="automation-env-label">PowerShell</div>
+                        <div class="automation-env-value automation-mono" x-text="environment.powershell || 'Not detected'"></div>
                     </div>
-                    <div class="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                        <div class="font-semibold text-slate-500">Installer</div>
-                        <div class="mt-1 font-semibold text-slate-900" x-text="environment.installer_exists ? 'Ready' : 'Not found'"></div>
+                    <div class="automation-env-card">
+                        <div class="automation-env-label">Installer</div>
+                        <div class="automation-env-value" x-text="environment.installer_exists ? 'Ready' : 'Not found'"></div>
                     </div>
-                    <div class="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                        <div class="font-semibold text-slate-500">Max timeout</div>
-                        <div class="mt-1 font-mono text-slate-900"><span x-text="environment.timeout_seconds"></span>s</div>
+                    <div class="automation-env-card">
+                        <div class="automation-env-label">Max timeout</div>
+                        <div class="automation-env-value automation-mono"><span x-text="environment.timeout_seconds"></span>s</div>
                     </div>
                 </div>
             </div>
         </header>
 
-        <section class="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-            <aside class="space-y-3">
-                <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                    <div class="mb-3 flex items-center justify-between">
-                        <h2 class="text-sm font-bold text-slate-900">Command</h2>
-                        <span class="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600" x-text="selectedCommand.group"></span>
+        <section class="automation-grid">
+            <aside class="automation-side">
+                <div class="automation-panel">
+                    <div class="automation-panel-head">
+                        <h2 class="automation-panel-title">Command</h2>
+                        <span class="automation-badge" x-text="selectedCommand.group"></span>
                     </div>
 
-                    <div class="space-y-2">
+                    <div class="automation-command-list">
                         @foreach ($commands as $command)
                             <button
                                 type="button"
                                 @click="selectCommand(@js($command['key']))"
-                                class="w-full rounded-lg border px-3 py-3 text-left transition"
-                                :class="selectedKey === @js($command['key']) ? 'border-emerald-300 bg-emerald-50/80 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'"
+                                class="automation-command"
+                                :class="selectedKey === @js($command['key']) ? 'automation-command--active' : ''"
                             >
-                                <div class="flex items-start justify-between gap-3">
-                                    <div class="min-w-0">
-                                        <div class="truncate text-sm font-bold text-slate-900">{{ $command['label'] }}</div>
-                                        <div class="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{{ $command['summary'] }}</div>
+                                <div class="automation-command-row">
+                                    <div>
+                                        <div class="automation-command-title">{{ $command['label'] }}</div>
+                                        <div class="automation-command-summary">{{ $command['summary'] }}</div>
                                     </div>
-                                    <span class="mt-0.5 rounded-md bg-white px-2 py-1 text-[10px] font-bold uppercase text-slate-500 ring-1 ring-slate-200">{{ Str::replaceLast('.ps1', '', $command['script']) }}</span>
+                                    <span class="automation-script-badge">{{ Str::replaceLast('.ps1', '', $command['script']) }}</span>
                                 </div>
                             </button>
                         @endforeach
                     </div>
                 </div>
 
-                <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                    <div class="mb-3 flex items-center justify-between">
-                        <h2 class="text-sm font-bold text-slate-900">Output Files</h2>
-                        <button type="button" @click="refreshOutputs()" class="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50">Refresh</button>
+                <div class="automation-panel">
+                    <div class="automation-panel-head">
+                        <h2 class="automation-panel-title">Output Files</h2>
+                        <button type="button" @click="refreshOutputs()" class="automation-terminal-button" style="color:#475569;border-color:#e2e8f0">Refresh</button>
                     </div>
-                    <div class="space-y-2">
+                    <div class="automation-output-list">
                         <template x-for="file in selectedOutputFiles" :key="file.name">
-                            <div class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="truncate font-mono text-xs text-slate-700" x-text="file.name"></span>
-                                    <span class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="file.exists ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'" x-text="file.exists ? 'Ready' : 'Missing'"></span>
+                            <div class="automation-output-row">
+                                <div class="automation-output-main">
+                                    <span class="automation-file-name" x-text="file.name"></span>
+                                    <span class="automation-file-status" :class="file.exists ? 'automation-file-status--ready' : 'automation-file-status--missing'" x-text="file.exists ? 'Ready' : 'Missing'"></span>
                                 </div>
-                                <div class="mt-1 text-[11px] text-slate-500" x-text="file.modified_at || 'No run yet'"></div>
+                                <div class="automation-file-meta" x-text="file.modified_at || 'No run yet'"></div>
                             </div>
                         </template>
                     </div>
                 </div>
             </aside>
 
-            <main class="space-y-5">
-                <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                    <form @submit.prevent="runCommand()" class="space-y-5">
-                        <div class="grid gap-4 lg:grid-cols-2" x-show="selectedCommand.needs_segments">
-                            <div class="lg:col-span-2">
-                                <label for="automation-segments" class="mb-1.5 block text-xs font-semibold text-slate-600">IP segments</label>
+            <main class="automation-main">
+                <section class="automation-panel automation-form-panel">
+                    <form @submit.prevent="runCommand()" class="automation-form">
+                        <div class="automation-form-grid automation-form-grid-2" x-show="selectedCommand.needs_segments">
+                            <div class="automation-field automation-span-full">
+                                <label for="automation-segments" class="automation-label">IP segments</label>
                                 <textarea
                                     id="automation-segments"
                                     x-model="form.segments"
                                     rows="3"
-                                    class="w-full rounded-lg border-slate-300 font-mono text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
+                                    class="automation-input automation-mono"
                                     placeholder="10.62.38, 10.62.39, 10.62.36"
                                 ></textarea>
                             </div>
-                            <div>
-                                <label for="automation-start-host" class="mb-1.5 block text-xs font-semibold text-slate-600">Start host</label>
-                                <input id="automation-start-host" type="number" min="1" max="254" x-model.number="form.start_host" class="h-10 w-full rounded-lg border-slate-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <div class="automation-field">
+                                <label for="automation-start-host" class="automation-label">Start host</label>
+                                <input id="automation-start-host" type="number" min="1" max="254" x-model.number="form.start_host" class="automation-input">
                             </div>
-                            <div>
-                                <label for="automation-end-host" class="mb-1.5 block text-xs font-semibold text-slate-600">End host</label>
-                                <input id="automation-end-host" type="number" min="1" max="254" x-model.number="form.end_host" class="h-10 w-full rounded-lg border-slate-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <div class="automation-field">
+                                <label for="automation-end-host" class="automation-label">End host</label>
+                                <input id="automation-end-host" type="number" min="1" max="254" x-model.number="form.end_host" class="automation-input">
                             </div>
                         </div>
 
-                        <div x-show="selectedCommand.needs_targets">
-                            <label for="automation-targets" class="mb-1.5 block text-xs font-semibold text-slate-600">Hostname / IP targets</label>
+                        <div class="automation-field" x-show="selectedCommand.needs_targets">
+                            <label for="automation-targets" class="automation-label">Hostname / IP targets</label>
                             <textarea
                                 id="automation-targets"
                                 x-model="form.targets"
                                 rows="5"
-                                class="w-full rounded-lg border-slate-300 font-mono text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
+                                class="automation-input automation-mono"
                                 placeholder="PC-001&#10;LAPTOP-002&#10;10.62.38.25"
                             ></textarea>
                         </div>
 
-                        <div class="grid gap-4 lg:grid-cols-3" x-show="selectedCommand.uses_asset_sync">
-                            <div>
-                                <label for="automation-factory" class="mb-1.5 block text-xs font-semibold text-slate-600">Factory</label>
-                                <input id="automation-factory" type="text" x-model="form.factory" class="h-10 w-full rounded-lg border-slate-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <div class="automation-form-grid automation-form-grid-3" x-show="selectedCommand.uses_asset_sync">
+                            <div class="automation-field">
+                                <label for="automation-factory" class="automation-label">Factory</label>
+                                <input id="automation-factory" type="text" x-model="form.factory" class="automation-input">
                             </div>
-                            <div>
-                                <label for="automation-department" class="mb-1.5 block text-xs font-semibold text-slate-600">Department</label>
-                                <input id="automation-department" type="text" x-model="form.department" class="h-10 w-full rounded-lg border-slate-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <div class="automation-field">
+                                <label for="automation-department" class="automation-label">Department</label>
+                                <input id="automation-department" type="text" x-model="form.department" class="automation-input">
                             </div>
-                            <div>
-                                <label for="automation-max-parallel" class="mb-1.5 block text-xs font-semibold text-slate-600">Max parallel</label>
-                                <input id="automation-max-parallel" type="number" min="1" max="50" x-model.number="form.max_parallel" class="h-10 w-full rounded-lg border-slate-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <div class="automation-field">
+                                <label for="automation-max-parallel" class="automation-label">Max parallel</label>
+                                <input id="automation-max-parallel" type="number" min="1" max="50" x-model.number="form.max_parallel" class="automation-input">
                             </div>
-                            <div class="lg:col-span-3">
-                                <label for="automation-server-url" class="mb-1.5 block text-xs font-semibold text-slate-600">Asset sync API</label>
-                                <input id="automation-server-url" type="url" x-model="form.server_url" class="h-10 w-full rounded-lg border-slate-300 font-mono text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <div class="automation-field automation-span-full">
+                                <label for="automation-server-url" class="automation-label">Asset sync API</label>
+                                <input id="automation-server-url" type="url" x-model="form.server_url" class="automation-input automation-mono">
                             </div>
                         </div>
 
-                        <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]" x-show="selectedCommand.requires_token">
-                            <label class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
-                                <input type="checkbox" x-model="form.use_config_token" :disabled="!environment.has_config_token" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        <div class="automation-token-grid" x-show="selectedCommand.requires_token">
+                            <label class="automation-option">
+                                <input type="checkbox" x-model="form.use_config_token" :disabled="!environment.has_config_token">
                                 <span x-text="environment.has_config_token ? 'Use server token' : 'Server token not configured'"></span>
                             </label>
                             <input
                                 type="password"
                                 x-model="form.token"
                                 :disabled="form.use_config_token"
-                                class="h-10 w-full rounded-lg border-slate-300 text-sm focus:border-emerald-500 focus:ring-emerald-500 disabled:bg-slate-100"
+                                class="automation-input"
                                 placeholder="Manual asset sync token"
                             >
                         </div>
 
-                        <div class="flex flex-wrap gap-2" x-show="optionEntries.length > 0">
+                        <div class="automation-option-list" x-show="optionEntries.length > 0">
                             <template x-for="[key, option] in optionEntries" :key="key">
-                                <label class="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm">
-                                    <input type="checkbox" x-model="form[key]" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                <label class="automation-option">
+                                    <input type="checkbox" x-model="form[key]">
                                     <span x-text="option.label"></span>
                                 </label>
                             </template>
                         </div>
 
-                        <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div class="text-xs text-slate-500">
-                                <span class="font-mono" x-text="selectedCommand.script"></span>
+                        <div class="automation-submit-row">
+                            <div class="automation-script-name automation-mono">
+                                <span x-text="selectedCommand.script"></span>
                             </div>
                             <button
                                 type="submit"
                                 :disabled="running || !environment.can_execute"
-                                class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                class="automation-run"
                             >
-                                <svg x-show="!running" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <svg x-show="!running" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                     <path d="m8 5 11 7-11 7V5Z" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
-                                <svg x-show="running" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                <svg x-show="running" class="automation-spinner" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <circle style="opacity:.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                                 </svg>
                                 <span x-text="running ? 'Running...' : 'Run command'"></span>
                             </button>
@@ -193,20 +277,19 @@
                     </form>
                 </section>
 
-                <section class="overflow-hidden rounded-lg border border-slate-900 bg-slate-950 shadow-sm">
-                    <div class="flex items-center justify-between border-b border-white/10 bg-slate-900 px-4 py-2">
-                        <div class="flex items-center gap-2">
-                            <span class="h-2.5 w-2.5 rounded-full bg-rose-400"></span>
-                            <span class="h-2.5 w-2.5 rounded-full bg-amber-300"></span>
-                            <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
-                            <span class="ml-2 text-xs font-semibold text-slate-300">Terminal Output</span>
+                <section class="automation-terminal">
+                    <div class="automation-terminal-head">
+                        <div>
+                            <span class="automation-dot automation-dot--red"></span>
+                            <span class="automation-dot automation-dot--green"></span>
+                            <span class="automation-terminal-title">Terminal Output</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button type="button" @click="copyTerminal()" class="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-slate-300 hover:bg-white/10">Copy</button>
-                            <button type="button" @click="clearTerminal()" class="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-slate-300 hover:bg-white/10">Clear</button>
+                        <div class="automation-terminal-actions">
+                            <button type="button" @click="copyTerminal()" class="automation-terminal-button">Copy</button>
+                            <button type="button" @click="clearTerminal()" class="automation-terminal-button">Clear</button>
                         </div>
                     </div>
-                    <pre class="min-h-[360px] max-h-[620px] overflow-auto whitespace-pre-wrap p-4 font-mono text-xs leading-6 text-emerald-100" x-text="terminalText"></pre>
+                    <pre class="automation-terminal-body" x-text="terminalText"></pre>
                 </section>
             </main>
         </section>
