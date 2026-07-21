@@ -415,6 +415,8 @@ Route::middleware(['auth', 'approved', 'admin'])->group(function () {
     Route::post('/admin/assets/import', [App\Http\Controllers\AssetCenterController::class, 'import'])->name('admin.assets.import');
     Route::get('/admin/assets/export', [App\Http\Controllers\AssetCenterController::class, 'export'])->name('admin.assets.export');
     Route::get('/admin/assets/scan', [App\Http\Controllers\AssetCenterController::class, 'scan'])->name('admin.assets.scan');
+    Route::get('/admin/assets/automation-console', [App\Http\Controllers\AssetAutomationController::class, 'index'])->name('admin.assets.automation-console');
+    Route::post('/admin/assets/automation-console/run', [App\Http\Controllers\AssetAutomationController::class, 'run'])->name('admin.assets.automation-console.run');
 
     Route::get('/admin/assets/bast', [App\Http\Controllers\AssetBastController::class, 'index'])->name('admin.assets.bast.index');
     Route::get('/admin/assets/bast/create', [App\Http\Controllers\AssetBastController::class, 'create'])->name('admin.assets.bast.create');
