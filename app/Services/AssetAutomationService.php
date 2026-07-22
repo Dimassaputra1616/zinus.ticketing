@@ -38,6 +38,38 @@ class AssetAutomationService
                     'probe_smb' => ['label' => 'SMB 445', 'default' => false],
                 ],
             ],
+            'all_auto_scan' => [
+                'key' => 'all_auto_scan',
+                'label' => 'All Auto Scan',
+                'group' => 'Automation',
+                'script' => 'Invoke-ZinusFinalizeAutomation.ps1',
+                'summary' => 'Run discovery, pull PC/laptop inventory, sync network devices, local printers, and summary files.',
+                'needs_segments' => true,
+                'needs_targets' => false,
+                'requires_token' => true,
+                'uses_asset_sync' => true,
+                'supports_parallel' => true,
+                'supports_dry_run' => false,
+                'default_segments' => '10.62.38, 10.62.39, 10.62.36',
+                'default_max_parallel' => 12,
+                'output_files' => [
+                    'zinus-web-auto-discovery.csv',
+                    'zinus-web-auto-verification.csv',
+                    'zinus-web-auto-ready-targets.txt',
+                    'zinus-web-auto-blocked-targets.txt',
+                    'zinus-web-auto-scan-results.csv',
+                    'zinus-web-auto-network-device-sync-results.csv',
+                    'zinus-web-auto-local-printer-sync-results.csv',
+                    'zinus-web-auto-summary.csv',
+                ],
+                'options' => [
+                    'skip_bootstrap' => ['label' => 'Skip WinRM bootstrap', 'default' => true],
+                    'skip_anydesk_collect' => ['label' => 'Skip AnyDesk collect', 'default' => true],
+                    'skip_remote_scan' => ['label' => 'Skip PC/laptop scan', 'default' => false],
+                    'skip_network_devices' => ['label' => 'Skip network devices', 'default' => false],
+                    'skip_local_printers' => ['label' => 'Skip local printers', 'default' => false],
+                ],
+            ],
             'discover_segments' => [
                 'key' => 'discover_segments',
                 'label' => 'Discover Segments',
@@ -635,6 +667,7 @@ class AssetAutomationService
     protected function scriptArguments(string $commandKey, array $command, array $input): array
     {
         return match ($commandKey) {
+            'all_auto_scan' => $this->allAutoScanArguments($command, $input),
             'discover_segments' => $this->discoverSegmentsArguments($command, $input),
             'remote_scan_segments' => $this->remoteScanSegmentsArguments($command, $input),
             'remote_scan_targets' => $this->remoteScanTargetsArguments($command, $input),
@@ -647,6 +680,50 @@ class AssetAutomationService
             'build_package' => $this->buildPackageArguments(),
             default => [[], []],
         };
+    }
+
+    protected function allAutoScanArguments(array $command, array $input): array
+    {
+        $segments = $this->segments($input, $command);
+        [$startHost, $endHost] = $this->hostRange($input);
+        [$token, $secrets] = $this->token($input, false);
+        $maxParallel = $this->maxParallel($input, (int) ($command['default_max_parallel'] ?? 12));
+
+        return [[
+            '-IpSegment', ...$segments,
+            '-StartHost', (string) $startHost,
+            '-EndHost', (string) $endHost,
+            '-Token', $token,
+            '-Factory', $this->text($input, 'factory', config('services.asset_sync.factory') ?: 'GCI-HWANG', 150),
+            '-Department', $this->text($input, 'department', config('services.asset_sync.department') ?: 'IT', 150),
+            '-ServerUrl', $this->serverUrl($input),
+            '-RemoteScanMaxParallel', (string) $maxParallel,
+            '-LocalPrinterMaxParallel', (string) min($maxParallel, 20),
+            '-AnyDeskMaxParallel', (string) min($maxParallel, 30),
+            '-UseIntegratedAuth',
+            '-DeviceListPath', '.\zinus-remediation-non-windows-devices.csv',
+            '-InitialDiscoveryPath', '.\zinus-web-auto-discovery.csv',
+            '-InitialOnlinePath', '.\zinus-web-auto-discovery-online.csv',
+            '-FinalVerificationPath', '.\zinus-web-auto-verification.csv',
+            '-FinalOnlinePath', '.\zinus-web-auto-verification-online.csv',
+            '-RemoteCandidatePath', '.\zinus-web-auto-remote-candidates.txt',
+            '-BootstrapTargetPath', '.\zinus-web-auto-bootstrap-targets.txt',
+            '-ReadyTargetPath', '.\zinus-web-auto-ready-targets.txt',
+            '-BlockedTargetPath', '.\zinus-web-auto-blocked-targets.txt',
+            '-BootstrapResultPath', '.\zinus-web-auto-bootstrap-results.csv',
+            '-AnyDeskResultPath', '.\zinus-web-auto-anydesk-results.csv',
+            '-RemoteScanResultPath', '.\zinus-web-auto-scan-results.csv',
+            '-NetworkDeviceResultPath', '.\zinus-web-auto-network-device-sync-results.csv',
+            '-LocalPrinterResultPath', '.\zinus-web-auto-local-printer-sync-results.csv',
+            '-VirtualPrinterCleanupPath', '.\zinus-web-auto-virtual-printer-cleanup.csv',
+            '-PhysicalPrinterKeepPath', '.\zinus-web-auto-physical-printer-keep.csv',
+            '-SummaryPath', '.\zinus-web-auto-summary.csv',
+            ...($this->flag($input, 'skip_bootstrap', $this->defaultOption($command, 'skip_bootstrap', true)) ? ['-SkipBootstrap'] : []),
+            ...($this->flag($input, 'skip_anydesk_collect', $this->defaultOption($command, 'skip_anydesk_collect', true)) ? ['-SkipAnyDeskCollect'] : []),
+            ...($this->flag($input, 'skip_remote_scan', false) ? ['-SkipRemoteScan'] : []),
+            ...($this->flag($input, 'skip_network_devices', false) ? ['-SkipNetworkDevices'] : []),
+            ...($this->flag($input, 'skip_local_printers', false) ? ['-SkipLocalPrinters'] : []),
+        ], $secrets];
     }
 
     protected function discoverSegmentsArguments(array $command, array $input): array

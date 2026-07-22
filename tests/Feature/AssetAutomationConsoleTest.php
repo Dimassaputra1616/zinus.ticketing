@@ -20,6 +20,7 @@ class AssetAutomationConsoleTest extends TestCase
             ->assertOk()
             ->assertSeeText('Automation Console')
             ->assertSeeText('Ping / SSH Probe')
+            ->assertSeeText('All Auto Scan')
             ->assertSeeText('Discover Segments')
             ->assertSeeText('Remote Scan by Segment')
             ->assertSeeText('Remote Scan All')
@@ -94,5 +95,20 @@ class AssetAutomationConsoleTest extends TestCase
             ->assertJsonPath('successful', true)
             ->assertJsonFragment(['command' => 'network-diagnostics --targets=1'])
             ->assertJsonPath('stdout', fn (string $stdout) => str_contains($stdout, 'Network diagnostics'));
+    }
+
+    public function test_all_auto_scan_requires_asset_sync_token(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        config(['services.asset_sync.token' => '']);
+
+        $this->actingAs($admin)
+            ->postJson(route('admin.assets.automation-console.run'), [
+                'command_key' => 'all_auto_scan',
+                'segments' => '10.62.38',
+                'use_config_token' => true,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('token');
     }
 }

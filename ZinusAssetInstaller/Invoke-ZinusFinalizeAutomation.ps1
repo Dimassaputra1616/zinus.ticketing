@@ -39,7 +39,8 @@ param(
     [switch]$SkipRemoteScan,
     [switch]$SkipNetworkDevices,
     [switch]$SkipLocalPrinters,
-    [System.Management.Automation.PSCredential]$Credential
+    [System.Management.Automation.PSCredential]$Credential,
+    [switch]$UseIntegratedAuth
 )
 
 $ErrorActionPreference = "Stop"
@@ -329,7 +330,7 @@ if ([string]::IsNullOrWhiteSpace($Token)) {
     throw "Token wajib diisi."
 }
 
-if (-not $Credential) {
+if (-not $Credential -and -not $UseIntegratedAuth) {
     $Credential = Get-Credential -Message "Credential admin target PC (contoh .\Administrator atau DOMAIN\Administrator)"
 }
 
@@ -338,6 +339,20 @@ Write-Info "Segment: $($IpSegment -join ', ')"
 Write-Info "Server : $ServerUrl"
 Write-Info "Factory: $Factory"
 Write-Info "Dept   : $Department"
+
+if (-not $Credential -and $UseIntegratedAuth) {
+    Write-Info "Credential prompt dilewati. Remote scan memakai current/integrated auth dari proses PowerShell."
+}
+
+if (-not $Credential -and -not $SkipBootstrap) {
+    Write-Info "Bootstrap dilewati karena credential admin tidak dikirim dari web console."
+    $SkipBootstrap = $true
+}
+
+if (-not $Credential -and -not $SkipAnyDeskCollect) {
+    Write-Info "Collect AnyDesk ID dilewati karena credential admin tidak dikirim dari web console."
+    $SkipAnyDeskCollect = $true
+}
 
 if (-not $SkipDiscovery) {
     Write-Phase "TAHAP 1/7 - Discovery awal + cek WinRM"
@@ -368,13 +383,15 @@ Write-Info "Target bootstrap     : $BootstrapTargetPath"
 
 if (-not $SkipBootstrap -and $initialTargets.RemoteCandidates -gt 0) {
     Write-Phase "TAHAP 2/7 - Bootstrap policy WinRM local admin"
-    & $bootstrapScript `
-        -ComputerList $BootstrapTargetPath `
-        -Credential $Credential `
-        -EnableLocalAccountRemoteAdmin `
-        -ForceBootstrap `
-        -NoFailExit `
-        -ResultPath $BootstrapResultPath
+    $bootstrapParams = @{
+        ComputerList = $BootstrapTargetPath
+        Credential = $Credential
+        EnableLocalAccountRemoteAdmin = $true
+        ForceBootstrap = $true
+        NoFailExit = $true
+        ResultPath = $BootstrapResultPath
+    }
+    & $bootstrapScript @bootstrapParams
 } elseif ($SkipBootstrap) {
     Write-Info "Bootstrap dilewati sesuai parameter."
 } else {
@@ -412,12 +429,14 @@ Write-Info "Masih blocked        : $($finalTargets.Blocked)"
 
 if (-not $SkipAnyDeskCollect -and $finalTargets.RemoteCandidates -gt 0) {
     Write-Phase "TAHAP 4/7 - Collect AnyDesk ID dari config"
-    & $anyDeskScript `
-        -ComputerList $RemoteCandidatePath `
-        -Credential $Credential `
-        -MaxParallel $AnyDeskMaxParallel `
-        -TargetTimeoutSeconds $AnyDeskTargetTimeoutSeconds `
-        -ResultPath $AnyDeskResultPath
+    $anyDeskParams = @{
+        ComputerList = $RemoteCandidatePath
+        Credential = $Credential
+        MaxParallel = $AnyDeskMaxParallel
+        TargetTimeoutSeconds = $AnyDeskTargetTimeoutSeconds
+        ResultPath = $AnyDeskResultPath
+    }
+    & $anyDeskScript @anyDeskParams
 } elseif ($SkipAnyDeskCollect) {
     Write-Info "Collect AnyDesk ID dilewati sesuai parameter."
 } else {
@@ -426,16 +445,20 @@ if (-not $SkipAnyDeskCollect -and $finalTargets.RemoteCandidates -gt 0) {
 
 if (-not $SkipRemoteScan -and $finalTargets.Ready -gt 0) {
     Write-Phase "TAHAP 5/7 - Sync PC/laptop + monitor"
-    & $remoteScanScript `
-        -ComputerList $ReadyTargetPath `
-        -Token $Token `
-        -Credential $Credential `
-        -Factory $Factory `
-        -Department $Department `
-        -ServerUrl $ServerUrl `
-        -MaxParallel $RemoteScanMaxParallel `
-        -NoFailExit `
-        -ResultPath $RemoteScanResultPath
+    $remoteScanParams = @{
+        ComputerList = $ReadyTargetPath
+        Token = $Token
+        Factory = $Factory
+        Department = $Department
+        ServerUrl = $ServerUrl
+        MaxParallel = $RemoteScanMaxParallel
+        NoFailExit = $true
+        ResultPath = $RemoteScanResultPath
+    }
+    if ($Credential) {
+        $remoteScanParams.Credential = $Credential
+    }
+    & $remoteScanScript @remoteScanParams
 } elseif ($SkipRemoteScan) {
     Write-Info "Remote scan PC/laptop dilewati sesuai parameter."
 } else {
@@ -462,16 +485,20 @@ if (-not $SkipNetworkDevices) {
 
 if (-not $SkipLocalPrinters -and $finalTargets.Ready -gt 0) {
     Write-Phase "TAHAP 7/7 - Sync printer local/USB fisik"
-    & $localPrinterScript `
-        -ComputerList $ReadyTargetPath `
-        -Token $Token `
-        -Credential $Credential `
-        -Factory $Factory `
-        -Department $Department `
-        -ServerUrl $ServerUrl `
-        -MaxParallel $LocalPrinterMaxParallel `
-        -TargetTimeoutSeconds $LocalPrinterTargetTimeoutSeconds `
-        -ResultPath $LocalPrinterResultPath
+    $localPrinterParams = @{
+        ComputerList = $ReadyTargetPath
+        Token = $Token
+        Factory = $Factory
+        Department = $Department
+        ServerUrl = $ServerUrl
+        MaxParallel = $LocalPrinterMaxParallel
+        TargetTimeoutSeconds = $LocalPrinterTargetTimeoutSeconds
+        ResultPath = $LocalPrinterResultPath
+    }
+    if ($Credential) {
+        $localPrinterParams.Credential = $Credential
+    }
+    & $localPrinterScript @localPrinterParams
 } elseif ($SkipLocalPrinters) {
     Write-Info "Sync printer local/USB dilewati sesuai parameter."
 } else {
