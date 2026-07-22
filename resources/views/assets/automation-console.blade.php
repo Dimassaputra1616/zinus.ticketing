@@ -261,7 +261,7 @@
                             </div>
                             <button
                                 type="submit"
-                                :disabled="running || !canRunSelectedCommand()"
+                                :disabled="running || !environment.enabled"
                                 class="automation-run"
                             >
                                 <svg x-show="!running" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -346,6 +346,25 @@
 
                     return !!this.environment.can_run_powershell;
                 },
+                selectedCommandSetupMessage() {
+                    if (this.canRunSelectedCommand()) {
+                        return 'ready';
+                    }
+
+                    if (this.selectedCommand.native) {
+                        return 'automation console disabled';
+                    }
+
+                    if (!this.environment.powershell) {
+                        return 'PowerShell runtime not detected on app server';
+                    }
+
+                    if (!this.environment.installer_exists) {
+                        return 'installer folder not found on app server';
+                    }
+
+                    return 'needs setup';
+                },
                 selectCommand(key) {
                     this.selectedKey = key;
                     this.form.segments = this.selectedCommand.default_segments || this.form.segments || '';
@@ -355,7 +374,7 @@
                     });
 
                     if (!this.canRunSelectedCommand()) {
-                        this.terminalText = `zinus> ${this.selectedCommand.script}\nneeds PowerShell runtime / installer setup`;
+                        this.terminalText = `zinus> ${this.selectedCommand.script}\n${this.selectedCommandSetupMessage()}\npress Run command to see server validation details`;
                         return;
                     }
 
