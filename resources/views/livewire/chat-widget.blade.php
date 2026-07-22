@@ -11,98 +11,245 @@
     {{-- Hidden bridge element: broadcasts unread count to bottom nav --}}
     <div id="chat-unread-bridge" data-count="{{ $totalUnreadCount }}" class="hidden"></div>
 
-    {{-- Desktop-only FAB area --}}
-    <div class="hidden lg:block">
-    <!-- FAB Speed Dial Sub-actions -->
-    <div class="flex flex-col items-end gap-3 mb-3">
+    @once
+    <style>
+        .zinus-support-launcher {
+            display: none;
+        }
 
-        <!-- Sub-button: Panduan Ulang (Guide/Tour) -->
+        @media (min-width: 1024px) {
+            .zinus-support-launcher {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+        }
+
+        .zinus-support-menu {
+            width: 18rem;
+            margin-bottom: .75rem;
+            padding: .5rem;
+            border: 1px solid rgba(203, 213, 225, .86);
+            border-radius: .5rem;
+            background: rgba(255, 255, 255, .96);
+            box-shadow: 0 18px 42px rgba(15, 23, 42, .14), 0 1px 0 rgba(255, 255, 255, .8) inset;
+            transform-origin: right bottom;
+            backdrop-filter: blur(12px);
+        }
+
+        .zinus-support-action {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            gap: .75rem;
+            border: 0;
+            border-radius: .375rem;
+            background: transparent;
+            padding: .625rem .75rem;
+            text-align: left;
+            transition: background-color .18s ease, transform .18s ease;
+        }
+
+        .zinus-support-action + .zinus-support-action {
+            margin-top: .25rem;
+        }
+
+        .zinus-support-action:hover {
+            background: #f8fafc;
+        }
+
+        .zinus-support-action:focus-visible,
+        .zinus-support-fab:focus-visible {
+            outline: 3px solid rgba(16, 185, 129, .24);
+            outline-offset: 2px;
+        }
+
+        .zinus-support-action-icon {
+            position: relative;
+            display: inline-flex;
+            width: 2.25rem;
+            height: 2.25rem;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e2e8f0;
+            border-radius: .375rem;
+            background: #f8fafc;
+            color: #23455d;
+            transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+        }
+
+        .zinus-support-action:hover .zinus-support-action-icon {
+            border-color: #a7f3d0;
+            background: #ecfdf5;
+            color: #047857;
+        }
+
+        .zinus-support-action-icon.is-chat {
+            border-color: #0f9b64;
+            background: #12824c;
+            color: #ffffff;
+            box-shadow: 0 8px 18px rgba(18, 130, 76, .22);
+        }
+
+        .zinus-support-action-icon svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .zinus-support-action:hover .zinus-support-action-icon.is-chat {
+            border-color: #0f6d3f;
+            background: #0f6d3f;
+            color: #ffffff;
+        }
+
+        .zinus-support-action-copy {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .zinus-support-action-title {
+            display: block;
+            color: #0f172a;
+            font-size: .875rem;
+            font-weight: 700;
+            line-height: 1.25rem;
+        }
+
+        .zinus-support-action-subtitle {
+            display: block;
+            overflow: hidden;
+            color: #64748b;
+            font-size: .75rem;
+            line-height: 1.25rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .zinus-support-fab {
+            position: relative;
+            display: flex;
+            width: 3.5rem;
+            height: 3.5rem;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 9999px;
+            background: #12824c;
+            color: #ffffff;
+            box-shadow: 0 18px 36px rgba(18, 130, 76, .28);
+            transition: background-color .18s ease, box-shadow .18s ease, transform .18s ease;
+        }
+
+        .zinus-support-fab:hover {
+            transform: translateY(-2px);
+            background: #0f6d3f;
+            box-shadow: 0 22px 42px rgba(18, 130, 76, .32);
+        }
+
+        .zinus-support-fab svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        .zinus-support-badge {
+            position: absolute;
+            top: -.25rem;
+            right: -.25rem;
+            display: flex;
+            min-width: 1.25rem;
+            height: 1.25rem;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+            border-radius: 9999px;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: .625rem;
+            font-weight: 800;
+            line-height: 1;
+            padding: 0 .25rem;
+            box-shadow: 0 8px 18px rgba(239, 68, 68, .22);
+        }
+    </style>
+    @endonce
+
+    {{-- Desktop-only help launcher --}}
+    <div class="zinus-support-launcher">
         <div
             x-show="fabOpen && !open"
-            x-transition:enter="transition ease-out duration-300 transform"
-            x-transition:enter-start="opacity-0 translate-y-8 scale-50"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-2 scale-95"
             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-            x-transition:leave="transition ease-in duration-200 transform"
+            x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-            x-transition:leave-end="opacity-0 translate-y-8 scale-50"
-            class="flex items-center gap-3 origin-bottom"
+            x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+            @click.outside="fabOpen = false"
+            class="zinus-support-menu"
             style="display:none"
         >
-            <span class="bg-white text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md border border-slate-100 whitespace-nowrap">Panduan Penggunaan</span>
             <button
+                type="button"
                 @click="localStorage.removeItem('zinus_tour_completed'); window.location.href = '{{ route('dashboard') }}';"
-                class="relative flex items-center justify-center w-12 h-12 bg-white text-[#23455D] border border-slate-200 rounded-full shadow-lg transition-all duration-200 hover:scale-110 hover:bg-slate-50"
-                title="Mulai Ulang Panduan Tour"
+                class="zinus-support-action"
+                title="Mulai ulang panduan penggunaan"
             >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="zinus-support-action-icon">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.25">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </span>
+                <span class="zinus-support-action-copy">
+                    <span class="zinus-support-action-title">Panduan Penggunaan</span>
+                    <span class="zinus-support-action-subtitle">Mulai ulang tour dashboard.</span>
+                </span>
             </button>
-        </div>
 
-        <!-- Sub-button: Live Chat -->
-        <div
-            x-show="fabOpen && !open"
-            x-transition:enter="transition ease-out duration-200 delay-75 transform"
-            x-transition:enter-start="opacity-0 translate-y-8 scale-50"
-            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-            x-transition:leave="transition ease-in duration-150 transform"
-            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-            x-transition:leave-end="opacity-0 translate-y-8 scale-50"
-            class="flex items-center gap-3 origin-bottom"
-            style="display:none"
-        >
-            <span class="bg-white text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md border border-slate-100 whitespace-nowrap">Live Chat</span>
             <button
-                @click="open = !open; fabOpen = false"
-                class="relative flex items-center justify-center w-12 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110"
-                title="Live Chat"
+                type="button"
+                @click="open = true; fabOpen = false"
+                class="zinus-support-action"
+                title="Buka live chat"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                @if($totalUnreadCount > 0)
-                    <span class="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-md ring-2 ring-white z-10">
-                        {{ $totalUnreadCount }}
-                    </span>
-                @endif
+                <span class="zinus-support-action-icon is-chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    @if($totalUnreadCount > 0)
+                        <span class="zinus-support-badge">
+                            {{ $totalUnreadCount }}
+                        </span>
+                    @endif
+                </span>
+                <span class="zinus-support-action-copy">
+                    <span class="zinus-support-action-title">Live Chat</span>
+                    <span class="zinus-support-action-subtitle">Ngobrol langsung dengan IT.</span>
+                </span>
             </button>
         </div>
+
+        <button
+            id="tour-chat-widget"
+            type="button"
+            @click.stop="fabOpen = !fabOpen; if(open) { open = false; }"
+            x-show="!open"
+            :aria-expanded="fabOpen.toString()"
+            class="zinus-support-fab"
+            title="Bantuan"
+        >
+            <svg x-show="!fabOpen" x-transition.opacity class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
+            </svg>
+            <svg x-show="fabOpen" x-transition.opacity class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            @if($totalUnreadCount > 0)
+                <span class="zinus-support-badge">
+                    {{ $totalUnreadCount }}
+                </span>
+            @endif
+        </button>
     </div>
-
-    <!-- Main FAB Toggle Button -->
-    <button
-        id="tour-chat-widget"
-        @click="fabOpen = !fabOpen; if(open) { open = false; }"
-        x-show="!open"
-        class="flex items-center justify-center w-14 h-14 bg-[#12824C] hover:bg-[#0f6d3f] text-white rounded-full shadow-xl shadow-emerald-600/30 transition-all duration-300 hover:scale-110"
-        :style="fabOpen ? 'transform: rotate(45deg)' : 'transform: rotate(0deg)'"
-        style="transition: transform 0.3s ease, background-color 0.2s ease;"
-        title="Menu"
-    >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
-        </svg>
-        @if($totalUnreadCount > 0)
-            <span class="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-md ring-2 ring-white z-10">
-                {{ $totalUnreadCount }}
-            </span>
-        @endif
-    </button>
-
-    <!-- Close button when chat is open -->
-    <button
-        @click="open = false; fabOpen = false"
-        x-show="open"
-        x-transition.opacity
-        class="flex items-center justify-center w-14 h-14 bg-slate-700 hover:bg-slate-800 text-white rounded-full shadow-xl transition-all duration-300 hover:scale-110"
-        style="display:none"
-        title="Tutup"
-    >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-    </button>
-
-    </div>{{-- end desktop-only FAB --}}
 
     <!-- Chat Box -->
     <div
