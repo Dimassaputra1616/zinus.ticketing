@@ -87,6 +87,7 @@
     <div
         x-data="assetAutomationConsole({
             runUrl: @js(route('admin.assets.automation-console.run')),
+            statusUrlTemplate: @js(route('admin.assets.automation-console.runs.show', ['runId' => '__RUN_ID__'])),
             csrfToken: @js(csrf_token()),
             commands: @js($commands),
             environment: @js($environment),
@@ -296,18 +297,20 @@
     </div>
 
     <script>
-        function assetAutomationConsole({ runUrl, csrfToken, commands, environment }) {
+        function assetAutomationConsole({ runUrl, statusUrlTemplate, csrfToken, commands, environment }) {
             const commandList = Object.values(commands);
             const defaultCommand = commandList[0] || {};
 
             return {
                 runUrl,
+                statusUrlTemplate,
                 csrfToken,
                 commands,
                 commandList,
                 environment,
                 selectedKey: defaultCommand.key,
                 running: false,
+                pollTimer: null,
                 result: null,
                 terminalText: 'zinus> select a command and press Run command',
                 form: {
@@ -402,6 +405,7 @@
                     return payload;
                 },
                 async runCommand() {
+                    this.stopPolling();
                     this.running = true;
                     this.result = null;
                     this.terminalText = `zinus> starting ${this.selectedCommand.label}...\n`;
@@ -416,7 +420,7 @@
                             },
                             body: JSON.stringify(this.payload()),
                         });
-                        const data = await response.json();
+                        const data = await this.parseJsonResponse(response);
 
                         if (!response.ok) {
                             const messages = data.errors
@@ -426,25 +430,90 @@
                         }
 
                         this.result = data;
-                        this.terminalText = [
-                            `zinus> ${data.command}`,
-                            `status: ${data.successful ? 'success' : 'failed'} | exit: ${data.exit_code} | duration: ${data.duration_ms}ms`,
-                            data.log_file ? `log: storage/logs/asset-automation/${data.log_file}` : null,
-                            '',
-                            '[stdout]',
-                            data.stdout || '(empty)',
-                            '',
-                            '[stderr]',
-                            data.stderr || '(empty)',
-                            '',
-                            '[outputs]',
-                            ...(data.output_files || []).map((file) => `${file.exists ? 'ok' : '--'} ${file.name}${file.modified_at ? ' | ' + file.modified_at : ''}`),
-                        ].filter((line) => line !== null).join('\n');
+                        this.terminalText = this.formatTerminal(data);
                         this.environment.recent_outputs = data.output_files || this.environment.recent_outputs;
+
+                        if (data.async && data.running && data.run_id) {
+                            this.startPolling(data.run_id);
+                            return;
+                        }
                     } catch (error) {
                         this.terminalText += `\nerror: ${error.message}`;
-                    } finally {
                         this.running = false;
+                    }
+                },
+                async parseJsonResponse(response) {
+                    const text = await response.text();
+                    if (!text) {
+                        return {};
+                    }
+
+                    try {
+                        return JSON.parse(text);
+                    } catch (error) {
+                        return {
+                            message: response.ok ? text : `HTTP ${response.status}: ${text.slice(0, 300)}`,
+                        };
+                    }
+                },
+                formatTerminal(data) {
+                    const status = data.running
+                        ? 'running'
+                        : (data.successful ? 'success' : 'failed');
+
+                    return [
+                        `zinus> ${data.command}`,
+                        `status: ${status} | exit: ${data.exit_code ?? '-'} | duration: ${data.duration_ms ?? 0}ms`,
+                        data.run_id ? `run: ${data.run_id}` : null,
+                        data.log_file ? `log: storage/logs/asset-automation/${data.log_file}` : null,
+                        '',
+                        '[stdout]',
+                        data.stdout || (data.running ? '(waiting for output)' : '(empty)'),
+                        '',
+                        '[stderr]',
+                        data.stderr || '(empty)',
+                        '',
+                        '[outputs]',
+                        ...(data.output_files || []).map((file) => `${file.exists ? 'ok' : '--'} ${file.name}${file.modified_at ? ' | ' + file.modified_at : ''}`),
+                    ].filter((line) => line !== null).join('\n');
+                },
+                statusUrl(runId) {
+                    return this.statusUrlTemplate.replace('__RUN_ID__', encodeURIComponent(runId));
+                },
+                startPolling(runId) {
+                    this.stopPolling();
+                    this.pollTimer = window.setInterval(() => this.pollRun(runId), 2000);
+                    this.pollRun(runId);
+                },
+                stopPolling() {
+                    if (this.pollTimer) {
+                        window.clearInterval(this.pollTimer);
+                        this.pollTimer = null;
+                    }
+                },
+                async pollRun(runId) {
+                    try {
+                        const response = await fetch(this.statusUrl(runId), {
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        const data = await this.parseJsonResponse(response);
+
+                        if (!response.ok) {
+                            throw new Error(data.message || 'Failed to read run status.');
+                        }
+
+                        this.result = data;
+                        this.terminalText = this.formatTerminal(data);
+                        this.environment.recent_outputs = data.output_files || this.environment.recent_outputs;
+
+                        if (!data.running) {
+                            this.stopPolling();
+                            this.running = false;
+                        }
+                    } catch (error) {
+                        this.stopPolling();
+                        this.running = false;
+                        this.terminalText += `\nstatus error: ${error.message}`;
                     }
                 },
                 refreshOutputs() {
@@ -453,6 +522,8 @@
                     }
                 },
                 clearTerminal() {
+                    this.stopPolling();
+                    this.running = false;
                     this.terminalText = 'zinus> cleared';
                 },
                 async copyTerminal() {

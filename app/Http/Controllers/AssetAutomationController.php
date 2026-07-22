@@ -61,4 +61,9 @@ class AssetAutomationController extends Controller
 
         return response()->json($result);
     }
+
+    public function status(string $runId): JsonResponse
+    {
+        return response()->json($this->automation->status($runId));
+    }
 }

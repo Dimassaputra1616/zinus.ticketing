@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -369,6 +370,10 @@ class AssetAutomationService
         ];
         $arguments = array_merge($arguments, $scriptArguments);
 
+        if ($this->shouldRunAsync($command)) {
+            return $this->startAsyncRun($commandKey, $command, $arguments, $secrets, $installerPath, $actor);
+        }
+
         $startedAt = now();
         $stdout = '';
         $stderr = '';
@@ -435,6 +440,193 @@ class AssetAutomationService
         $result['log_file'] = $this->writeRunLog($result, $actor);
 
         return $result;
+    }
+
+    public function status(string $runId): array
+    {
+        if (! preg_match('/^[A-Za-z0-9_-]{16,80}$/', $runId)) {
+            throw ValidationException::withMessages([
+                'run_id' => 'Run id tidak valid.',
+            ]);
+        }
+
+        $runDirectory = $this->runDirectory($runId);
+        $metaPath = $runDirectory.DIRECTORY_SEPARATOR.'meta.json';
+        if (! is_file($metaPath)) {
+            throw ValidationException::withMessages([
+                'run_id' => 'Automation run tidak ditemukan.',
+            ]);
+        }
+
+        $meta = json_decode((string) file_get_contents($metaPath), true) ?: [];
+        $exitCode = $this->readExitCode($runDirectory);
+        $pid = (int) ($meta['pid'] ?? 0);
+        $running = $exitCode === null && $this->isProcessRunning($pid);
+        $startedAt = Carbon::parse((string) ($meta['started_at'] ?? now()->toDateTimeString()));
+        $finishedAt = $exitCode === null
+            ? null
+            : trim($this->readRunFile($runDirectory, 'finished_at', 120));
+        $finishedCarbon = $finishedAt !== '' ? Carbon::parse($finishedAt) : null;
+        $stderr = $this->readRunFile($runDirectory, 'stderr.txt', 60000);
+
+        if (! $running && $exitCode === null) {
+            $exitCode = -1;
+            $stderr = trim($stderr.PHP_EOL.'Process selesai tanpa menulis exit code. Cek permission atau log server.');
+        }
+
+        $durationEnd = $finishedCarbon ?: now();
+        $commandKey = (string) ($meta['command_key'] ?? '');
+        $command = $this->commands()[$commandKey] ?? [];
+
+        return [
+            'run_id' => $runId,
+            'async' => true,
+            'running' => $running,
+            'command_key' => $commandKey,
+            'label' => $meta['label'] ?? ($command['label'] ?? $commandKey),
+            'command' => $meta['command'] ?? '',
+            'successful' => $exitCode === 0,
+            'exit_code' => $exitCode,
+            'timed_out' => false,
+            'started_at' => $startedAt->toDateTimeString(),
+            'finished_at' => $finishedCarbon?->toDateTimeString(),
+            'duration_ms' => $startedAt->diffInMilliseconds($durationEnd),
+            'stdout' => $this->readRunFile($runDirectory, 'stdout.txt', 60000),
+            'stderr' => $stderr,
+            'output_files' => $this->outputFileStatuses($command['output_files'] ?? []),
+            'log_file' => 'runs/'.$runId.'/stdout.txt',
+        ];
+    }
+
+    protected function shouldRunAsync(array $command): bool
+    {
+        return ! (bool) ($command['native'] ?? false);
+    }
+
+    protected function startAsyncRun(string $commandKey, array $command, array $arguments, array $secrets, string $installerPath, ?User $actor): array
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            throw ValidationException::withMessages([
+                'command_key' => 'Background automation dari web saat ini disiapkan untuk server Linux.',
+            ]);
+        }
+
+        $runId = now()->format('YmdHis').'_'.Str::random(16);
+        $runDirectory = $this->runDirectory($runId);
+        File::ensureDirectoryExists($runDirectory);
+
+        $startedAt = now();
+        $displayCommand = $this->displayCommand($arguments, $secrets);
+        $meta = [
+            'run_id' => $runId,
+            'command_key' => $commandKey,
+            'label' => $command['label'],
+            'command' => $displayCommand,
+            'actor' => $actor?->email ?: 'system',
+            'started_at' => $startedAt->toDateTimeString(),
+            'pid' => null,
+        ];
+
+        File::put($runDirectory.DIRECTORY_SEPARATOR.'meta.json', json_encode($meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        File::put($runDirectory.DIRECTORY_SEPARATOR.'stdout.txt', '');
+        File::put($runDirectory.DIRECTORY_SEPARATOR.'stderr.txt', '');
+
+        $scriptPath = $runDirectory.DIRECTORY_SEPARATOR.'run.sh';
+        File::put($scriptPath, $this->asyncShellScript($arguments, $installerPath, $runDirectory));
+        @chmod($scriptPath, 0750);
+
+        $output = [];
+        $exitCode = 0;
+        exec('nohup /bin/sh '.escapeshellarg($scriptPath).' >/dev/null 2>&1 & echo $!', $output, $exitCode);
+        if ($exitCode !== 0 || trim((string) ($output[0] ?? '')) === '') {
+            throw ValidationException::withMessages([
+                'command_key' => 'Gagal memulai background process automation.',
+            ]);
+        }
+
+        $meta['pid'] = (int) trim((string) $output[0]);
+        File::put($runDirectory.DIRECTORY_SEPARATOR.'meta.json', json_encode($meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+        return [
+            'run_id' => $runId,
+            'async' => true,
+            'running' => true,
+            'command_key' => $commandKey,
+            'label' => $command['label'],
+            'command' => $displayCommand,
+            'successful' => false,
+            'exit_code' => null,
+            'timed_out' => false,
+            'started_at' => $startedAt->toDateTimeString(),
+            'finished_at' => null,
+            'duration_ms' => 0,
+            'stdout' => '',
+            'stderr' => '',
+            'output_files' => $this->outputFileStatuses($command['output_files'] ?? []),
+            'log_file' => 'runs/'.$runId.'/stdout.txt',
+        ];
+    }
+
+    protected function asyncShellScript(array $arguments, string $installerPath, string $runDirectory): string
+    {
+        $command = implode(' ', array_map('escapeshellarg', $arguments));
+        $stdoutPath = $runDirectory.DIRECTORY_SEPARATOR.'stdout.txt';
+        $stderrPath = $runDirectory.DIRECTORY_SEPARATOR.'stderr.txt';
+        $exitCodePath = $runDirectory.DIRECTORY_SEPARATOR.'exit_code';
+        $finishedAtPath = $runDirectory.DIRECTORY_SEPARATOR.'finished_at';
+
+        return implode("\n", [
+            '#!/bin/sh',
+            'cd '.escapeshellarg($installerPath).' || exit 97',
+            $command.' > '.escapeshellarg($stdoutPath).' 2> '.escapeshellarg($stderrPath),
+            'EXIT_CODE=$?',
+            "date '+%Y-%m-%d %H:%M:%S' > ".escapeshellarg($finishedAtPath),
+            'printf "%s" "$EXIT_CODE" > '.escapeshellarg($exitCodePath),
+            'exit "$EXIT_CODE"',
+            '',
+        ]);
+    }
+
+    protected function runDirectory(string $runId): string
+    {
+        return storage_path('logs/asset-automation/runs/'.$runId);
+    }
+
+    protected function readRunFile(string $runDirectory, string $fileName, int $limit): string
+    {
+        $path = $runDirectory.DIRECTORY_SEPARATOR.$fileName;
+        if (! is_file($path) || ! is_readable($path)) {
+            return '';
+        }
+
+        return Str::limit(trim((string) file_get_contents($path)), $limit, "\n...[output truncated]");
+    }
+
+    protected function readExitCode(string $runDirectory): ?int
+    {
+        $path = $runDirectory.DIRECTORY_SEPARATOR.'exit_code';
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $value = trim((string) file_get_contents($path));
+
+        return is_numeric($value) ? (int) $value : null;
+    }
+
+    protected function isProcessRunning(int $pid): bool
+    {
+        if ($pid <= 0) {
+            return false;
+        }
+
+        if (function_exists('posix_kill')) {
+            return posix_kill($pid, 0);
+        }
+
+        exec('ps -p '.escapeshellarg((string) $pid).' >/dev/null 2>&1', $output, $exitCode);
+
+        return $exitCode === 0;
     }
 
     protected function runNativeCommand(string $commandKey, array $command, array $input, ?User $actor): array

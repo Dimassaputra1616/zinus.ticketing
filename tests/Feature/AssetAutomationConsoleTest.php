@@ -134,7 +134,51 @@ class AssetAutomationConsoleTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('command_key', 'all_auto_scan')
-            ->assertJsonPath('successful', true)
+            ->assertJsonPath('async', true)
+            ->assertJsonPath('running', true)
             ->assertJsonPath('command', fn (string $command) => str_contains($command, '-IpSegment 10.62.38,10.62.39,10.62.36'));
+    }
+
+    public function test_background_automation_run_can_be_polled_until_complete(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $installerPath = storage_path('framework/testing/fake-asset-installer-poll');
+
+        File::ensureDirectoryExists($installerPath);
+        File::put($installerPath.'/Invoke-ZinusFinalizeAutomation.ps1', '');
+        config([
+            'asset_automation.installer_path' => $installerPath,
+            'asset_automation.powershell_path' => '/usr/bin/true',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->postJson(route('admin.assets.automation-console.run'), [
+                'command_key' => 'all_auto_scan',
+                'segments' => '10.62.38',
+                'use_config_token' => false,
+                'token' => 'token-for-test',
+                'server_url' => 'https://app.it-ticketing.web.id/api/asset-sync',
+            ])
+            ->assertOk()
+            ->assertJsonPath('async', true);
+
+        $runId = $response->json('run_id');
+        $status = null;
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            usleep(100000);
+            $status = $this->actingAs($admin)
+                ->getJson(route('admin.assets.automation-console.runs.show', ['runId' => $runId]))
+                ->assertOk();
+
+            if (! $status->json('running')) {
+                break;
+            }
+        }
+
+        $status
+            ->assertJsonPath('async', true)
+            ->assertJsonPath('running', false)
+            ->assertJsonPath('successful', true)
+            ->assertJsonPath('exit_code', 0);
     }
 }
