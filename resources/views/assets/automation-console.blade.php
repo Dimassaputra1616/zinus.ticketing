@@ -342,7 +342,7 @@
                 selectCommand(key) {
                     this.selectedKey = key;
                     this.form.segments = this.selectedCommand.default_segments || this.form.segments || '';
-                    this.form.max_parallel = this.selectedCommand.key === 'sync_local_printers' ? 8 : 20;
+                    this.form.max_parallel = Number(this.selectedCommand.default_max_parallel || (this.selectedCommand.key === 'sync_local_printers' ? 8 : 20));
                     Object.entries(this.selectedCommand.options || {}).forEach(([optionKey, option]) => {
                         this.form[optionKey] = !!option.default;
                     });

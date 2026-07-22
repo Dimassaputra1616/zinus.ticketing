@@ -80,6 +80,55 @@ class AssetAutomationService
                     'no_fail_exit' => ['label' => 'Keep exit code green for partial failures', 'default' => true],
                 ],
             ],
+            'remote_scan_all_segments' => [
+                'key' => 'remote_scan_all_segments',
+                'label' => 'Remote Scan All',
+                'group' => 'Inventory',
+                'script' => 'Scan-ZinusAssetsRemote.ps1',
+                'summary' => 'Pull every PC/laptop in selected IP ranges, including existing assets.',
+                'needs_segments' => true,
+                'needs_targets' => false,
+                'requires_token' => true,
+                'uses_asset_sync' => true,
+                'supports_parallel' => true,
+                'supports_dry_run' => false,
+                'default_segments' => '10.62.38, 10.62.39, 10.62.36',
+                'default_max_parallel' => 20,
+                'result_path' => '.\zinus-web-asset-scan-all-results.csv',
+                'output_files' => [
+                    'zinus-web-asset-scan-all-results.csv',
+                ],
+                'options' => [
+                    'skip_existing' => ['label' => 'Skip existing assets', 'default' => false],
+                    'skip_preflight' => ['label' => 'Skip WinRM preflight', 'default' => false],
+                    'no_fail_exit' => ['label' => 'Keep exit code green for partial failures', 'default' => true],
+                ],
+            ],
+            'retry_failed_scan' => [
+                'key' => 'retry_failed_scan',
+                'label' => 'Retry Failed Scan',
+                'group' => 'Retry',
+                'script' => 'Scan-ZinusAssetsRemote.ps1',
+                'summary' => 'Pull inventory again from targets that failed or were skipped before.',
+                'needs_segments' => false,
+                'needs_targets' => false,
+                'requires_token' => true,
+                'uses_asset_sync' => true,
+                'supports_parallel' => true,
+                'supports_dry_run' => false,
+                'default_segments' => '',
+                'default_max_parallel' => 12,
+                'result_path' => '.\zinus-web-failed-scan-results.csv',
+                'output_files' => [
+                    'zinus-web-failed-scan-targets.txt',
+                    'zinus-web-failed-scan-results.csv',
+                ],
+                'options' => [
+                    'skip_existing' => ['label' => 'Skip existing assets', 'default' => false],
+                    'skip_preflight' => ['label' => 'Skip WinRM preflight', 'default' => false],
+                    'no_fail_exit' => ['label' => 'Keep exit code green for partial failures', 'default' => true],
+                ],
+            ],
             'sync_local_printers' => [
                 'key' => 'sync_local_printers',
                 'label' => 'Sync Local Printers',
@@ -330,6 +379,8 @@ class AssetAutomationService
             'discover_segments' => $this->discoverSegmentsArguments($command, $input),
             'remote_scan_segments' => $this->remoteScanSegmentsArguments($command, $input),
             'remote_scan_targets' => $this->remoteScanTargetsArguments($command, $input),
+            'remote_scan_all_segments' => $this->remoteScanSegmentsArguments($command, $input),
+            'retry_failed_scan' => $this->retryFailedScanArguments($command, $input),
             'sync_local_printers' => $this->syncLocalPrintersArguments($command, $input),
             'sync_network_devices' => $this->syncNetworkDevicesArguments($command, $input),
             'export_data_quality' => $this->exportDataQualityArguments(),
@@ -370,8 +421,8 @@ class AssetAutomationService
             '-Department', $this->text($input, 'department', config('services.asset_sync.department') ?: 'IT', 150),
             '-ServerUrl', $this->serverUrl($input),
             '-MaxParallel', (string) $this->maxParallel($input, 20),
-            '-ResultPath', '.\zinus-web-asset-scan-results.csv',
-            ...($this->flag($input, 'skip_existing', true) ? ['-SkipExisting'] : []),
+            '-ResultPath', $this->scanResultPath($command, '.\zinus-web-asset-scan-results.csv'),
+            ...($this->flag($input, 'skip_existing', $this->defaultOption($command, 'skip_existing', true)) ? ['-SkipExisting'] : []),
             ...($this->flag($input, 'skip_preflight', false) ? ['-SkipPreflight'] : []),
             ...($this->flag($input, 'no_fail_exit', true) ? ['-NoFailExit'] : []),
         ], $secrets];
@@ -390,8 +441,40 @@ class AssetAutomationService
             '-Department', $this->text($input, 'department', config('services.asset_sync.department') ?: 'IT', 150),
             '-ServerUrl', $this->serverUrl($input),
             '-MaxParallel', (string) $this->maxParallel($input, 20),
-            '-ResultPath', '.\zinus-web-asset-scan-results.csv',
-            ...($this->flag($input, 'skip_existing', true) ? ['-SkipExisting'] : []),
+            '-ResultPath', $this->scanResultPath($command, '.\zinus-web-asset-scan-results.csv'),
+            ...($this->flag($input, 'skip_existing', $this->defaultOption($command, 'skip_existing', true)) ? ['-SkipExisting'] : []),
+            ...($this->flag($input, 'skip_preflight', false) ? ['-SkipPreflight'] : []),
+            ...($this->flag($input, 'no_fail_exit', true) ? ['-NoFailExit'] : []),
+        ], $secrets];
+    }
+
+    protected function retryFailedScanArguments(array $command, array $input): array
+    {
+        $targets = $this->failedScanTargets();
+        if ($targets === []) {
+            throw ValidationException::withMessages([
+                'targets' => 'Belum ada target gagal dari hasil scan sebelumnya.',
+            ]);
+        }
+
+        if (count($targets) > 1000) {
+            throw ValidationException::withMessages([
+                'targets' => 'Target gagal terlalu banyak. Rapikan file hasil gagal atau jalankan per segment.',
+            ]);
+        }
+
+        $this->writeInstallerTextList('zinus-web-failed-scan-targets.txt', $targets);
+        [$token, $secrets] = $this->token($input, false);
+
+        return [[
+            '-ComputerList', '.\zinus-web-failed-scan-targets.txt',
+            '-Token', $token,
+            '-Factory', $this->text($input, 'factory', config('services.asset_sync.factory') ?: 'GCI-HWANG', 150),
+            '-Department', $this->text($input, 'department', config('services.asset_sync.department') ?: 'IT', 150),
+            '-ServerUrl', $this->serverUrl($input),
+            '-MaxParallel', (string) $this->maxParallel($input, 12),
+            '-ResultPath', $this->scanResultPath($command, '.\zinus-web-failed-scan-results.csv'),
+            ...($this->flag($input, 'skip_existing', $this->defaultOption($command, 'skip_existing', false)) ? ['-SkipExisting'] : []),
             ...($this->flag($input, 'skip_preflight', false) ? ['-SkipPreflight'] : []),
             ...($this->flag($input, 'no_fail_exit', true) ? ['-NoFailExit'] : []),
         ], $secrets];
@@ -474,6 +557,186 @@ class AssetAutomationService
             '-OutputDirectory', '.\dist',
             '-PackageName', 'ZinusAssetInstaller',
         ], []];
+    }
+
+    protected function scanResultPath(array $command, string $default): string
+    {
+        $path = trim((string) ($command['result_path'] ?? $default));
+
+        return $path !== '' ? $path : $default;
+    }
+
+    protected function defaultOption(array $command, string $key, bool $default): bool
+    {
+        return (bool) ($command['options'][$key]['default'] ?? $default);
+    }
+
+    protected function failedScanTargets(): array
+    {
+        $targets = [];
+        $csvSources = [
+            ['path' => 'zinus-web-asset-scan-results.csv', 'target_columns' => ['computer', 'ip_address', 'hostname']],
+            ['path' => 'zinus-web-asset-scan-all-results.csv', 'target_columns' => ['computer', 'ip_address', 'hostname']],
+            ['path' => 'zinus-web-failed-scan-results.csv', 'target_columns' => ['computer', 'ip_address', 'hostname']],
+            ['path' => 'zinus-auto-scan-results.csv', 'target_columns' => ['computer', 'ip_address', 'hostname']],
+            ['path' => 'zinus-auto-scan-results-retry.csv', 'target_columns' => ['computer', 'ip_address', 'hostname']],
+            ['path' => 'zinus-asset-remote-scan-results.csv', 'target_columns' => ['computer', 'ip_address', 'hostname']],
+            ['path' => 'zinus-auto-failure-analysis.csv', 'target_columns' => ['ip_address', 'hostname', 'computer']],
+        ];
+
+        foreach ($csvSources as $source) {
+            foreach ($this->readInstallerCsv($source['path']) as $row) {
+                if (! $this->isFailedStatusRow($row) || $this->isNonWindowsFailureRow($row)) {
+                    continue;
+                }
+
+                $this->addFailedTarget($targets, $this->firstRowValue($row, $source['target_columns']));
+            }
+        }
+
+        foreach ([
+            'zinus-retry-failed-targets.txt',
+            'zinus-remediation-retry-computers.txt',
+        ] as $textPath) {
+            foreach ($this->readInstallerTextList($textPath) as $target) {
+                $this->addFailedTarget($targets, $target);
+            }
+        }
+
+        ksort($targets, SORT_NATURAL);
+
+        return array_keys($targets);
+    }
+
+    protected function readInstallerCsv(string $relativePath): array
+    {
+        $path = $this->installerFilePath($relativePath);
+        if (! is_file($path) || ! is_readable($path)) {
+            return [];
+        }
+
+        $handle = fopen($path, 'rb');
+        if (! $handle) {
+            return [];
+        }
+
+        try {
+            $header = fgetcsv($handle);
+            if (! is_array($header)) {
+                return [];
+            }
+
+            $keys = array_map(
+                fn ($key) => strtolower(trim((string) $key)),
+                $header
+            );
+
+            $rows = [];
+            while (($values = fgetcsv($handle)) !== false) {
+                if (! is_array($values)) {
+                    continue;
+                }
+
+                $row = [];
+                foreach ($keys as $index => $key) {
+                    if ($key === '') {
+                        continue;
+                    }
+
+                    $row[$key] = isset($values[$index]) ? trim((string) $values[$index]) : '';
+                }
+
+                if ($row !== []) {
+                    $rows[] = $row;
+                }
+            }
+
+            return $rows;
+        } finally {
+            fclose($handle);
+        }
+    }
+
+    protected function readInstallerTextList(string $relativePath): array
+    {
+        $path = $this->installerFilePath($relativePath);
+        if (! is_file($path) || ! is_readable($path)) {
+            return [];
+        }
+
+        return collect(file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [])
+            ->map(fn ($line) => trim((string) $line))
+            ->filter(fn ($line) => $line !== '' && ! str_starts_with($line, '#'))
+            ->values()
+            ->all();
+    }
+
+    protected function writeInstallerTextList(string $relativePath, array $items): void
+    {
+        $path = $this->installerFilePath($relativePath);
+        File::put($path, implode(PHP_EOL, $items).PHP_EOL);
+    }
+
+    protected function installerFilePath(string $relativePath): string
+    {
+        return $this->installerPath().DIRECTORY_SEPARATOR.ltrim(
+            str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativePath),
+            DIRECTORY_SEPARATOR
+        );
+    }
+
+    protected function isFailedStatusRow(array $row): bool
+    {
+        $status = strtolower(trim((string) ($row['status'] ?? '')));
+        if ($status === '') {
+            return false;
+        }
+
+        return ! in_array($status, [
+            'success',
+            'ok',
+            'ready',
+            'online',
+            'already_ready',
+            'already_synced',
+            'skipped_existing',
+        ], true);
+    }
+
+    protected function isNonWindowsFailureRow(array $row): bool
+    {
+        $type = strtolower(trim((string) ($row['likely_device_type'] ?? $row['category'] ?? '')));
+        if ($type === '') {
+            return false;
+        }
+
+        foreach (['printer', 'network device', 'gateway', 'cctv', 'camera', 'nas', 'storage'] as $needle) {
+            if (str_contains($type, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function firstRowValue(array $row, array $keys): string
+    {
+        foreach ($keys as $key) {
+            $value = trim((string) ($row[$key] ?? ''));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    protected function addFailedTarget(array &$targets, string $target): void
+    {
+        $target = trim($target);
+        if ($target !== '' && $this->validTarget($target)) {
+            $targets[$target] = true;
+        }
     }
 
     protected function segments(array $input, array $command): array

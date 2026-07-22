@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class AssetAutomationConsoleTest extends TestCase
@@ -20,6 +21,8 @@ class AssetAutomationConsoleTest extends TestCase
             ->assertSeeText('Automation Console')
             ->assertSeeText('Discover Segments')
             ->assertSeeText('Remote Scan by Segment')
+            ->assertSeeText('Remote Scan All')
+            ->assertSeeText('Retry Failed Scan')
             ->assertSeeText('Terminal Output');
     }
 
@@ -42,6 +45,24 @@ class AssetAutomationConsoleTest extends TestCase
         $this->actingAs($admin)
             ->postJson(route('admin.assets.automation-console.run'), [
                 'command_key' => 'remote_scan_targets',
+                'use_config_token' => false,
+                'token' => 'token-for-test',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('targets');
+    }
+
+    public function test_retry_failed_scan_requires_previous_failed_targets(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $installerPath = storage_path('framework/testing/empty-asset-installer');
+
+        File::ensureDirectoryExists($installerPath);
+        config(['asset_automation.installer_path' => $installerPath]);
+
+        $this->actingAs($admin)
+            ->postJson(route('admin.assets.automation-console.run'), [
+                'command_key' => 'retry_failed_scan',
                 'use_config_token' => false,
                 'token' => 'token-for-test',
             ])
