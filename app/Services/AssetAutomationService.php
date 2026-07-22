@@ -56,6 +56,7 @@ class AssetAutomationService
                 'output_files' => [
                     'zinus-web-auto-discovery.csv',
                     'zinus-web-auto-verification.csv',
+                    'zinus-web-auto-non-windows-devices.csv',
                     'zinus-web-auto-ready-targets.txt',
                     'zinus-web-auto-blocked-targets.txt',
                     'zinus-web-auto-scan-results.csv',
@@ -893,7 +894,7 @@ class AssetAutomationService
             '-LocalPrinterMaxParallel', (string) min($maxParallel, 20),
             '-AnyDeskMaxParallel', (string) min($maxParallel, 30),
             '-UseIntegratedAuth',
-            '-DeviceListPath', '.\zinus-remediation-non-windows-devices.csv',
+            '-DeviceListPath', '.\zinus-web-auto-non-windows-devices.csv',
             '-InitialDiscoveryPath', '.\zinus-web-auto-discovery.csv',
             '-InitialOnlinePath', '.\zinus-web-auto-discovery-online.csv',
             '-FinalVerificationPath', '.\zinus-web-auto-verification.csv',

@@ -136,7 +136,9 @@ class AssetAutomationConsoleTest extends TestCase
             ->assertJsonPath('command_key', 'all_auto_scan')
             ->assertJsonPath('async', true)
             ->assertJsonPath('running', true)
-            ->assertJsonPath('command', fn (string $command) => str_contains($command, '-IpSegment 10.62.38,10.62.39,10.62.36'));
+            ->assertJsonPath('command', fn (string $command) => str_contains($command, '-IpSegment 10.62.38,10.62.39,10.62.36'))
+            ->assertJsonPath('command', fn (string $command) => str_contains($command, '-DeviceListPath .\zinus-web-auto-non-windows-devices.csv'))
+            ->assertJsonFragment(['name' => 'zinus-web-auto-non-windows-devices.csv']);
     }
 
     public function test_background_automation_run_can_be_polled_until_complete(): void

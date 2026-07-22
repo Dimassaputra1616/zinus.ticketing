@@ -6,6 +6,7 @@ param(
     [int]$PortTimeoutMs = 750,
     [int]$NbtstatTimeoutMs = 1000,
     [switch]$ProbeWsMan,
+    [int[]]$ExtraTcpPorts = @(),
     [string]$ResultPath = ".\zinus-network-discovery-results.csv",
     [string]$OnlineResultPath = ".\zinus-network-discovery-online.csv"
 )
@@ -256,7 +257,8 @@ $workerScript = {
         [int]$PingTimeoutMs,
         [int]$PortTimeoutMs,
         [int]$NbtstatTimeoutMs,
-        [bool]$ProbeWsMan
+        [bool]$ProbeWsMan,
+        [int[]]$ExtraTcpPorts
     )
 
     function Test-Ping {
@@ -428,6 +430,8 @@ $workerScript = {
     if ($ProbeWsMan) {
         $portsToProbe += 5985
     }
+    $portsToProbe += @($ExtraTcpPorts)
+    $portsToProbe = @($portsToProbe | Where-Object { $_ -gt 0 } | Sort-Object -Unique)
 
     $openPorts = @(Test-TcpPorts -Computer $target -Ports $portsToProbe -TimeoutMs $PortTimeoutMs)
     $online = $pingOnline -or $openPorts.Count -gt 0
@@ -442,13 +446,10 @@ $workerScript = {
     $neighbor = if ($online) { Get-MacFromNeighbor -IpAddress $target } else { [pscustomobject]@{ mac_address = $null; state = $null } }
     $wsmanOpen = if ($ProbeWsMan) { 5985 -in $openPorts } else { $null }
 
-    $detectionMethod = if ($pingOnline) {
-        "Ping"
-    } elseif ($openPorts.Count -gt 0) {
-        "TCP:$($openPorts -join ',')"
-    } else {
-        $null
-    }
+    $signals = @()
+    if ($pingOnline) { $signals += "Ping" }
+    if ($openPorts.Count -gt 0) { $signals += "TCP:$($openPorts -join ',')" }
+    $detectionMethod = if ($signals.Count -gt 0) { $signals -join ";" } else { $null }
 
     return [pscustomobject]@{
         ip_address     = $target
@@ -475,6 +476,7 @@ foreach ($target in $targets) {
     $pipeline.AddArgument($PortTimeoutMs) | Out-Null
     $pipeline.AddArgument($NbtstatTimeoutMs) | Out-Null
     $pipeline.AddArgument($ProbeWsMan) | Out-Null
+    $pipeline.AddArgument($ExtraTcpPorts) | Out-Null
 
     $runspaces += [pscustomobject]@{
         Target      = $target

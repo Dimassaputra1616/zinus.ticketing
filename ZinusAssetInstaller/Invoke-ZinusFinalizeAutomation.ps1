@@ -179,6 +179,160 @@ function Get-NonWindowsExcludeIps {
     )
 }
 
+function Get-OpenPortsFromDetection {
+    param([string]$Detection)
+
+    if ([string]::IsNullOrWhiteSpace($Detection)) {
+        return @()
+    }
+
+    return @(
+        [regex]::Matches($Detection, '\b\d{2,5}\b') |
+            ForEach-Object { [int]$_.Value } |
+            Where-Object { $_ -gt 0 -and $_ -le 65535 } |
+            Sort-Object -Unique
+    )
+}
+
+function Test-AnyPort {
+    param(
+        [int[]]$Ports,
+        [int[]]$CandidatePorts
+    )
+
+    foreach ($port in @($CandidatePorts)) {
+        if ($Ports -contains $port) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Get-PortEvidence {
+    param(
+        [int[]]$Ports,
+        [string]$Fallback = ""
+    )
+
+    if ($Ports.Count -gt 0) {
+        return "Open TCP: $($Ports -join ',')"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($Fallback)) {
+        return $Fallback
+    }
+
+    return "Online dari discovery"
+}
+
+function Get-DeviceCandidateObject {
+    param(
+        [object]$Row,
+        [string]$LikelyDeviceType,
+        [string]$Confidence,
+        [string]$Evidence,
+        [int[]]$Ports
+    )
+
+    $ip = ([string]$Row.ip_address).Trim()
+    $hostname = ([string]$Row.hostname).Trim()
+    $dnsName = ([string]$Row.dns_name).Trim()
+    if (-not $hostname -and $dnsName) {
+        $hostname = $dnsName
+    }
+
+    return [pscustomobject]@{
+        ip_address         = $ip
+        hostname           = $hostname
+        likely_device_type = $LikelyDeviceType
+        confidence         = $Confidence
+        evidence           = $Evidence
+        detection          = [string]$Row.detection
+        open_ports         = ($Ports -join ",")
+        wsman_5985         = (Test-TrueValue -Value $Row.wsman_5985)
+        discovered_at      = [string]$Row.discovered_at
+    }
+}
+
+function Resolve-NonWindowsDeviceCandidate {
+    param([object]$Row)
+
+    $ip = ([string]$Row.ip_address).Trim()
+    if ([string]::IsNullOrWhiteSpace($ip) -or -not (Test-TrueValue -Value $Row.online)) {
+        return $null
+    }
+
+    $hostname = ([string]$Row.hostname).Trim()
+    $dnsName = ([string]$Row.dns_name).Trim()
+    $detection = [string]$Row.detection
+    $ports = @(Get-OpenPortsFromDetection -Detection $detection)
+    $text = @($hostname, $dnsName, $detection, [string]$Row.name_source) -join " "
+    $wsmanOpen = Test-TrueValue -Value $Row.wsman_5985
+    $hasWindowsPorts = Test-AnyPort -Ports $ports -CandidatePorts @(135, 139, 445)
+    $hasManagementPort = Test-AnyPort -Ports $ports -CandidatePorts @(22, 23, 80, 443, 8080, 8443)
+
+    if ($text -match '(?i)\b(CCTV|CAMERA|IPCAM|IP-CAM|NVR|DVR|HIKVISION|DAHUA|UNIVIEW|ONVIF|RTSP)\b' -or (Test-AnyPort -Ports $ports -CandidatePorts @(554, 8000, 8899, 37777))) {
+        return Get-DeviceCandidateObject -Row $Row -LikelyDeviceType "CCTV / camera" -Confidence "medium" -Evidence (Get-PortEvidence -Ports $ports -Fallback "Hostname/evidence terlihat seperti CCTV: $hostname") -Ports $ports
+    }
+
+    if ($text -match '(?i)\b(TRUENAS|NAS|SYNOLOGY|QNAP|STORAGE)\b' -or (Test-AnyPort -Ports $ports -CandidatePorts @(5000, 5001))) {
+        return Get-DeviceCandidateObject -Row $Row -LikelyDeviceType "NAS / storage" -Confidence "high" -Evidence (Get-PortEvidence -Ports $ports -Fallback "Hostname/evidence terlihat seperti NAS/storage: $hostname") -Ports $ports
+    }
+
+    if ($text -match '(?i)(\b(BROTHER|MFC|DCP|PRINTER|PRINT|LASERJET|DESKJET|OFFICEJET|EPSON|CANON)\b|^(BRN|HL-|HP[A-F0-9]{5,}|HPB|HPLASER|HP-))' -or (Test-AnyPort -Ports $ports -CandidatePorts @(515, 631, 9100))) {
+        return Get-DeviceCandidateObject -Row $Row -LikelyDeviceType "Printer" -Confidence "high" -Evidence (Get-PortEvidence -Ports $ports -Fallback "Hostname/evidence terlihat seperti printer: $hostname") -Ports $ports
+    }
+
+    if ($wsmanOpen -or $hostname -match '(?i)^(PC|NB|LAPTOP|DESKTOP|WS|WIN|CLIENT)[-_]') {
+        return $null
+    }
+
+    if ($text -match '(?i)\b(ROUTER|SWITCH|GATEWAY|MIKROTIK|ROUTEROS|UBIQUITI|UNIFI|TP-?LINK|RUIJIE|CISCO|D-?LINK|ACCESS\s*POINT|WIRELESS\s*AP)\b') {
+        return Get-DeviceCandidateObject -Row $Row -LikelyDeviceType "Network device / gateway" -Confidence "high" -Evidence (Get-PortEvidence -Ports $ports -Fallback "Hostname/evidence terlihat seperti network device: $hostname") -Ports $ports
+    }
+
+    if ($ip -match '\.(1|254)$') {
+        return Get-DeviceCandidateObject -Row $Row -LikelyDeviceType "Network device / gateway" -Confidence "medium" -Evidence (Get-PortEvidence -Ports $ports -Fallback "IP ujung segment/gateway: $ip") -Ports $ports
+    }
+
+    if ($hasManagementPort -and -not $hasWindowsPorts) {
+        return Get-DeviceCandidateObject -Row $Row -LikelyDeviceType "Network device / gateway" -Confidence "medium" -Evidence (Get-PortEvidence -Ports $ports -Fallback "Management port network device terdeteksi") -Ports $ports
+    }
+
+    return $null
+}
+
+function Export-NonWindowsDeviceListFromVerification {
+    param(
+        [string]$VerificationPath,
+        [string]$DeviceListPath
+    )
+
+    $rows = @(Import-CsvSafe -Path $VerificationPath)
+    $devices = @(
+        $rows |
+            ForEach-Object { Resolve-NonWindowsDeviceCandidate -Row $_ } |
+            Where-Object { $_ } |
+            Sort-Object ip_address -Unique
+    )
+
+    $fullPath = Resolve-ZinusPath -Path $DeviceListPath
+    $dir = Split-Path -Parent $fullPath
+    if ($dir -and -not (Test-Path -LiteralPath $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+
+    if ($devices.Count -gt 0) {
+        $devices | Export-Csv -LiteralPath $fullPath -NoTypeInformation -Encoding UTF8
+    } else {
+        "ip_address,hostname,likely_device_type,confidence,evidence,detection,open_ports,wsman_5985,discovered_at" |
+            Set-Content -LiteralPath $fullPath -Encoding UTF8
+    }
+
+    return $devices.Count
+}
+
 function Save-TargetListsFromVerification {
     param(
         [string]$VerificationPath,
@@ -354,6 +508,8 @@ Write-Info "Server : $ServerUrl"
 Write-Info "Factory: $Factory"
 Write-Info "Dept   : $Department"
 
+$networkDeviceProbePorts = @(22, 23, 80, 443, 515, 554, 631, 9100, 5000, 5001, 8000, 8080, 8443, 8899, 37777)
+
 if (-not $Credential -and $UseIntegratedAuth) {
     Write-Info "Credential prompt dilewati. Remote scan memakai current/integrated auth dari proses PowerShell."
 }
@@ -375,11 +531,16 @@ if (-not $SkipDiscovery) {
         -StartHost $StartHost `
         -EndHost $EndHost `
         -ProbeWsMan `
+        -ExtraTcpPorts $networkDeviceProbePorts `
         -ResultPath $InitialDiscoveryPath `
         -OnlineResultPath $InitialOnlinePath
 } elseif (-not (Test-Path -LiteralPath $InitialDiscoveryPath)) {
     throw "SkipDiscovery dipilih, tapi file discovery awal tidak ada: $InitialDiscoveryPath"
 }
+
+$initialDeviceCount = Export-NonWindowsDeviceListFromVerification `
+    -VerificationPath $InitialDiscoveryPath `
+    -DeviceListPath $DeviceListPath
 
 $initialTargets = Save-TargetListsFromVerification `
     -VerificationPath $InitialDiscoveryPath `
@@ -390,6 +551,7 @@ $initialTargets = Save-TargetListsFromVerification `
     -BlockedTargetPath $BlockedTargetPath
 
 Write-Info "Online awal          : $($initialTargets.Online)"
+Write-Info "Non-Windows awal     : $initialDeviceCount"
 Write-Info "Remote candidate     : $($initialTargets.RemoteCandidates)"
 Write-Info "WinRM ready awal     : $($initialTargets.Ready)"
 Write-Info "WinRM belum ready    : $($initialTargets.Blocked)"
@@ -419,6 +581,7 @@ if (-not $SkipDiscovery) {
         -StartHost $StartHost `
         -EndHost $EndHost `
         -ProbeWsMan `
+        -ExtraTcpPorts $networkDeviceProbePorts `
         -ResultPath $FinalVerificationPath `
         -OnlineResultPath $FinalOnlinePath
 } else {
@@ -427,6 +590,10 @@ if (-not $SkipDiscovery) {
         Copy-Item -LiteralPath (Resolve-ZinusPath -Path $InitialOnlinePath) -Destination (Resolve-ZinusPath -Path $FinalOnlinePath) -Force
     }
 }
+
+$finalDeviceCount = Export-NonWindowsDeviceListFromVerification `
+    -VerificationPath $FinalVerificationPath `
+    -DeviceListPath $DeviceListPath
 
 $finalTargets = Save-TargetListsFromVerification `
     -VerificationPath $FinalVerificationPath `
@@ -437,6 +604,7 @@ $finalTargets = Save-TargetListsFromVerification `
     -BlockedTargetPath $BlockedTargetPath
 
 Write-Info "Online final         : $($finalTargets.Online)"
+Write-Info "Non-Windows final    : $finalDeviceCount"
 Write-Info "Remote candidate     : $($finalTargets.RemoteCandidates)"
 Write-Info "WinRM ready final    : $($finalTargets.Ready)"
 Write-Info "Masih blocked        : $($finalTargets.Blocked)"
@@ -480,7 +648,8 @@ if (-not $SkipRemoteScan -and $finalTargets.Ready -gt 0) {
 }
 
 if (-not $SkipNetworkDevices) {
-    if (Test-Path -LiteralPath $DeviceListPath) {
+    $networkDeviceRows = @(Import-CsvSafe -Path $DeviceListPath)
+    if ($networkDeviceRows.Count -gt 0) {
         Write-Phase "TAHAP 6/7 - Sync printer IP + NAS + CCTV + network device"
         & $networkDeviceScript `
             -DeviceListPath $DeviceListPath `
@@ -491,7 +660,7 @@ if (-not $SkipNetworkDevices) {
             -IncludeGateways `
             -ResultPath $NetworkDeviceResultPath
     } else {
-        Write-Host "Device list tidak ada, sync printer/NAS/CCTV/network dilewati: $DeviceListPath" -ForegroundColor Yellow
+        Write-Info "Tidak ada kandidat printer/NAS/CCTV/network dari discovery: $DeviceListPath"
     }
 } else {
     Write-Info "Sync printer/NAS/CCTV/network dilewati sesuai parameter."
@@ -527,6 +696,7 @@ $cleanupCounts = Export-PrinterCleanupLists `
 
 $summary = @(
     [pscustomobject]@{ item = "online_final"; value = $finalTargets.Online; detail = $FinalVerificationPath },
+    [pscustomobject]@{ item = "non_windows_devices"; value = $finalDeviceCount; detail = $DeviceListPath },
     [pscustomobject]@{ item = "remote_candidates"; value = $finalTargets.RemoteCandidates; detail = $RemoteCandidatePath },
     [pscustomobject]@{ item = "winrm_ready"; value = $finalTargets.Ready; detail = $ReadyTargetPath },
     [pscustomobject]@{ item = "winrm_blocked"; value = $finalTargets.Blocked; detail = $BlockedTargetPath },
