@@ -85,6 +85,7 @@
     $advancedFiltersOpen = filled($location) || filled($status) || filled($brand);
     $bulkQrPrintQuery = array_merge(request()->query(), ['category_group' => $categoryGroup]);
     $currentPageQrIds = $assets->pluck('id')->map(fn ($id) => (string) $id)->values();
+    $desktopTableMinWidth = $isSoftwareLicense ? 1340 : ($usesMonitoringColumn ? 1460 : 1320);
 @endphp
 
 <x-app-layout>
@@ -380,10 +381,37 @@
 
             <div class="hidden overflow-hidden rounded-lg border border-slate-200 bg-white lg:block">
                 <div class="max-h-[68vh] overflow-auto">
-                    <table class="w-full {{ $usesMonitoringColumn ? 'min-w-[1180px]' : 'min-w-[1080px]' }} table-fixed text-left text-sm">
+                    <table class="w-full table-fixed text-left text-sm" style="min-width: {{ $desktopTableMinWidth }}px;">
+                        <colgroup>
+                            @if ($isSoftwareLicense)
+                                <col style="width: 48px;">
+                                <col style="width: 230px;">
+                                <col style="width: 150px;">
+                                <col style="width: 150px;">
+                                <col style="width: 230px;">
+                                <col style="width: 170px;">
+                                <col style="width: 120px;">
+                                <col style="width: 110px;">
+                                <col style="width: 124px;">
+                            @else
+                                <col style="width: 48px;">
+                                <col style="width: 190px;">
+                                <col style="width: 140px;">
+                                <col style="width: 155px;">
+                                <col style="width: 135px;">
+                                @if ($usesMonitoringColumn)
+                                    <col style="width: 145px;">
+                                @endif
+                                <col style="width: 145px;">
+                                <col style="width: 145px;">
+                                <col style="width: 110px;">
+                                <col style="width: 110px;">
+                                <col style="width: 124px;">
+                            @endif
+                        </colgroup>
                         <thead class="sticky top-0 z-10 bg-slate-50">
                             <tr class="border-b border-slate-200 text-xs font-semibold text-slate-500">
-                                <th class="w-[44px] px-4 py-3">
+                                <th class="px-4 py-3">
                                     <input
                                         type="checkbox"
                                         class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
@@ -393,26 +421,26 @@
                                     >
                                 </th>
                                 @if ($isSoftwareLicense)
-                                    <th class="w-[22%] px-4 py-3">Software</th>
-                                    <th class="w-[15%] px-4 py-3">Asset Code</th>
-                                    <th class="w-[15%] px-4 py-3">Vendor</th>
-                                    <th class="w-[18%] px-4 py-3">License / Product Key</th>
-                                    <th class="w-[13%] px-4 py-3">Department</th>
-                                    <th class="w-[10%] px-4 py-3">Expiry</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Software</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Asset Code</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Vendor</th>
+                                    <th class="whitespace-nowrap px-4 py-3">License / Product Key</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Department</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Expiry</th>
                                 @else
-                                    <th class="w-[17%] px-4 py-3">Device</th>
-                                    <th class="w-[13%] px-4 py-3">Asset Code</th>
-                                    <th class="w-[13%] px-4 py-3">Brand / Model</th>
-                                    <th class="w-[12%] px-4 py-3">{{ $technicalColumnLabel }}</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Device</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Asset Code</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Brand / Model</th>
+                                    <th class="whitespace-nowrap px-4 py-3">{{ $technicalColumnLabel }}</th>
                                     @if ($usesMonitoringColumn)
-                                        <th class="w-[11%] px-4 py-3">Monitoring</th>
+                                        <th class="whitespace-nowrap px-4 py-3">Monitoring</th>
                                     @endif
-                                    <th class="w-[10%] px-4 py-3">Location</th>
-                                    <th class="w-[10%] px-4 py-3">Department</th>
-                                    <th class="w-[8%] px-4 py-3">Condition</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Location</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Department</th>
+                                    <th class="whitespace-nowrap px-4 py-3">Condition</th>
                                 @endif
-                                <th class="w-[8%] px-4 py-3">Status</th>
-                                <th class="w-[124px] px-2 py-3 text-right">Actions</th>
+                                <th class="whitespace-nowrap px-4 py-3">Status</th>
+                                <th class="whitespace-nowrap px-2 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
