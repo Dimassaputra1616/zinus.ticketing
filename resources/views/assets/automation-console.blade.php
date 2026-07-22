@@ -261,7 +261,7 @@
                             </div>
                             <button
                                 type="submit"
-                                :disabled="running || !environment.can_execute"
+                                :disabled="running || !canRunSelectedCommand()"
                                 class="automation-run"
                             >
                                 <svg x-show="!running" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -339,6 +339,13 @@
                         };
                     });
                 },
+                canRunSelectedCommand() {
+                    if (this.selectedCommand.native) {
+                        return !!this.environment.can_run_native;
+                    }
+
+                    return !!this.environment.can_run_powershell;
+                },
                 selectCommand(key) {
                     this.selectedKey = key;
                     this.form.segments = this.selectedCommand.default_segments || this.form.segments || '';
@@ -346,6 +353,12 @@
                     Object.entries(this.selectedCommand.options || {}).forEach(([optionKey, option]) => {
                         this.form[optionKey] = !!option.default;
                     });
+
+                    if (!this.canRunSelectedCommand()) {
+                        this.terminalText = `zinus> ${this.selectedCommand.script}\nneeds PowerShell runtime / installer setup`;
+                        return;
+                    }
+
                     this.terminalText = `zinus> ${this.selectedCommand.script}\nready`;
                 },
                 payload() {

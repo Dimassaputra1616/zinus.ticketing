@@ -15,6 +15,29 @@ class AssetAutomationService
     public function commands(): array
     {
         return [
+            'network_diagnostics' => [
+                'key' => 'network_diagnostics',
+                'label' => 'Ping / SSH Probe',
+                'group' => 'Diagnostics',
+                'script' => 'Network-Diagnostics',
+                'summary' => 'Ping targets and check SSH, WinRM, RDP, or SMB ports from the app server.',
+                'native' => true,
+                'needs_segments' => false,
+                'needs_targets' => true,
+                'requires_token' => false,
+                'uses_asset_sync' => false,
+                'supports_parallel' => false,
+                'supports_dry_run' => false,
+                'default_segments' => '',
+                'output_files' => [],
+                'options' => [
+                    'probe_ping' => ['label' => 'Ping', 'default' => true],
+                    'probe_ssh' => ['label' => 'SSH 22', 'default' => true],
+                    'probe_winrm' => ['label' => 'WinRM 5985', 'default' => true],
+                    'probe_rdp' => ['label' => 'RDP 3389', 'default' => false],
+                    'probe_smb' => ['label' => 'SMB 445', 'default' => false],
+                ],
+            ],
             'discover_segments' => [
                 'key' => 'discover_segments',
                 'label' => 'Discover Segments',
@@ -236,13 +259,18 @@ class AssetAutomationService
     {
         $powershell = $this->resolvePowerShell();
         $installerPath = $this->installerPath();
+        $enabled = (bool) config('asset_automation.enabled', true);
+        $canRunNative = $enabled;
+        $canRunPowerShell = $enabled && (bool) $powershell && is_dir($installerPath);
 
         return [
-            'enabled' => (bool) config('asset_automation.enabled', true),
+            'enabled' => $enabled,
             'installer_path' => $installerPath,
             'installer_exists' => is_dir($installerPath),
             'powershell' => $powershell,
-            'can_execute' => (bool) $powershell && is_dir($installerPath),
+            'can_run_native' => $canRunNative,
+            'can_run_powershell' => $canRunPowerShell,
+            'can_execute' => $canRunNative || $canRunPowerShell,
             'os' => PHP_OS_FAMILY,
             'timeout_seconds' => $this->timeoutSeconds(),
             'has_config_token' => $this->configuredToken() !== '',
@@ -269,6 +297,10 @@ class AssetAutomationService
         }
 
         $command = $commands[$commandKey];
+        if ((bool) ($command['native'] ?? false)) {
+            return $this->runNativeCommand($commandKey, $command, $input, $actor);
+        }
+
         $secrets = [];
         [$scriptArguments, $secrets] = $this->scriptArguments($commandKey, $command, $input);
 
@@ -371,6 +403,233 @@ class AssetAutomationService
         $result['log_file'] = $this->writeRunLog($result, $actor);
 
         return $result;
+    }
+
+    protected function runNativeCommand(string $commandKey, array $command, array $input, ?User $actor): array
+    {
+        $startedAt = now();
+        $stdout = '';
+        $stderr = '';
+        $exitCode = 0;
+        $timedOut = false;
+
+        try {
+            [$stdout, $timedOut] = match ($commandKey) {
+                'network_diagnostics' => $this->networkDiagnosticsOutput($command, $input),
+                default => throw ValidationException::withMessages([
+                    'command_key' => 'Native command tidak tersedia.',
+                ]),
+            };
+
+            if ($timedOut) {
+                $exitCode = -1;
+            }
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            $exitCode = -1;
+            $stderr = $exception->getMessage();
+        }
+
+        $finishedAt = now();
+        $result = [
+            'command_key' => $commandKey,
+            'label' => $command['label'],
+            'command' => $this->nativeDisplayCommand($commandKey, $input),
+            'successful' => $exitCode === 0 && ! $timedOut,
+            'exit_code' => $exitCode,
+            'timed_out' => $timedOut,
+            'started_at' => $startedAt->toDateTimeString(),
+            'finished_at' => $finishedAt->toDateTimeString(),
+            'duration_ms' => $startedAt->diffInMilliseconds($finishedAt),
+            'stdout' => $this->trimOutput($stdout),
+            'stderr' => $this->trimOutput($stderr),
+            'output_files' => $this->outputFileStatuses($command['output_files'] ?? []),
+            'log_file' => null,
+        ];
+
+        $result['log_file'] = $this->writeRunLog($result, $actor);
+
+        return $result;
+    }
+
+    protected function networkDiagnosticsOutput(array $command, array $input): array
+    {
+        $targets = $this->targets($input, false);
+        if (count($targets) > 50) {
+            throw ValidationException::withMessages([
+                'targets' => 'Maksimal 50 target per network diagnostics.',
+            ]);
+        }
+
+        $probes = $this->diagnosticProbes($command, $input);
+        if ($probes === []) {
+            throw ValidationException::withMessages([
+                'command_key' => 'Pilih minimal satu probe diagnostic.',
+            ]);
+        }
+
+        $lines = [
+            'Network diagnostics dari server aplikasi',
+            'Targets: '.count($targets),
+            'Probes : '.implode(', ', array_column($probes, 'label')),
+            '',
+        ];
+        $deadline = microtime(true) + $this->timeoutSeconds();
+        $timedOut = false;
+
+        foreach ($targets as $index => $target) {
+            if (microtime(true) >= $deadline) {
+                $timedOut = true;
+                $remaining = count($targets) - $index;
+                $lines[] = "timeout: {$remaining} target belum dicek karena melewati max timeout.";
+                break;
+            }
+
+            $lines[] = '['.($index + 1).'/'.count($targets)."] {$target}";
+            foreach ($probes as $probe) {
+                if ($probe['type'] === 'ping') {
+                    $result = $this->pingTarget($target);
+                    $lines[] = sprintf(
+                        '  ping      : %-7s %s',
+                        $result['ok'] ? 'ok' : $result['status'],
+                        $result['message']
+                    );
+
+                    continue;
+                }
+
+                $result = $this->probeTcpPort($target, $probe['port']);
+                $lines[] = sprintf(
+                    '  %-10s: %-7s %s',
+                    $probe['label'],
+                    $result['open'] ? 'open' : 'closed',
+                    $result['message']
+                );
+
+                if ($probe['port'] === 22 && $result['open']) {
+                    $lines[] = "  hint      : ssh user@{$target}";
+                }
+            }
+
+            $lines[] = '';
+        }
+
+        return [implode(PHP_EOL, $lines), $timedOut];
+    }
+
+    protected function diagnosticProbes(array $command, array $input): array
+    {
+        $probes = [];
+        if ($this->flag($input, 'probe_ping', $this->defaultOption($command, 'probe_ping', true))) {
+            $probes[] = ['type' => 'ping', 'label' => 'ping'];
+        }
+
+        foreach ([
+            'probe_ssh' => ['label' => 'ssh 22', 'port' => 22, 'default' => true],
+            'probe_winrm' => ['label' => 'winrm 5985', 'port' => 5985, 'default' => true],
+            'probe_rdp' => ['label' => 'rdp 3389', 'port' => 3389, 'default' => false],
+            'probe_smb' => ['label' => 'smb 445', 'port' => 445, 'default' => false],
+        ] as $key => $probe) {
+            if ($this->flag($input, $key, $this->defaultOption($command, $key, $probe['default']))) {
+                $probes[] = ['type' => 'tcp', 'label' => $probe['label'], 'port' => $probe['port']];
+            }
+        }
+
+        return $probes;
+    }
+
+    protected function pingTarget(string $target): array
+    {
+        if (! $this->commandExists('ping')) {
+            return [
+                'ok' => false,
+                'status' => 'skipped',
+                'message' => 'ping command tidak ditemukan di server.',
+            ];
+        }
+
+        $arguments = PHP_OS_FAMILY === 'Windows'
+            ? ['ping', '-n', '1', '-w', '1500', $target]
+            : ['ping', '-c', '1', '-W', '2', $target];
+        $started = microtime(true);
+        $process = new Process($arguments, null, [
+            'NO_COLOR' => '1',
+            'TERM' => 'dumb',
+        ], null, 4);
+
+        try {
+            $process->run();
+            $durationMs = (int) round((microtime(true) - $started) * 1000);
+            $output = trim($process->getOutput().PHP_EOL.$process->getErrorOutput());
+
+            return [
+                'ok' => $process->isSuccessful(),
+                'status' => $process->isSuccessful() ? 'ok' : 'failed',
+                'message' => $this->summarizePingOutput($output, $durationMs),
+            ];
+        } catch (Throwable $exception) {
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => $exception->getMessage(),
+            ];
+        }
+    }
+
+    protected function summarizePingOutput(string $output, int $durationMs): string
+    {
+        if (preg_match('/time[=<]\s*([0-9.]+\s*ms)/i', $output, $matches)) {
+            return $matches[1];
+        }
+
+        if (preg_match('/(ttl=\d+)/i', $output, $matches)) {
+            return $matches[1].", {$durationMs}ms";
+        }
+
+        if (preg_match('/(\d+)\s+packets?\s+transmitted,\s+(\d+)\s+(?:packets?\s+)?received/i', $output, $matches)) {
+            return "{$matches[2]}/{$matches[1]} received, {$durationMs}ms";
+        }
+
+        return $durationMs.'ms';
+    }
+
+    protected function probeTcpPort(string $target, int $port): array
+    {
+        $endpoint = filter_var($target, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)
+            ? "tcp://[{$target}]:{$port}"
+            : "tcp://{$target}:{$port}";
+        $started = microtime(true);
+        $errno = 0;
+        $errstr = '';
+        $socket = @stream_socket_client($endpoint, $errno, $errstr, 1.5, STREAM_CLIENT_CONNECT);
+        $durationMs = (int) round((microtime(true) - $started) * 1000);
+
+        if (is_resource($socket)) {
+            fclose($socket);
+
+            return [
+                'open' => true,
+                'message' => $durationMs.'ms',
+            ];
+        }
+
+        $message = $errstr !== '' ? $errstr : 'connection failed';
+
+        return [
+            'open' => false,
+            'message' => "{$message}, {$durationMs}ms",
+        ];
+    }
+
+    protected function nativeDisplayCommand(string $commandKey, array $input): string
+    {
+        $targetCount = count($this->parseList($input['targets'] ?? ''));
+
+        return match ($commandKey) {
+            'network_diagnostics' => "network-diagnostics --targets={$targetCount}",
+            default => $commandKey,
+        };
     }
 
     protected function scriptArguments(string $commandKey, array $command, array $input): array
