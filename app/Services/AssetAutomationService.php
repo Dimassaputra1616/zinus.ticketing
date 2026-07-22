@@ -690,7 +690,7 @@ class AssetAutomationService
         $maxParallel = $this->maxParallel($input, (int) ($command['default_max_parallel'] ?? 12));
 
         return [[
-            '-IpSegment', ...$segments,
+            '-IpSegment', $this->segmentsArgument($segments),
             '-StartHost', (string) $startHost,
             '-EndHost', (string) $endHost,
             '-Token', $token,
@@ -732,7 +732,7 @@ class AssetAutomationService
         [$startHost, $endHost] = $this->hostRange($input);
 
         return [[
-            '-IpSegment', ...$segments,
+            '-IpSegment', $this->segmentsArgument($segments),
             '-StartHost', (string) $startHost,
             '-EndHost', (string) $endHost,
             '-ResultPath', '.\zinus-web-network-discovery-results.csv',
@@ -749,7 +749,7 @@ class AssetAutomationService
 
         return [[
             '-ComputerList', '',
-            '-IpSegment', ...$segments,
+            '-IpSegment', $this->segmentsArgument($segments),
             '-StartHost', (string) $startHost,
             '-EndHost', (string) $endHost,
             '-Token', $token,
@@ -1099,6 +1099,11 @@ class AssetAutomationService
         }
 
         return $segments;
+    }
+
+    protected function segmentsArgument(array $segments): string
+    {
+        return implode(',', $segments);
     }
 
     protected function targets(array $input, bool $optional): array

@@ -111,4 +111,30 @@ class AssetAutomationConsoleTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('token');
     }
+
+    public function test_segment_commands_pass_ip_segments_as_one_powershell_argument(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $installerPath = storage_path('framework/testing/fake-asset-installer');
+
+        File::ensureDirectoryExists($installerPath);
+        File::put($installerPath.'/Invoke-ZinusFinalizeAutomation.ps1', '');
+        config([
+            'asset_automation.installer_path' => $installerPath,
+            'asset_automation.powershell_path' => '/usr/bin/true',
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson(route('admin.assets.automation-console.run'), [
+                'command_key' => 'all_auto_scan',
+                'segments' => '10.62.38, 10.62.39, 10.62.36',
+                'use_config_token' => false,
+                'token' => 'token-for-test',
+                'server_url' => 'https://app.it-ticketing.web.id/api/asset-sync',
+            ])
+            ->assertOk()
+            ->assertJsonPath('command_key', 'all_auto_scan')
+            ->assertJsonPath('successful', true)
+            ->assertJsonPath('command', fn (string $command) => str_contains($command, '-IpSegment 10.62.38,10.62.39,10.62.36'));
+    }
 }

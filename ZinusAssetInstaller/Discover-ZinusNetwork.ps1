@@ -16,6 +16,20 @@ if ($StartHost -lt 1 -or $StartHost -gt 254 -or $EndHost -lt 1 -or $EndHost -gt 
     throw "Range host tidak valid. Gunakan StartHost/EndHost antara 1 sampai 254."
 }
 
+function Normalize-IpSegments {
+    param([string[]]$Segments)
+
+    return @(
+        foreach ($segment in @($Segments)) {
+            ([string]$segment).Split(",") |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ }
+        }
+    )
+}
+
+$IpSegment = @(Normalize-IpSegments -Segments $IpSegment)
+
 function Expand-IpSegment {
     param(
         [string]$Segment,

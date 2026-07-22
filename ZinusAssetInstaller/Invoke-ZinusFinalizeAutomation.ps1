@@ -47,6 +47,20 @@ $ErrorActionPreference = "Stop"
 
 Set-Location -LiteralPath $PSScriptRoot
 
+function Normalize-IpSegments {
+    param([string[]]$Segments)
+
+    return @(
+        foreach ($segment in @($Segments)) {
+            ([string]$segment).Split(",") |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ }
+        }
+    )
+}
+
+$IpSegment = @(Normalize-IpSegments -Segments $IpSegment)
+
 function Write-Phase {
     param([string]$Message)
 
