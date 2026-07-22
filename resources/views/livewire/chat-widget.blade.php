@@ -129,8 +129,8 @@
         .zinus-support-fab {
             position: relative;
             display: flex;
-            width: 3.5rem;
-            height: 3.5rem;
+            width: 3rem;
+            height: 3rem;
             align-items: center;
             justify-content: center;
             border: 0;
@@ -148,8 +148,8 @@
         }
 
         .zinus-support-fab svg {
-            width: 1.5rem;
-            height: 1.5rem;
+            width: 1.25rem;
+            height: 1.25rem;
         }
 
         .zinus-support-badge {
@@ -237,11 +237,12 @@
             class="zinus-support-fab"
             title="Bantuan"
         >
-            <svg x-show="!fabOpen" x-transition.opacity class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
+            <svg x-show="!fabOpen" x-transition.opacity fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M9.09 9a3 3 0 015.82 1c0 1.5-1.16 2.16-2.06 2.68-.62.36-.85.58-.85 1.07M12 17h.01"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <svg x-show="fabOpen" x-transition.opacity class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+            <svg x-show="fabOpen" x-transition.opacity fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             @if($totalUnreadCount > 0)
                 <span class="zinus-support-badge">
